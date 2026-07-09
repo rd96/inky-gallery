@@ -1,0 +1,13 @@
+{
+  "name": "inky-gallery",
+  "version": "1.0.0",
+  "description": "Frontend for inky-gallery",
+  "main": "frontend/index.js",
+  "scripts": {
+    "build": "tbd",
+    "dev": "tbd",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
