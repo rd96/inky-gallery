@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FILE=".env.example"
+
+# Only check if the file exists in the repo / index
+if ! git ls-files --error-unmatch "$FILE" >/dev/null 2>&1; then
+  exit 0
+fi
+
+# Check the staged version, not the working tree version
+bad_lines="$(
+  git show ":$FILE" 2>/dev/null \
+    | awk '
+      /^[[:space:]]*#/ { next }      # ignore comments
+      /^[[:space:]]*$/ { next }      # ignore blank lines
+      /^[^=]+=[[:space:]]*$/ { next } # allow KEY=
+      /=/ { print NR ": " $0 }
+    '
+)"
+
+if [ -n "$bad_lines" ]; then
+  echo "Error: $FILE must not contain values after '='"
+  echo
+  echo "$bad_lines"
+  echo
+  echo "Use empty values only, e.g."
+  echo "DATABASE_URL="
+  echo "API_KEY="
+  exit 1
+fi

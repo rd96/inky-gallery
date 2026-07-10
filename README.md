@@ -15,6 +15,9 @@ Things to install:
 
 Setup steps:
 
+- Git commit hooks
+  - `./scripts/setup-git-hooks.sh`
+
 - Set up .env (see `.env.example`)
 - Get postgres running locally with docker
   - run `docker compose -f docker-compose.dev.yml up -d postgres`
