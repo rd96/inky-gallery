@@ -18,6 +18,9 @@ dependencies {
 
     implementation(libs.bundles.exposed)
     implementation(libs.postgres)
+    implementation(libs.hikari)
+
+    implementation(libs.argon2)
 
     testImplementation(kotlin("test"))
 }
