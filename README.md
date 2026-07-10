@@ -2,6 +2,28 @@
 
 An app for creating drawings and viewing them on an InkyFrame.
 
+## Development
+
+Things to install:
+- Docker
+- IntelliJ IDEA for Backend
+  - Java 21
+- Visual Studio Code for Frontend/Micropython
+- NVM to install Node 22
+- Optional Thonny for Micropython
+- pgadmin to explore database
+
+Setup steps:
+
+- Set up .env (see `.env.example`)
+- Get postgres running locally with docker
+  - run `docker compose -f docker-compose.dev.yml up -d postgres`
+
+Reset Database (will delete everything):
+- `docker compose -f docker-compose.dev.yml down -v`
+- `docker compose -f docker-compose.dev.yml up -d postgres`
+
+
 ## Structure
 
 ### backend
