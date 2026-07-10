@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "2.0.20"
+    kotlin("jvm") version "2.4.0"
 }
 
 group = "uk.derbyshire"
@@ -10,6 +10,15 @@ repositories {
 }
 
 dependencies {
+    implementation(platform(libs.http4k.bom))
+    implementation(libs.bundles.http4k)
+
+    implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.result4k)
+
+    implementation(libs.bundles.exposed)
+    implementation(libs.postgres)
+
     testImplementation(kotlin("test"))
 }
 
