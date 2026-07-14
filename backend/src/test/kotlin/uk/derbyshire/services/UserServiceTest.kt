@@ -14,9 +14,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import uk.derbyshire.auth.PasswordHasher
+import uk.derbyshire.auth.Role
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.UserRepository
 import java.sql.SQLException
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 class UserServiceTest {
@@ -138,6 +140,17 @@ class UserServiceTest {
     }
 
     @Test
+    fun `findUserByUsername normalises username before lookup`() {
+        every { database.transaction<User?>(any()) } answers { firstArg<() -> User?>().invoke() }
+        every { userRepository.findUserByUsername("user-one") } returns FOUND_USER
+
+        val result = userService.findUserByUsername("  User-One  ")
+
+        assertEquals(FOUND_USER, result)
+        verify(exactly = 1) { userRepository.findUserByUsername("user-one") }
+    }
+
+    @Test
     fun `createUser normalises username before saving`() {
         val result = userService.createUser("  User-One  ", Secret(VALID_PASSWORD))
 
@@ -196,6 +209,14 @@ class UserServiceTest {
         const val HASHED_PASSWORD = "hashed-password"
 
         val CREATED_USER_ID: Uuid = Uuid.random()
+        val FOUND_USER = User(
+            id = Uuid.random(),
+            username = "user-one",
+            passwordHash = Secret(HASHED_PASSWORD),
+            role = Role.USER,
+            createdAt = Instant.fromEpochMilliseconds(0),
+            disabled = false,
+        )
     }
 }
 

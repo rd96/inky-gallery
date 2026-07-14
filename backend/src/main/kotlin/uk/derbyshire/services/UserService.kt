@@ -34,12 +34,10 @@ class UserService(
         }
     }
 
-    fun findUserByUsername(username: String): User? {
-        // normalise username
-        return database.transaction {
-            userRepository.findUserByUsername(username)
+    fun findUserByUsername(username: String): User? =
+        database.transaction {
+            userRepository.findUserByUsername(normaliseUsername(username))
         }
-    }
 
     fun createAdminUserIfMissing(username: String, password: Secret): Boolean =
         database.transaction {
