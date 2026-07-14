@@ -1,4 +1,4 @@
-package uk.derbyshire.db.security
+package uk.derbyshire.auth
 
 import de.mkammerer.argon2.Argon2
 import de.mkammerer.argon2.Argon2Factory
