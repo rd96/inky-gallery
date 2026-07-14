@@ -4,6 +4,7 @@ import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Result4k
 import dev.forkhandles.result4k.asSuccess
 import org.http4k.config.Secret
+import org.slf4j.LoggerFactory
 import uk.derbyshire.auth.PasswordHasher
 import uk.derbyshire.auth.Role
 import uk.derbyshire.database.DatabaseContext
@@ -17,6 +18,7 @@ class UserService(
     private val passwordHasher: PasswordHasher,
     private val database: DatabaseContext
 ) {
+    private val logger = LoggerFactory.getLogger(UserService::class.java)
     fun createUser(username: String, password: Secret): Result4k<Uuid, CreateUserFailure> {
         val passwordHash = validateAndHashPassword(password) ?: return Failure(CreateUserFailure.INVALID_PASSWORD)
         val normalisedUsername = normaliseUsername(username)
@@ -27,8 +29,7 @@ class UserService(
             try {
                 userRepository.createUser(normalisedUsername, passwordHash).asSuccess()
             } catch (sqlException: SQLException) {
-                // TODO logging
-                println(sqlException.message)
+                logger.warn("createUser failed with SQL exception", sqlException)
                 Failure(CreateUserFailure.EXISTING_USER)
             }
         }
