@@ -13,9 +13,10 @@ import org.http4k.routing.routes
 import org.http4k.routing.static
 import org.http4k.server.ApacheServer
 import org.http4k.server.asServer
-import java.time.Clock
+import uk.derbyshire.api.apiRoutes
+import uk.derbyshire.api.filters.AuthFilters
 
-class Server(private val env: Environment, private val clock: Clock) {
+class Server(private val services: Services, val serverConfig: ServerConfig) {
     private val catchAllErrorHandler = { e: Throwable ->
         when (e) {
             is IllegalArgumentException -> Response(Status.BAD_REQUEST).body("Invalid input: ${e.message}")
@@ -24,15 +25,23 @@ class Server(private val env: Environment, private val clock: Clock) {
     }
 
     fun start() {
+        warningsCheck()
+
+        val authFilters = AuthFilters(services.authService)
+
         val app: HttpHandler = ServerFilters.RequestTracing()
             .then(PrintRequestAndResponse(System.out)) // TODO prefer to have a proper logging solution in place
             .then(routes(
-                "/test" bind Method.GET to { Response(Status.OK).body("Connected to server") },
+                "/api" bind apiRoutes(authFilters, services.authService, serverConfig),
                 "/" bind Method.GET to static(ResourceLoader.Classpath("public")),
             ))
 
-        app.asServer(ApacheServer(env.serverConfig.port)).also {
-            println("Running on ${env.serverConfig.port}")
+        app.asServer(ApacheServer(serverConfig.port)).also {
+            println("Running on ${serverConfig.port}")
         }.start()
+    }
+
+    private fun warningsCheck() {
+        if (!serverConfig.secureSessionCookies) println("WARNING: Secure session cookies is FALSE. Set to TRUE in production.")
     }
 }
