@@ -19,10 +19,21 @@ dependencies {
     implementation(libs.bundles.exposed)
     implementation(libs.postgres)
     implementation(libs.hikari)
+    implementation(libs.bundles.flyway)
 
     implementation(libs.argon2)
 
     testImplementation(kotlin("test"))
+    testImplementation(libs.junit.params)
+    testImplementation(libs.mockk)
+}
+
+tasks.register<JavaExec>("runMigrationGenerator") {
+    group = "database"
+    description = "Generates suggested SQL for the next Flyway migration"
+
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("uk.derbyshire.inkygallery.tooling.GenerateMigration")
 }
 
 tasks.test {
