@@ -1,0 +1,25 @@
+package uk.derbyshire.api.auth
+
+import org.http4k.core.Body
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
+import org.http4k.core.with
+import org.http4k.format.Jackson.auto
+import uk.derbyshire.api.filters.CurrentUser
+import uk.derbyshire.auth.Role
+
+fun getCurrentUser() = { request: Request ->
+    val user = CurrentUser(request)
+
+    Response(Status.OK).with(CurrentUserResponseDTO.lens.of(CurrentUserResponseDTO(user.username, user.role)))
+}
+
+private data class CurrentUserResponseDTO(
+    val username: String,
+    val role: Role,
+) {
+    companion object {
+        val lens = Body.auto<CurrentUserResponseDTO>().toLens()
+    }
+}
