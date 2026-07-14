@@ -5,10 +5,13 @@ import org.http4k.config.EnvironmentKey
 import org.http4k.config.Port
 import org.http4k.config.Secret
 import org.http4k.core.Uri
+import org.http4k.lens.boolean
 import org.http4k.lens.port
 import org.http4k.lens.secret
 import org.http4k.lens.uri
 import uk.derbyshire.ServerConfig.Companion.port
+import uk.derbyshire.ServerConfig.Companion.secureSessionCookies
+import java.io.File
 
 data class Environment(
     val serverConfig: ServerConfig,
@@ -18,10 +21,17 @@ data class Environment(
     companion object {
         private val defaultConfig = Environment4k.defaults(
             port of Port(8080),
+            secureSessionCookies of true,
         )
 
+        val source = run {
+            val dotenv = Environment4k.from(File(".env"))
+
+            Environment4k.ENV overrides dotenv overrides defaultConfig
+        }
+
         fun fromEnv(): Environment {
-            val env = Environment4k.ENV overrides defaultConfig
+            val env = source
 
             return Environment(
                 serverConfig = ServerConfig.from(env),
@@ -34,9 +44,11 @@ data class Environment(
 
 data class ServerConfig (
     val port: Int,
+    val secureSessionCookies: Boolean = true,
 ) {
     companion object {
         val port = EnvironmentKey.port().required("PORT")
+        val secureSessionCookies = EnvironmentKey.boolean().required("SECURE_SESSION_COOKIES")
 
         fun from(env: Environment4k) = ServerConfig(
             port = port(env).value,
@@ -68,7 +80,7 @@ data class AdminUserConfig(
 ) {
     companion object {
         private val username = EnvironmentKey.secret().optional("INITIAL_ADMIN_USERNAME")
-        private val password = EnvironmentKey.secret().optional("INITIAL_ADMIN_USERNAME")
+        private val password = EnvironmentKey.secret().optional("INITIAL_ADMIN_PASSWORD")
 
         fun from(env: Environment4k): AdminUserConfig? {
             val username = username(env) ?: return null
