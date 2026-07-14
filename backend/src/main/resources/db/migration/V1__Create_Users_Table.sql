@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS users (
+    id uuid PRIMARY KEY,
+    username VARCHAR(30) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    "role" VARCHAR(20) DEFAULT 'USER' NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    disabled BOOLEAN DEFAULT FALSE NOT NULL
+);
+
+ALTER TABLE users ADD CONSTRAINT users_username_unique UNIQUE (username);

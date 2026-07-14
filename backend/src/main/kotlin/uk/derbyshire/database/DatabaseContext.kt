@@ -1,4 +1,4 @@
-package uk.derbyshire.db
+package uk.derbyshire.database
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -7,8 +7,8 @@ import java.io.Closeable
 import org.jetbrains.exposed.v1.jdbc.Database as ExposedDatabase
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction as exposedTransaction
 
-class Database(config: DatabaseConfig): Closeable {
-    private val dataSource: HikariDataSource = createDataSource(config)
+class DatabaseContext(config: DatabaseConfig): Closeable {
+    val dataSource: HikariDataSource = createDataSource(config)
 
     val database = ExposedDatabase.connect(dataSource)
 
