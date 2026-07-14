@@ -1,7 +1,6 @@
 package uk.derbyshire.database
 
 import uk.derbyshire.AdminUserConfig
-import uk.derbyshire.auth.PasswordHasher
 import uk.derbyshire.services.UserService
 
 class DatabaseSetup(

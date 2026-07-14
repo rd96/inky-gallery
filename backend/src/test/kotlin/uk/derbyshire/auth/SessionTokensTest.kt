@@ -47,17 +47,4 @@ class SessionTokensTest {
             hash,
         )
     }
-
-    private class StubSecureRandom(
-        private val output: ByteArray,
-    ) : SecureRandom() {
-        var requestedSize: Int? = null
-            private set
-
-        override fun nextBytes(bytes: ByteArray) {
-            requestedSize = bytes.size
-            require(bytes.size == output.size)
-            output.copyInto(bytes)
-        }
-    }
 }
