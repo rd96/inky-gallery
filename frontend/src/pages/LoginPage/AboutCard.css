@@ -1,0 +1,9 @@
+.about-body p {
+  margin: 0 0 1rem;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.about-body p:last-child {
+  margin-bottom: 0;
+}

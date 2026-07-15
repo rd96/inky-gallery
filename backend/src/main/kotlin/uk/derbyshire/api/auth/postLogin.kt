@@ -18,7 +18,7 @@ fun postLogin(authService: AuthService, serverConfig: ServerConfig): HttpHandler
     val loginRequest = LoginRequestDTO.lens(request)
 
     when (val loginResult = authService.login(loginRequest.username, loginRequest.password)) {
-        is Success -> Response(Status.OK).cookie(sessionCookie(loginResult.value.sessionToken, serverConfig.secureSessionCookies))
+        is Success -> Response(Status.NO_CONTENT).cookie(sessionCookie(loginResult.value.sessionToken, serverConfig.secureSessionCookies))
         is Failure -> Response(Status.UNAUTHORIZED)
     }
 }

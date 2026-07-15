@@ -1,0 +1,55 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('../../assets/login-background.jpeg');
+  background-size: cover;
+  background-position: center;
+  padding: 2rem;
+}
+
+.login-flip-card {
+  width: min(92vw, 440px);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: 3.5rem 3rem;
+  border-radius: 16px;
+  background: #fff;
+  color: var(--inky-color-black);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.card h1,
+.card h2 {
+  margin: 0;
+  color: var(--inky-color-blue);
+  font-family: 'Silkscreen', system-ui, sans-serif;
+  font-size: 2rem;
+  line-height: 1.4;
+}
+
+.card .tagline {
+  margin: 0.5rem 0 1.5rem;
+  color: var(--inky-color-black);
+  opacity: 0.7;
+  font-family: 'Silkscreen', system-ui, sans-serif;
+}
+
+.flip-link {
+  margin-top: auto;
+  padding: 1.5rem 0 0;
+  border: none;
+  background: none;
+  color: var(--inky-color-blue);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.flip-link:hover {
+  text-decoration: underline;
+}
