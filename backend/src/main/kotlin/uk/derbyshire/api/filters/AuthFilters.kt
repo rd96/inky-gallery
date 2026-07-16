@@ -7,8 +7,8 @@ import org.http4k.core.cookie.cookie
 import org.http4k.core.then
 import org.http4k.core.with
 import org.http4k.lens.RequestKey
-import uk.derbyshire.auth.AuthenticatedUser
-import uk.derbyshire.auth.Role
+import uk.derbyshire.domain.auth.AuthenticatedUser
+import uk.derbyshire.domain.users.Role
 import uk.derbyshire.services.AuthService
 
 val CurrentUser = RequestKey.required<AuthenticatedUser>("currentUser")
