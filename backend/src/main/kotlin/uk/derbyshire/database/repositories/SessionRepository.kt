@@ -8,7 +8,7 @@ import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.update
 import uk.derbyshire.database.schema.SessionTable
 import uk.derbyshire.database.schema.UserTable
-import uk.derbyshire.services.SessionUser
+import uk.derbyshire.domain.auth.SessionUser
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -21,7 +21,7 @@ class SessionRepository {
                 UserTable.id,
                 UserTable.username,
                 UserTable.role,
-                UserTable.disabled,
+                UserTable.status,
             )
             .where(SessionTable.tokenHash eq tokenHash)
             .singleOrNull()?.let {
@@ -31,7 +31,7 @@ class SessionRepository {
                     it[UserTable.id].value,
                     it[UserTable.username],
                     it[UserTable.role],
-                    it[UserTable.disabled],
+                    it[UserTable.status],
                 )
             }
 
