@@ -13,7 +13,7 @@ import uk.derbyshire.services.AuthService
 
 val CurrentUser = RequestKey.required<AuthenticatedUser>("currentUser")
 
-class AuthFilters(
+class AuthChecker(
     private val authService: AuthService,
 ) {
     fun requireUser(): Filter = Filter { next ->
