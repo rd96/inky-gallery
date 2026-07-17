@@ -11,6 +11,7 @@ data class SessionUser(
     val userId: Uuid,
     val username: String,
     val role: Role,
+    val displayName: String,
     val activationStatus: ActivationStatus,
     val enabled: Boolean,
 )
