@@ -141,12 +141,12 @@ class UserServiceTest {
     @Test
     fun `findUserByUsername normalises username before lookup`() {
         every { database.transaction<User?>(any()) } answers { firstArg<() -> User?>().invoke() }
-        every { userRepository.findUserByUsername("user-one") } returns FOUND_USER
+        every { userRepository.findUserLoginByUsername("user-one") } returns FOUND_USER
 
-        val result = userService.findUserByUsername("  User-One  ")
+        val result = userService.findUserLoginByUsername("  User-One  ")
 
         assertEquals(FOUND_USER, result)
-        verify(exactly = 1) { userRepository.findUserByUsername("user-one") }
+        verify(exactly = 1) { userRepository.findUserLoginByUsername("user-one") }
     }
 
     @Test

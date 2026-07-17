@@ -36,14 +36,26 @@ class UserRepository {
             .limit(1)
             .any()
 
-    fun findUserByUsername(username: String): UserLoginDetail? =
+    fun findUser(userId: Uuid): UserSummary? =
+        UserTable.select(
+            UserTable.id,
+            UserTable.username,
+            UserTable.displayName,
+            UserTable.role,
+            UserTable.status,
+            UserTable.createdAt,
+        )
+            .where { UserTable.id eq userId }
+            .singleOrNull()
+            ?.let(::toUserSummary)
+
+    fun findUserLoginByUsername(username: String): UserLoginDetail? =
         UserTable.select(
             UserTable.id,
             UserTable.username,
             UserTable.passwordHash,
             UserTable.role,
             UserTable.status,
-            UserTable.createdAt,
         )
             .where { UserTable.username eq username }
             .singleOrNull()
@@ -64,7 +76,7 @@ class UserRepository {
             UserTable.displayName,
             UserTable.role,
             UserTable.status,
-            UserTable.createdAt
+            UserTable.createdAt,
         )
 
         nameSearch?.takeIf(String::isNotBlank)

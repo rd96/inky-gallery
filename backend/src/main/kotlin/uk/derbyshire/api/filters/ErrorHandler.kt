@@ -5,7 +5,7 @@ import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.with
 import org.slf4j.LoggerFactory
-import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.errorResponseLens
+import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.lens
 import uk.derbyshire.api.helpers.Json
 
 class ErrorHandler {
@@ -22,9 +22,7 @@ class ErrorHandler {
                 )
 
                 Response(Status.INTERNAL_SERVER_ERROR).with(
-                    errorResponseLens of ErrorResponseDTO(
-                        error = Status.INTERNAL_SERVER_ERROR.description,
-                    ),
+                    lens of ErrorResponseDTO(Status.INTERNAL_SERVER_ERROR.description)
                 )
             }
         }
@@ -32,10 +30,10 @@ class ErrorHandler {
 }
 
 
-private data class ErrorResponseDTO(
+data class ErrorResponseDTO(
     val error: String,
 ) {
     companion object {
-        val errorResponseLens = Json.autoBody<ErrorResponseDTO>().toLens()
+        val lens = Json.autoBody<ErrorResponseDTO>().toLens()
     }
 }

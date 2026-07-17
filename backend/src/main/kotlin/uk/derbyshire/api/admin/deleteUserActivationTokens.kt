@@ -1,0 +1,25 @@
+package uk.derbyshire.api.admin
+
+import dev.forkhandles.result4k.Failure
+import dev.forkhandles.result4k.Success
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
+import org.http4k.core.with
+import uk.derbyshire.api.filters.ErrorResponseDTO
+import uk.derbyshire.api.helpers.Path
+import uk.derbyshire.services.AuthService
+
+fun deleteUserActivationTokens(authService: AuthService) = { request: Request ->
+    val userId = Path.userId(request)
+
+    val result = authService.revokeUserActivationTokens(
+        userId = userId,
+    )
+
+    when (result) {
+        is Success -> Response(Status.NO_CONTENT)
+        is Failure -> Response(Status.BAD_REQUEST).with(ErrorResponseDTO.lens of ErrorResponseDTO(Status.BAD_REQUEST.description))
+    }
+}
+

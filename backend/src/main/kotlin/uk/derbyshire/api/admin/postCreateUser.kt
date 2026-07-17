@@ -5,8 +5,12 @@ import dev.forkhandles.result4k.Success
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.http4k.core.with
+import uk.derbyshire.api.admin.PostCreateUserResponseDTO.Companion.toDto
 import uk.derbyshire.api.filters.CurrentUser
+import uk.derbyshire.api.filters.ErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
+import uk.derbyshire.domain.auth.UserPendingActivation
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.services.AuthService
 import kotlin.uuid.Uuid
@@ -23,11 +27,9 @@ fun postCreateUser(authService: AuthService) = request@{ request: Request ->
     )
 
     when (pendingUserResult) {
-        is Success -> {}
-        is Failure -> {}
+        is Success -> Response(Status.OK).with(PostCreateUserResponseDTO.lens of pendingUserResult.value.toDto())
+        is Failure -> Response(Status.BAD_REQUEST).with(ErrorResponseDTO.lens of ErrorResponseDTO(Status.BAD_REQUEST.description))
     }
-
-    Response(Status.NOT_IMPLEMENTED)
 }
 
 data class PostCreateUserRequestDTO(
@@ -43,4 +45,13 @@ data class PostCreateUserRequestDTO(
 data class PostCreateUserResponseDTO(
     val userId: Uuid,
     val activationToken: String,
-)
+) {
+    companion object {
+        val lens = Json.autoBody<PostCreateUserResponseDTO>().toLens()
+
+        fun UserPendingActivation.toDto() = PostCreateUserResponseDTO(
+            userId = userId,
+            activationToken = activationToken,
+        )
+    }
+}

@@ -2,10 +2,12 @@ package uk.derbyshire.services
 
 import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Result4k
+import dev.forkhandles.result4k.Success
 import dev.forkhandles.result4k.asFailure
 import dev.forkhandles.result4k.asSuccess
 import dev.forkhandles.result4k.onFailure
 import org.http4k.config.Secret
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import uk.derbyshire.domain.auth.AuthenticatedUser
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.domain.users.UserStatus
@@ -62,7 +64,7 @@ class AuthService(
     }
 
     fun login(username: String, password: Secret): Result4k<LoginSuccess, LoginFailure> {
-        val user = userService.findUserByUsername(username) ?: return Failure(LoginFailure.NO_USER)
+        val user = userService.findUserLoginByUsername(username) ?: return Failure(LoginFailure.NO_USER)
 
         if (user.status != UserStatus.ACTIVE || user.passwordHash == null) return Failure(LoginFailure.DISABLED)
 
@@ -86,17 +88,43 @@ class AuthService(
         ).asSuccess()
     }
 
-    fun createPendingUser(username: String, displayName: String, role: Role, createdBy: Uuid): Result4k<UserPendingActivation, String> {
-        val userId = userService.createPendingUser(username, displayName, role).onFailure { return Failure("Failed to create pending user $username") }
+    fun createPendingUser(username: String, displayName: String, role: Role, createdBy: Uuid): Result4k<UserPendingActivation, CreateUserFailure> {
+        val userId = userService.createPendingUser(username, displayName, role).onFailure { return it }
         val token = sessionTokenService.generate()
         val tokenHash = sessionTokenService.hash(token)
 
-        activationTokenRepository.createActivationToken(
-            userId,
-            tokenHash,
-            createdBy,
-            clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER,
-        )
+        transaction {
+            activationTokenRepository.createActivationToken(
+                userId,
+                tokenHash,
+                createdBy,
+                clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER,
+            )
+        }
+
+        return UserPendingActivation(
+            userId = userId,
+            activationToken = token,
+        ).asSuccess()
+    }
+
+    fun createUserActivationToken(userId: Uuid, createdBy: Uuid): Result4k<UserPendingActivation, String> {
+        val user = userService.findUser(userId) ?: return Failure("User $userId not found")
+
+        if (user.status != UserStatus.PENDING_ACTIVATION) return Failure("User $userId is ${user.status.name.lowercase()}")
+
+        val token = sessionTokenService.generate()
+        val tokenHash = sessionTokenService.hash(token)
+
+        transaction {
+            activationTokenRepository.expireActivationTokensForUser(userId, clock.now())
+            activationTokenRepository.createActivationToken(
+                userId,
+                tokenHash,
+                createdBy,
+                clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER,
+            )
+        }
 
         return UserPendingActivation(
             userId = userId,
@@ -109,7 +137,7 @@ class AuthService(
     }
 
     fun activate(username: String, activationToken: Secret, password: Secret): Result4k<LoginSuccess, LoginFailure> {
-        val user = userService.findUserByUsername(username) ?: return Failure(LoginFailure.NO_USER)
+        val user = userService.findUserLoginByUsername(username) ?: return Failure(LoginFailure.NO_USER)
 
         if (user.status != UserStatus.PENDING_ACTIVATION || user.passwordHash != null) return Failure(LoginFailure.USER_ALREADY_ACTIVATED)
 
@@ -124,16 +152,21 @@ class AuthService(
         }
     }
 
+    fun revokeUserActivationTokens(userId: Uuid): Result4k<Unit, String> {
+        userService.findUser(userId) ?: return Failure("User $userId not found")
+
+        context.transaction {
+            activationTokenRepository.expireActivationTokensForUser(userId, clock.now())
+        }
+
+        return Success(Unit)
+    }
+
     companion object {
         val SESSION_EXPIRES_AFTER = 30.days
         val ACTIVATION_TOKEN_EXPIRES_AFTER = 7.days
     }
 }
-
-data class CreateUserActivationLink(
-    val userId: Uuid,
-    val token: String,
-)
 
 enum class LoginFailure {
     DISABLED,

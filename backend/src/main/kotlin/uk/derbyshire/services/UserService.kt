@@ -10,6 +10,7 @@ import uk.derbyshire.domain.users.UserStatus
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.UserRepository
 import uk.derbyshire.domain.users.UserLoginDetail
+import uk.derbyshire.domain.users.UserSummary
 import java.sql.SQLException
 import kotlin.uuid.Uuid
 
@@ -39,9 +40,14 @@ class UserService(
         }
     }
 
-    fun findUserByUsername(username: String): UserLoginDetail? =
+    fun findUserLoginByUsername(username: String): UserLoginDetail? =
         database.transaction {
-            userRepository.findUserByUsername(normaliseUsername(username))
+            userRepository.findUserLoginByUsername(normaliseUsername(username))
+        }
+
+    fun findUser(userId: Uuid): UserSummary? =
+        database.transaction {
+            userRepository.findUser(userId)
         }
 
     fun createAdminUserIfMissing(username: String, password: Secret): Boolean =
@@ -55,6 +61,10 @@ class UserService(
 
             !hasExistingAdminUser
         }
+
+    fun activateUser(userId: String, password: Secret): Boolean {
+        return true
+    }
 
     fun searchAllUsers(nameSearch: String?, role: Role?, status: UserStatus?, page: Int) =
         database.transaction {
