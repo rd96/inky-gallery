@@ -8,6 +8,7 @@ data class UserSummary(
     val username: String,
     val displayName: String,
     val role: Role,
-    val status: UserStatus,
+    val activationStatus: ActivationStatus,
+    val enabled: Boolean,
     val createdAt: Instant,
 )

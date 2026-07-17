@@ -6,6 +6,7 @@ import org.http4k.lens.string
 import kotlin.uuid.Uuid
 
 object Path {
-    const val USER_ID = "userId"
-    fun userId(request: Request) = Path4k.string().map(Uuid::parse).of(USER_ID)(request)
+    private const val USER_ID_PARAM_NAME = "userId"
+    const val USER_ID = "{$USER_ID_PARAM_NAME}"
+    fun userId(request: Request) = Path4k.string().map(Uuid::parse).of(USER_ID_PARAM_NAME)(request)
 }

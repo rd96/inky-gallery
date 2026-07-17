@@ -17,5 +17,5 @@ fun apiRoutes(
     serverConfig: ServerConfig,
 ) = routes(
     "/auth" bind authRoutes(authChecker, authService, serverConfig),
-    "/admin" bind authChecker.requireUser().then(adminRoutes(userService, authService))
+    "/admin" bind authChecker.requireAdmin().then(adminRoutes(userService, authService))
 )

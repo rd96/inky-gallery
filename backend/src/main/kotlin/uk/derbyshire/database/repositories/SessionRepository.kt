@@ -21,7 +21,8 @@ class SessionRepository {
                 UserTable.id,
                 UserTable.username,
                 UserTable.role,
-                UserTable.status,
+                UserTable.activationStatus,
+                UserTable.enabled,
             )
             .where(SessionTable.tokenHash eq tokenHash)
             .singleOrNull()?.let {
@@ -31,7 +32,8 @@ class SessionRepository {
                     it[UserTable.id].value,
                     it[UserTable.username],
                     it[UserTable.role],
-                    it[UserTable.status],
+                    it[UserTable.activationStatus],
+                    it[UserTable.enabled],
                 )
             }
 

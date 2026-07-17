@@ -6,9 +6,9 @@ import dev.forkhandles.result4k.asSuccess
 import org.http4k.config.Secret
 import org.slf4j.LoggerFactory
 import uk.derbyshire.domain.users.Role
-import uk.derbyshire.domain.users.UserStatus
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.UserRepository
+import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.domain.users.UserLoginDetail
 import uk.derbyshire.domain.users.UserSummary
 import java.sql.SQLException
@@ -22,7 +22,6 @@ class UserService(
     private val logger = LoggerFactory.getLogger(UserService::class.java)
 
     fun createPendingUser(username: String, displayName: String, role: Role): Result4k<Uuid, CreateUserFailure> {
-//        val passwordHash = validateAndHashPassword(password) ?: return Failure(CreateUserFailure.INVALID_PASSWORD)
         val normalisedUsername = normaliseUsername(username)
         val normalisedDisplayName = normaliseDisplayName(displayName)
 
@@ -31,7 +30,7 @@ class UserService(
         return database.transaction {
             try {
                 userRepository.createUser(
-                    normalisedUsername, null, normalisedDisplayName, role, UserStatus.PENDING_ACTIVATION
+                    normalisedUsername, null, normalisedDisplayName, role, ActivationStatus.PENDING
                 ).asSuccess()
             } catch (sqlException: SQLException) {
                 logger.warn("createUser failed with SQL exception", sqlException)
@@ -56,19 +55,25 @@ class UserService(
             val passwordHash = validateAndHashPassword(password) ?: return@transaction false
 
             if (!hasExistingAdminUser) userRepository.createUser(
-                username, passwordHash, username, Role.ADMIN, UserStatus.ACTIVE
+                username, passwordHash, username, Role.ADMIN, ActivationStatus.ACTIVATED
             )
 
             !hasExistingAdminUser
         }
 
-    fun activateUser(userId: String, password: Secret): Boolean {
-        return true
+    fun activateUser(userId: Uuid, password: Secret): Result4k<Unit, CreateUserFailure> {
+        val passwordHash = validateAndHashPassword(password) ?: return Failure(CreateUserFailure.INVALID_PASSWORD)
+
+        database.transaction {
+            userRepository.setUserPasswordAndStatus(userId, passwordHash, ActivationStatus.ACTIVATED)
+        }
+
+        return Unit.asSuccess()
     }
 
-    fun searchAllUsers(nameSearch: String?, role: Role?, status: UserStatus?, page: Int) =
+    fun searchAllUsers(nameSearch: String?, role: Role?, activationStatus: ActivationStatus?, enabled: Boolean?, page: Int) =
         database.transaction {
-            userRepository.searchUsers(nameSearch, role, status, USER_SEARCH_LIMIT, page)
+            userRepository.searchUsers(nameSearch, role, activationStatus, enabled, USER_SEARCH_LIMIT, page)
         }
 
     private fun validateAndHashPassword(password: Secret): String? = password.use {
@@ -100,8 +105,8 @@ class UserService(
     }
 }
 
-enum class CreateUserFailure {
-    INVALID_USERNAME,
-    INVALID_PASSWORD,
-    EXISTING_USER,
+enum class CreateUserFailure(val description: String) {
+    INVALID_USERNAME("Invalid username"),
+    INVALID_PASSWORD("Invalid password"),
+    EXISTING_USER("User already exists"),
 }

@@ -8,5 +8,6 @@ data class UserLoginDetail(
     val username: String,
     val passwordHash: Secret?,
     val role: Role,
-    val status: UserStatus,
+    val activationStatus: ActivationStatus,
+    val enabled: Boolean,
 )

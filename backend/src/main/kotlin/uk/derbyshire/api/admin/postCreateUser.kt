@@ -8,11 +8,12 @@ import org.http4k.core.Status
 import org.http4k.core.with
 import uk.derbyshire.api.admin.PostCreateUserResponseDTO.Companion.toDto
 import uk.derbyshire.api.filters.CurrentUser
-import uk.derbyshire.api.filters.ErrorResponseDTO
+import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.domain.auth.UserPendingActivation
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.services.AuthService
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 fun postCreateUser(authService: AuthService) = request@{ request: Request ->
@@ -22,13 +23,13 @@ fun postCreateUser(authService: AuthService) = request@{ request: Request ->
     val pendingUserResult = authService.createPendingUser(
         username = userRequest.username,
         displayName = userRequest.displayName,
-        role = user.role,
+        role = userRequest.role,
         createdBy = user.userId,
     )
 
     when (pendingUserResult) {
         is Success -> Response(Status.OK).with(PostCreateUserResponseDTO.lens of pendingUserResult.value.toDto())
-        is Failure -> Response(Status.BAD_REQUEST).with(ErrorResponseDTO.lens of ErrorResponseDTO(Status.BAD_REQUEST.description))
+        is Failure -> pendingUserResult.reason.description.toErrorResponseDTO()
     }
 }
 
@@ -45,6 +46,7 @@ data class PostCreateUserRequestDTO(
 data class PostCreateUserResponseDTO(
     val userId: Uuid,
     val activationToken: String,
+    val expiresAt: Instant,
 ) {
     companion object {
         val lens = Json.autoBody<PostCreateUserResponseDTO>().toLens()
@@ -52,6 +54,7 @@ data class PostCreateUserResponseDTO(
         fun UserPendingActivation.toDto() = PostCreateUserResponseDTO(
             userId = userId,
             activationToken = activationToken,
+            expiresAt = expiresAt,
         )
     }
 }

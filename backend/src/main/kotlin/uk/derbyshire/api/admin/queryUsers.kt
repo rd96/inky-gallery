@@ -9,7 +9,7 @@ import uk.derbyshire.api.admin.UserResponseDTO.Companion.toUserResponseDto
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.domain.users.UserSearchResult
-import uk.derbyshire.domain.users.UserStatus
+import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.domain.users.UserSummary
 import uk.derbyshire.services.UserService
 import kotlin.time.Instant
@@ -21,7 +21,8 @@ fun queryUsers(userService: UserService) = { request: Request ->
     val results = userService.searchAllUsers(
         searchRequest.nameSearch,
         searchRequest.role,
-        searchRequest.status,
+        searchRequest.activationStatus,
+        searchRequest.enabled,
         searchRequest.page,
     ).toQueryUsersResponseDto()
 
@@ -31,7 +32,8 @@ fun queryUsers(userService: UserService) = { request: Request ->
 private data class QueryUsersRequestDTO(
     val nameSearch: String? = null,
     val role: Role? = null,
-    val status: UserStatus? = null,
+    val activationStatus: ActivationStatus? = null,
+    val enabled: Boolean? = null,
     val page: Int = 1,
 ) {
     companion object {
@@ -58,7 +60,8 @@ private data class UserResponseDTO(
     val username: String,
     val displayName: String,
     val role: Role,
-    val status: UserStatus,
+    val activationStatus: ActivationStatus,
+    val enabled: Boolean,
     val createdAt: Instant,
 ) {
     companion object {
@@ -67,7 +70,8 @@ private data class UserResponseDTO(
             username = username,
             displayName = displayName,
             role = role,
-            status = status,
+            activationStatus = activationStatus,
+            enabled = enabled,
             createdAt = createdAt,
         )
     }

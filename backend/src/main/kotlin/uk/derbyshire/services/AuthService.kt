@@ -3,17 +3,19 @@ package uk.derbyshire.services
 import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Result4k
 import dev.forkhandles.result4k.Success
-import dev.forkhandles.result4k.asFailure
 import dev.forkhandles.result4k.asSuccess
 import dev.forkhandles.result4k.onFailure
 import org.http4k.config.Secret
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import uk.derbyshire.domain.auth.AuthenticatedUser
 import uk.derbyshire.domain.users.Role
-import uk.derbyshire.domain.users.UserStatus
+import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.ActivationTokenRepository
 import uk.derbyshire.database.repositories.SessionRepository
+import uk.derbyshire.domain.auth.ActivationFailure
+import uk.derbyshire.domain.auth.LoginFailure
+import uk.derbyshire.domain.auth.UserActivationToken
 import uk.derbyshire.domain.auth.LoginSuccess
 import uk.derbyshire.domain.auth.UserPendingActivation
 import kotlin.time.Clock
@@ -35,7 +37,7 @@ class AuthService(
 
             val sessionUser = sessionRepository.findUserBySessionTokenHash(tokenHash) ?: return@transaction null
 
-            if (sessionUser.status != UserStatus.ACTIVE) return@transaction null
+            if (sessionUser.activationStatus != ActivationStatus.ACTIVATED || !sessionUser.enabled) return@transaction null
 
             if (sessionUser.expiresAt < clock.now()) {
                 sessionRepository.deleteSession(sessionUser.sessionId)
@@ -63,10 +65,11 @@ class AuthService(
         return Secret(token)
     }
 
-    fun login(username: String, password: Secret): Result4k<LoginSuccess, LoginFailure> {
-        val user = userService.findUserLoginByUsername(username) ?: return Failure(LoginFailure.NO_USER)
+    fun login(username: String, password: Secret): Result4k<LoginSuccess, LoginFailure> = context.transaction {
+        val user = userService.findUserLoginByUsername(username) ?: return@transaction Failure(LoginFailure.USER_NOT_FOUND)
 
-        if (user.status != UserStatus.ACTIVE || user.passwordHash == null) return Failure(LoginFailure.DISABLED)
+        if (user.activationStatus == ActivationStatus.PENDING || user.passwordHash == null) return@transaction Failure(LoginFailure.USER_PENDING_ACTIVATION)
+        if (!user.enabled) return@transaction Failure(LoginFailure.USER_DISABLED)
 
         val passwordMatches = password.use {
             user.passwordHash.use { storedHash ->
@@ -74,11 +77,11 @@ class AuthService(
             }
         }
 
-        if (!passwordMatches) return Failure(LoginFailure.PASSWORD_INCORRECT)
+        if (!passwordMatches) return@transaction Failure(LoginFailure.PASSWORD_INCORRECT)
 
         val sessionToken = createSession(user.id)
 
-        return LoginSuccess(
+        LoginSuccess(
             sessionToken,
             AuthenticatedUser(
                 user.id,
@@ -92,56 +95,98 @@ class AuthService(
         val userId = userService.createPendingUser(username, displayName, role).onFailure { return it }
         val token = sessionTokenService.generate()
         val tokenHash = sessionTokenService.hash(token)
+        val expiresAt = clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER
 
         transaction {
             activationTokenRepository.createActivationToken(
                 userId,
                 tokenHash,
+                expiresAt,
                 createdBy,
-                clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER,
+                clock.now(),
             )
         }
 
         return UserPendingActivation(
             userId = userId,
             activationToken = token,
+            expiresAt = expiresAt,
         ).asSuccess()
     }
 
     fun createUserActivationToken(userId: Uuid, createdBy: Uuid): Result4k<UserPendingActivation, String> {
         val user = userService.findUser(userId) ?: return Failure("User $userId not found")
 
-        if (user.status != UserStatus.PENDING_ACTIVATION) return Failure("User $userId is ${user.status.name.lowercase()}")
+        if (user.activationStatus != ActivationStatus.PENDING) return Failure("User $userId is already activated")
+        if (!user.enabled) return Failure("User $userId is not enabled")
 
         val token = sessionTokenService.generate()
         val tokenHash = sessionTokenService.hash(token)
+        val expiresAt = clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER
 
         transaction {
-            activationTokenRepository.expireActivationTokensForUser(userId, clock.now())
+            activationTokenRepository.revokeActivationTokensForUser(userId, clock.now())
             activationTokenRepository.createActivationToken(
                 userId,
                 tokenHash,
+                expiresAt,
                 createdBy,
-                clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER,
+                clock.now(),
             )
         }
 
         return UserPendingActivation(
             userId = userId,
             activationToken = token,
+            expiresAt = expiresAt,
         ).asSuccess()
     }
 
-    fun getActivationDetails(activationToken: Secret) {
+    fun getActivationDetails(activationToken: Secret): Result4k<UserActivationToken, ActivationFailure> {
+        val tokenHash = activationToken.use(sessionTokenService::hash)
 
+        val activationToken = context.transaction {
+            activationTokenRepository.getByTokenHash(tokenHash)
+        }?: return Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN)
+
+        if (!activationToken.isValid(clock.now())) return Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN)
+
+        val user = userService.findUser(activationToken.userId) ?: return Failure(ActivationFailure.USER_NOT_FOUND)
+
+        if (user.activationStatus != ActivationStatus.PENDING) return Failure(ActivationFailure.USER_ALREADY_ACTIVATED)
+        if (!user.enabled) return Failure(ActivationFailure.USER_DISABLED)
+
+        return UserActivationToken(
+            username = user.username,
+            displayName = user.displayName,
+            expiresAt = activationToken.expiresAt,
+        ).asSuccess()
     }
 
-    fun activate(username: String, activationToken: Secret, password: Secret): Result4k<LoginSuccess, LoginFailure> {
-        val user = userService.findUserLoginByUsername(username) ?: return Failure(LoginFailure.NO_USER)
+    fun activateUser(activationToken: Secret, password: Secret): Result4k<LoginSuccess, ActivationFailure> = context.transaction {
+        val tokenHash = activationToken.use(sessionTokenService::hash)
 
-        if (user.status != UserStatus.PENDING_ACTIVATION || user.passwordHash != null) return Failure(LoginFailure.USER_ALREADY_ACTIVATED)
+        val activationToken = context.transaction {
+            activationTokenRepository.getByTokenHash(tokenHash)
+        }?: return@transaction Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN)
 
-        return LoginFailure.DISABLED.asFailure()
+        if (!activationToken.isValid(clock.now())) return@transaction Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN)
+
+        val user = userService.findUser(activationToken.userId) ?: return@transaction Failure(ActivationFailure.USER_NOT_FOUND)
+
+        if (user.activationStatus != ActivationStatus.PENDING) return@transaction Failure(ActivationFailure.USER_ALREADY_ACTIVATED)
+        if (!user.enabled) return@transaction Failure(ActivationFailure.USER_DISABLED)
+
+        userService.activateUser(user.id, password).onFailure { return@transaction(Failure(ActivationFailure.PASSWORD_INVALID)) }
+
+        LoginSuccess(
+            sessionToken = createSession(user.id),
+            user = AuthenticatedUser(
+                user.id,
+                user.username,
+                user.role,
+            )
+        ).asSuccess()
     }
 
     fun logout(token: String) {
@@ -156,7 +201,7 @@ class AuthService(
         userService.findUser(userId) ?: return Failure("User $userId not found")
 
         context.transaction {
-            activationTokenRepository.expireActivationTokensForUser(userId, clock.now())
+            activationTokenRepository.revokeActivationTokensForUser(userId, clock.now())
         }
 
         return Success(Unit)
@@ -166,11 +211,4 @@ class AuthService(
         val SESSION_EXPIRES_AFTER = 30.days
         val ACTIVATION_TOKEN_EXPIRES_AFTER = 7.days
     }
-}
-
-enum class LoginFailure {
-    DISABLED,
-    PASSWORD_INCORRECT,
-    NO_USER,
-    USER_ALREADY_ACTIVATED,
 }

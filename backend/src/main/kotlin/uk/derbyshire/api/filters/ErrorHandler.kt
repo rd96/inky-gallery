@@ -29,11 +29,13 @@ class ErrorHandler {
     }
 }
 
-
 data class ErrorResponseDTO(
     val error: String,
 ) {
     companion object {
         val lens = Json.autoBody<ErrorResponseDTO>().toLens()
+
+        fun String.toErrorResponseDTO(status: Status = Status.BAD_REQUEST) =
+            Response(status).with(lens of ErrorResponseDTO(this))
     }
 }
