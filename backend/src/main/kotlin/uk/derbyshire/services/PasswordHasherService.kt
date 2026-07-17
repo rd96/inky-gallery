@@ -1,9 +1,9 @@
-package uk.derbyshire.auth
+package uk.derbyshire.services
 
 import de.mkammerer.argon2.Argon2
 import de.mkammerer.argon2.Argon2Factory
 
-class PasswordHasher {
+class PasswordHasherService {
     private val argon2: Argon2 = Argon2Factory.create(
         Argon2Factory.Argon2Types.ARGON2id,
     )

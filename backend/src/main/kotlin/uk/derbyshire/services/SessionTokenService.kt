@@ -1,11 +1,11 @@
-package uk.derbyshire.auth
+package uk.derbyshire.services
 
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 import java.util.HexFormat
 
-class SessionTokens(
+class SessionTokenService(
     private val random: SecureRandom = SecureRandom(),
 ) {
     private val hex = HexFormat.of()
