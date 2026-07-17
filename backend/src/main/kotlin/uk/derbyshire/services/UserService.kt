@@ -5,29 +5,33 @@ import dev.forkhandles.result4k.Result4k
 import dev.forkhandles.result4k.asSuccess
 import org.http4k.config.Secret
 import org.slf4j.LoggerFactory
-import uk.derbyshire.auth.PasswordHasher
-import uk.derbyshire.auth.Role
+import uk.derbyshire.domain.users.Role
+import uk.derbyshire.domain.users.UserStatus
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.UserRepository
+import uk.derbyshire.domain.users.UserLoginDetail
 import java.sql.SQLException
-import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 class UserService(
     private val userRepository: UserRepository,
-    private val passwordHasher: PasswordHasher,
+    private val passwordHasherService: PasswordHasherService,
     private val database: DatabaseContext
 ) {
     private val logger = LoggerFactory.getLogger(UserService::class.java)
-    fun createUser(username: String, password: Secret): Result4k<Uuid, CreateUserFailure> {
-        val passwordHash = validateAndHashPassword(password) ?: return Failure(CreateUserFailure.INVALID_PASSWORD)
+
+    fun createPendingUser(username: String, displayName: String, role: Role): Result4k<Uuid, CreateUserFailure> {
+//        val passwordHash = validateAndHashPassword(password) ?: return Failure(CreateUserFailure.INVALID_PASSWORD)
         val normalisedUsername = normaliseUsername(username)
+        val normalisedDisplayName = normaliseDisplayName(displayName)
 
         if (!validUsername(normalisedUsername)) return Failure(CreateUserFailure.INVALID_USERNAME)
 
         return database.transaction {
             try {
-                userRepository.createUser(normalisedUsername, passwordHash).asSuccess()
+                userRepository.createUser(
+                    normalisedUsername, null, normalisedDisplayName, role, UserStatus.PENDING_ACTIVATION
+                ).asSuccess()
             } catch (sqlException: SQLException) {
                 logger.warn("createUser failed with SQL exception", sqlException)
                 Failure(CreateUserFailure.EXISTING_USER)
@@ -35,7 +39,7 @@ class UserService(
         }
     }
 
-    fun findUserByUsername(username: String): User? =
+    fun findUserByUsername(username: String): UserLoginDetail? =
         database.transaction {
             userRepository.findUserByUsername(normaliseUsername(username))
         }
@@ -45,24 +49,21 @@ class UserService(
             val hasExistingAdminUser = userRepository.hasAdminUser()
             val passwordHash = validateAndHashPassword(password) ?: return@transaction false
 
-            if (!hasExistingAdminUser) userRepository.createAdminUser(username, passwordHash)
+            if (!hasExistingAdminUser) userRepository.createUser(
+                username, passwordHash, username, Role.ADMIN, UserStatus.ACTIVE
+            )
 
-            hasExistingAdminUser
+            !hasExistingAdminUser
+        }
+
+    fun searchAllUsers(nameSearch: String?, role: Role?, status: UserStatus?, page: Int) =
+        database.transaction {
+            userRepository.searchUsers(nameSearch, role, status, USER_SEARCH_LIMIT, page)
         }
 
     private fun validateAndHashPassword(password: Secret): String? = password.use {
-        val isValid = it.length in MIN_PASSWORD_LENGTH..MAX_PASSWORD_LENGTH
-
-        if (isValid) passwordHasher.hash(it)
+        if (validPassword(it)) passwordHasherService.hash(it)
         else null
-    }
-
-    private fun validUsername(username: String): Boolean {
-        return USERNAME_REGEX.matchEntire(username) != null && !USERNAME_SPECIAL_CHAR_CHECK.containsMatchIn(username)
-    }
-
-    private fun normaliseUsername(username: String): String {
-        return username.trim().lowercase()
     }
 
     companion object {
@@ -71,17 +72,23 @@ class UserService(
         const val MAX_USERNAME_LENGTH = 30
         val USERNAME_REGEX = Regex("^[a-z][a-z0-9._-]{1,${MAX_USERNAME_LENGTH - 2}}[a-z0-9]$")
         val USERNAME_SPECIAL_CHAR_CHECK = Regex("[._-]{2,}")
+
+        const val USER_SEARCH_LIMIT = 50
+
+        private fun validUsername(username: String): Boolean {
+            return USERNAME_REGEX.matchEntire(username) != null && !USERNAME_SPECIAL_CHAR_CHECK.containsMatchIn(username)
+        }
+
+        private fun normaliseUsername(username: String) =
+            username.trim().lowercase()
+
+        private fun normaliseDisplayName(displayName: String) =
+            displayName.trim().replace(Regex("\\s+"), " ")
+
+        private fun validPassword(password: String) =
+            password.length in MIN_PASSWORD_LENGTH..MAX_PASSWORD_LENGTH
     }
 }
-
-data class User(
-    val id: Uuid,
-    val username: String,
-    val passwordHash: Secret,
-    val role: Role,
-    val createdAt: Instant,
-    val disabled: Boolean,
-)
 
 enum class CreateUserFailure {
     INVALID_USERNAME,

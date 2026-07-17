@@ -98,7 +98,7 @@ class UserRepository {
 
         return UserSearchResult(
             users,
-            total
+            total,
         )
     }
 

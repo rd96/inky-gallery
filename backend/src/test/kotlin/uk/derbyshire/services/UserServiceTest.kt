@@ -13,8 +13,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import uk.derbyshire.auth.PasswordHasher
-import uk.derbyshire.auth.Role
+import uk.derbyshire.domain.users.Role
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.UserRepository
 import java.sql.SQLException
@@ -23,20 +22,20 @@ import kotlin.uuid.Uuid
 
 class UserServiceTest {
     private val userRepository = mockk<UserRepository>()
-    private val passwordHasher = mockk<PasswordHasher>()
+    private val passwordHasherService = mockk<PasswordHasherService>()
     private val database = mockk<DatabaseContext>()
 
     private val userService = UserService(
         userRepository = userRepository,
-        passwordHasher = passwordHasher,
+        passwordHasherService = passwordHasherService,
         database = database,
     )
 
     @BeforeEach
     fun setUp() {
-        clearMocks(userRepository, passwordHasher, database)
+        clearMocks(userRepository, passwordHasherService, database)
 
-        every { passwordHasher.hash(any()) } returns HASHED_PASSWORD
+        every { passwordHasherService.hash(any()) } returns HASHED_PASSWORD
 
         every {
             database.transaction<CreateUserResult>(any())
@@ -45,7 +44,7 @@ class UserServiceTest {
         }
 
         every {
-            userRepository.createUser(any(), HASHED_PASSWORD)
+            userRepository.createUser(any(), HASHED_PASSWORD, any(), any(), any())
         } returns CREATED_USER_ID
     }
 
@@ -62,12 +61,12 @@ class UserServiceTest {
         ],
     )
     fun `createUser accepts valid usernames`(username: String) {
-        val result = userService.createUser(username, Secret(VALID_PASSWORD))
+        val result = userService.createPendingUser(username, username, Role.USER)
 
         assertEquals(CREATED_USER_ID.asSuccess(), result)
 
         verify(exactly = 1) {
-            passwordHasher.hash(VALID_PASSWORD)
+            passwordHasherService.hash(VALID_PASSWORD)
             userRepository.createUser(username, HASHED_PASSWORD)
         }
     }
@@ -116,7 +115,7 @@ class UserServiceTest {
         assertEquals(Failure(CreateUserFailure.INVALID_USERNAME), result)
 
         verify(exactly = 1) {
-            passwordHasher.hash(VALID_PASSWORD)
+            passwordHasherService.hash(VALID_PASSWORD)
         }
 
         verify(exactly = 0) {
@@ -171,7 +170,7 @@ class UserServiceTest {
         assertEquals(Failure(CreateUserFailure.INVALID_PASSWORD), result)
 
         verify(exactly = 0) {
-            passwordHasher.hash(any())
+            passwordHasherService.hash(any())
             database.transaction<CreateUserResult>(any())
             userRepository.createUser(any(), any())
         }
@@ -187,7 +186,7 @@ class UserServiceTest {
         assertEquals(Failure(CreateUserFailure.INVALID_PASSWORD), result)
 
         verify(exactly = 0) {
-            passwordHasher.hash(any())
+            passwordHasherService.hash(any())
             database.transaction<CreateUserResult>(any())
             userRepository.createUser(any(), any())
         }
