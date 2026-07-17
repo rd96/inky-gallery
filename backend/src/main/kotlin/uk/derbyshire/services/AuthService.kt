@@ -50,6 +50,7 @@ class AuthService(
                 sessionUser.userId,
                 sessionUser.username,
                 sessionUser.role,
+                sessionUser.displayName,
             )
         }
 
@@ -83,11 +84,6 @@ class AuthService(
 
         LoginSuccess(
             sessionToken,
-            AuthenticatedUser(
-                user.id,
-                user.username,
-                user.role,
-            ),
         ).asSuccess()
     }
 
@@ -181,11 +177,6 @@ class AuthService(
 
         LoginSuccess(
             sessionToken = createSession(user.id),
-            user = AuthenticatedUser(
-                user.id,
-                user.username,
-                user.role,
-            )
         ).asSuccess()
     }
 

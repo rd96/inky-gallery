@@ -7,4 +7,5 @@ data class AuthenticatedUser(
     val userId: Uuid,
     val username: String,
     val role: Role,
+    val displayName: String
 )

@@ -21,6 +21,7 @@ class SessionRepository {
                 UserTable.id,
                 UserTable.username,
                 UserTable.role,
+                UserTable.displayName,
                 UserTable.activationStatus,
                 UserTable.enabled,
             )
@@ -32,6 +33,7 @@ class SessionRepository {
                     it[UserTable.id].value,
                     it[UserTable.username],
                     it[UserTable.role],
+                    it[UserTable.displayName],
                     it[UserTable.activationStatus],
                     it[UserTable.enabled],
                 )
