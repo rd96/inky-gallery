@@ -1,6 +1,9 @@
+export type Role = 'ADMIN' | 'USER'
+
 export type User = {
   username: string
-  role: string
+  displayName: string
+  role: Role
 }
 
 export type AuthState =
