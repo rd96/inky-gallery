@@ -1,11 +1,28 @@
 :root {
     --inky-color-white: rgb(190, 210, 220);
+    --inky-color-sand: rgb(237, 224, 208);
     --inky-color-black: rgb(5, 5, 20);
     --inky-color-yellow: rgb(198, 180, 103);
     --inky-color-red: rgb(158, 86, 74);
     --inky-color-orange: rgb(170, 110, 82);
     --inky-color-green: rgb(40, 95, 85);
     --inky-color-blue: rgb(9, 29, 95);
+
+    --texture-canvas:
+        repeating-linear-gradient(
+            0deg,
+            rgba(5, 5, 20, 0.05) 0,
+            rgba(5, 5, 20, 0.05) 1px,
+            transparent 1px,
+            transparent 3px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            rgba(5, 5, 20, 0.05) 0,
+            rgba(5, 5, 20, 0.05) 1px,
+            transparent 1px,
+            transparent 3px
+        );
 }
 
 * {

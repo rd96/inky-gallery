@@ -3,7 +3,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--inky-color-white);
+  background-color: var(--inky-color-sand);
+  background-image: var(--texture-canvas);
   padding: 2rem;
 }
 

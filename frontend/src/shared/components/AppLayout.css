@@ -1,6 +1,7 @@
 .app-layout {
   min-height: 100vh;
-  background: var(--inky-color-white);
+  background-color: var(--inky-color-sand);
+  background-image: var(--texture-canvas);
 }
 
 .app-nav {
