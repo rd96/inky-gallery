@@ -13,17 +13,17 @@ async function request<T>(
   })
 
   if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      `Request failed with status ${response.status}`,
-    )
+    const body = await response.json().catch(() => null)
+    const message =
+      typeof body?.error === 'string'
+        ? body.error
+        : `Request failed with status ${response.status}`
+
+    throw new ApiError(response.status, message)
   }
 
-  if (response.status === 204) {
-    return undefined as T
-  }
-
-  return response.json() as Promise<T>
+  const text = await response.text()
+  return (text === '' ? undefined : JSON.parse(text)) as T
 }
 
 export const ApiClient = {
@@ -45,5 +45,21 @@ export const ApiClient = {
 
   delete<TResponse>(path: string): Promise<TResponse> {
     return request<TResponse>(path, { method: 'DELETE' })
+  },
+
+  put<TResponse, TBody>(path: string, body: TBody): Promise<TResponse> {
+    return request<TResponse>(path, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  },
+
+  query<TResponse, TBody>(path: string, body: TBody): Promise<TResponse> {
+    return request<TResponse>(path, {
+      method: 'QUERY',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
   },
 }
