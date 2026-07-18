@@ -27,7 +27,7 @@ fun patchUser(userService: UserService) = { request: Request ->
     )
 
     when (result) {
-        is Success -> Response(Status.OK)
+        is Success -> Response(Status.NO_CONTENT)
         is Failure -> when (result.reason) {
             UpdateUserFailure.USER_NOT_FOUND -> result.reason.description.toErrorResponseDTO(NOT_FOUND)
             else -> result.reason.description.toErrorResponseDTO(BAD_REQUEST)
