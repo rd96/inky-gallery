@@ -16,6 +16,8 @@ import org.junit.jupiter.params.provider.ValueSource
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.UserRepository
+import uk.derbyshire.domain.users.ActivationStatus
+import uk.derbyshire.domain.users.UserLoginDetail
 import java.sql.SQLException
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -44,7 +46,7 @@ class UserServiceTest {
         }
 
         every {
-            userRepository.createUser(any(), HASHED_PASSWORD, any(), any(), any())
+            userRepository.createUser(any(), null, any(), any(), any())
         } returns CREATED_USER_ID
     }
 
@@ -61,13 +63,12 @@ class UserServiceTest {
         ],
     )
     fun `createUser accepts valid usernames`(username: String) {
-        val result = userService.createPendingUser(username, username, Role.USER)
+        val result = userService.createPendingUser(username, VALID_DISPLAY_NAME, Role.USER)
 
         assertEquals(CREATED_USER_ID.asSuccess(), result)
 
         verify(exactly = 1) {
-            passwordHasherService.hash(VALID_PASSWORD)
-            userRepository.createUser(username, HASHED_PASSWORD)
+            userRepository.createUser(username, null, VALID_DISPLAY_NAME, Role.USER, ActivationStatus.PENDING)
         }
     }
 
@@ -75,12 +76,12 @@ class UserServiceTest {
     fun `createUser accepts username at max length`() {
         val username = "a" + "b".repeat(UserService.MAX_USERNAME_LENGTH - 2) + "1"
 
-        val result = userService.createUser(username, Secret(VALID_PASSWORD))
+        val result = userService.createPendingUser(username, VALID_DISPLAY_NAME, Role.USER)
 
         assertEquals(CREATED_USER_ID.asSuccess(), result)
 
         verify(exactly = 1) {
-            userRepository.createUser(username, HASHED_PASSWORD)
+            userRepository.createUser(username, null, VALID_DISPLAY_NAME, Role.USER, ActivationStatus.PENDING)
         }
     }
 
@@ -110,17 +111,13 @@ class UserServiceTest {
         ],
     )
     fun `createUser rejects invalid usernames`(username: String) {
-        val result = userService.createUser(username, Secret(VALID_PASSWORD))
+        val result = userService.createPendingUser(username, username, Role.USER)
 
         assertEquals(Failure(CreateUserFailure.INVALID_USERNAME), result)
 
-        verify(exactly = 1) {
-            passwordHasherService.hash(VALID_PASSWORD)
-        }
-
         verify(exactly = 0) {
             database.transaction<CreateUserResult>(any())
-            userRepository.createUser(any(), any())
+            userRepository.createUser(any(), any(), any(), any(), any())
         }
     }
 
@@ -128,19 +125,19 @@ class UserServiceTest {
     fun `createUser rejects username longer than max length`() {
         val username = "a" + "b".repeat(UserService.MAX_USERNAME_LENGTH - 1) + "1"
 
-        val result = userService.createUser(username, Secret(VALID_PASSWORD))
+        val result = userService.createPendingUser(username, username, Role.USER)
 
         assertEquals(Failure(CreateUserFailure.INVALID_USERNAME), result)
 
         verify(exactly = 0) {
             database.transaction<CreateUserResult>(any())
-            userRepository.createUser(any(), any())
+            userRepository.createUser(any(), any(), any(), any(), any())
         }
     }
 
     @Test
     fun `findUserByUsername normalises username before lookup`() {
-        every { database.transaction<User?>(any()) } answers { firstArg<() -> User?>().invoke() }
+        every { database.transaction<UserLoginDetail?>(any()) } answers { firstArg<() -> UserLoginDetail?>().invoke() }
         every { userRepository.findUserLoginByUsername("user-one") } returns FOUND_USER
 
         val result = userService.findUserLoginByUsername("  User-One  ")
@@ -151,54 +148,54 @@ class UserServiceTest {
 
     @Test
     fun `createUser normalises username before saving`() {
-        val result = userService.createUser("  User-One  ", Secret(VALID_PASSWORD))
+        val result = userService.createPendingUser("  User-One  ", VALID_DISPLAY_NAME, Role.USER)
 
         assertEquals(CREATED_USER_ID.asSuccess(), result)
 
         verify(exactly = 1) {
-            userRepository.createUser("user-one", HASHED_PASSWORD)
+            userRepository.createUser("user-one", null, VALID_DISPLAY_NAME, Role.USER, ActivationStatus.PENDING)
         }
     }
 
-    @Test
-    fun `createUser rejects password shorter than minimum length`() {
-        val result = userService.createUser(
-            username = "valid-user",
-            password = Secret("a".repeat(UserService.MIN_PASSWORD_LENGTH - 1)),
-        )
-
-        assertEquals(Failure(CreateUserFailure.INVALID_PASSWORD), result)
-
-        verify(exactly = 0) {
-            passwordHasherService.hash(any())
-            database.transaction<CreateUserResult>(any())
-            userRepository.createUser(any(), any())
-        }
-    }
-
-    @Test
-    fun `createUser rejects password longer than maximum length`() {
-        val result = userService.createUser(
-            username = "valid-user",
-            password = Secret("a".repeat(UserService.MAX_PASSWORD_LENGTH + 1)),
-        )
-
-        assertEquals(Failure(CreateUserFailure.INVALID_PASSWORD), result)
-
-        verify(exactly = 0) {
-            passwordHasherService.hash(any())
-            database.transaction<CreateUserResult>(any())
-            userRepository.createUser(any(), any())
-        }
-    }
+//    @Test
+//    fun `createUser rejects password shorter than minimum length`() {
+//        val result = userService.createPendingUser(
+//            username = "valid-user",
+//            password = Secret("a".repeat(UserService.MIN_PASSWORD_LENGTH - 1)),
+//        )
+//
+//        assertEquals(Failure(CreateUserFailure.INVALID_PASSWORD), result)
+//
+//        verify(exactly = 0) {
+//            passwordHasherService.hash(any())
+//            database.transaction<CreateUserResult>(any())
+//            userRepository.createUser(any(), any())
+//        }
+//    }
+//
+//    @Test
+//    fun `createUser rejects password longer than maximum length`() {
+//        val result = userService.createUser(
+//            username = "valid-user",
+//            password = Secret("a".repeat(UserService.MAX_PASSWORD_LENGTH + 1)),
+//        )
+//
+//        assertEquals(Failure(CreateUserFailure.INVALID_PASSWORD), result)
+//
+//        verify(exactly = 0) {
+//            passwordHasherService.hash(any())
+//            database.transaction<CreateUserResult>(any())
+//            userRepository.createUser(any(), any(), any(), any(), any())
+//        }
+//    }
 
     @Test
     fun `createUser returns existing user failure when insert fails`() {
         every {
-            userRepository.createUser("existing-user", HASHED_PASSWORD)
+            userRepository.createUser("existing-user", null, VALID_DISPLAY_NAME, Role.USER, ActivationStatus.PENDING)
         } throws SQLException("duplicate username")
 
-        val result = userService.createUser("existing-user", Secret(VALID_PASSWORD))
+        val result = userService.createPendingUser("existing-user", VALID_DISPLAY_NAME, Role.USER)
 
         assertEquals(Failure(CreateUserFailure.EXISTING_USER), result)
     }
@@ -206,15 +203,16 @@ class UserServiceTest {
     private companion object {
         const val VALID_PASSWORD = "valid-password"
         const val HASHED_PASSWORD = "hashed-password"
+        const val VALID_DISPLAY_NAME = "Valid Display Name"
 
         val CREATED_USER_ID: Uuid = Uuid.random()
-        val FOUND_USER = User(
+        val FOUND_USER = UserLoginDetail(
             id = Uuid.random(),
             username = "user-one",
             passwordHash = Secret(HASHED_PASSWORD),
             role = Role.USER,
-            createdAt = Instant.fromEpochMilliseconds(0),
-            disabled = false,
+            activationStatus = ActivationStatus.PENDING,
+            enabled = true,
         )
     }
 }

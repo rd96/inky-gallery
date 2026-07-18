@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.UserRepository
+import uk.derbyshire.domain.auth.ActivationFailure
 import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.domain.users.UserLoginDetail
 import uk.derbyshire.domain.users.UserSummary
@@ -61,12 +62,14 @@ class UserService(
             !hasExistingAdminUser
         }
 
-    fun activateUser(userId: Uuid, password: Secret): Result4k<Unit, CreateUserFailure> {
-        val passwordHash = validateAndHashPassword(password) ?: return Failure(CreateUserFailure.INVALID_PASSWORD)
+    fun activateUser(userId: Uuid, password: Secret): Result4k<Unit, ActivationFailure> {
+        val passwordHash = validateAndHashPassword(password) ?: return Failure(ActivationFailure.PASSWORD_INVALID)
 
-        database.transaction {
-            userRepository.setUserPasswordAndStatus(userId, passwordHash, ActivationStatus.ACTIVATED)
+        val success = database.transaction {
+            userRepository.setUserPasswordAndStatus(userId, passwordHash, ActivationStatus.ACTIVATED) == 1
         }
+
+        if (!success) return Failure(ActivationFailure.USER_NOT_FOUND)
 
         return Unit.asSuccess()
     }

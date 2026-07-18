@@ -173,7 +173,7 @@ class AuthService(
         if (user.activationStatus != ActivationStatus.PENDING) return@transaction Failure(ActivationFailure.USER_ALREADY_ACTIVATED)
         if (!user.enabled) return@transaction Failure(ActivationFailure.USER_DISABLED)
 
-        userService.activateUser(user.id, password).onFailure { return@transaction(Failure(ActivationFailure.PASSWORD_INVALID)) }
+        userService.activateUser(user.id, password).onFailure { return@transaction it  }
 
         LoginSuccess(
             sessionToken = createSession(user.id),
