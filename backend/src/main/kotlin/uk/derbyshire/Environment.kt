@@ -52,6 +52,7 @@ data class ServerConfig (
 
         fun from(env: Environment4k) = ServerConfig(
             port = port(env).value,
+            secureSessionCookies = secureSessionCookies(env),
         )
     }
 }
