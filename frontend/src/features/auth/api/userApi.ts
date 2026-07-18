@@ -36,7 +36,41 @@ async function login(request: LoginRequest): Promise<User> {
   return user
 }
 
+type ActivationDetails = {
+  username: string
+  displayName: string
+  expiresAt: string
+}
+
+function getActivationDetails(activationToken: string): Promise<ActivationDetails> {
+  return ApiClient.query<ActivationDetails, { activationToken: string }>(
+    '/api/auth/activate',
+    { activationToken },
+  )
+}
+
+type ActivateRequest = {
+  activationToken: string
+  password: string
+}
+
+async function activate(request: ActivateRequest): Promise<User> {
+  await ApiClient.post<void, ActivateRequest>('/api/auth/activate', request)
+
+  const user = await getCurrentUser()
+
+  if (user === null) {
+    throw new Error(
+      'Activation succeeded but no authenticated user was returned',
+    )
+  }
+
+  return user
+}
+
 export const UserApi = {
   getCurrentUser,
   login,
+  getActivationDetails,
+  activate,
 }
