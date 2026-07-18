@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import { useAuth } from '../../features/auth/useAuth'
 import { UserApi } from '../../features/auth/api/userApi'
 import { ApiError } from '../../shared/api/ApiError'
@@ -15,7 +15,7 @@ export default function LoginCard({ onShowAbout }: LoginCardProps) {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     setSubmitting(true)
