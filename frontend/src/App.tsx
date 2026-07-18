@@ -1,29 +1,33 @@
-import './App.css'
+import { Route, Routes } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
-import { useAuth } from './features/auth/useAuth'
 import GalleryPage from './pages/GalleryPage'
+import AdminPage from './pages/AdminPage'
+import AppLayout from './shared/components/AppLayout'
+import {
+  RedirectIfAuthenticated,
+  RequireAdmin,
+  RequireAuth,
+} from './features/auth/RouteGuards'
 
 export default function App() {
-  const { auth, refresh } = useAuth()
-
-  switch (auth.status) {
-    case 'loading':
-      return null
-
-    case 'unauthenticated':
-      return <LoginPage />
-
-    case 'error':
-      return (
-        <main>
-          <p>Unable to connect to the server.</p>
-          <button type="button" onClick={() => void refresh()}>
-            Try again
-          </button>
-        </main>
-      )
-
-    case 'authenticated':
-      return <GalleryPage user={auth.user} />
-  }
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          <RedirectIfAuthenticated>
+            <LoginPage />
+          </RedirectIfAuthenticated>
+        }
+      />
+      <Route element={<RequireAuth />}>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<GalleryPage />} />
+          <Route element={<RequireAdmin />}>
+            <Route path="/admin" element={<AdminPage />} />
+          </Route>
+        </Route>
+      </Route>
+    </Routes>
+  )
 }

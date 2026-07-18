@@ -1,11 +1,13 @@
-import type { User } from '../features/auth/types.ts'
+import { useAuth } from '../features/auth/useAuth'
 
-type GalleryPageProps = {
-  user: User
-}
+export default function GalleryPage() {
+  const { auth } = useAuth()
 
-export default function GalleryPage({ user }: GalleryPageProps) {
-    return <>
-        <h1>Welcome ${user.username}</h1>
+  if (auth.status !== 'authenticated') return null
+
+  return (
+    <>
+      <h1>Welcome {auth.user.username}</h1>
     </>
+  )
 }
