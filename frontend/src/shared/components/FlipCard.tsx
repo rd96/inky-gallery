@@ -1,4 +1,10 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from 'react'
 import './FlipCard.css'
 
 type FlipCardProps = {
@@ -6,9 +12,16 @@ type FlipCardProps = {
   back: ReactNode
   flipped: boolean
   className?: string
+  onClick?: (event: MouseEvent<HTMLDivElement>) => void
 }
 
-export default function FlipCard({ front, back, flipped, className }: FlipCardProps) {
+export default function FlipCard({
+  front,
+  back,
+  flipped,
+  className,
+  onClick,
+}: FlipCardProps) {
   const frontRef = useRef<HTMLDivElement>(null)
   const backRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState<number>()
@@ -19,7 +32,11 @@ export default function FlipCard({ front, back, flipped, className }: FlipCardPr
   })
 
   return (
-    <div className={`flip-card ${className ?? ''}`} style={{ height }}>
+    <div
+      className={`flip-card ${className ?? ''}`}
+      style={{ height }}
+      onClick={onClick}
+    >
       <div className={`flip-card-inner ${flipped ? 'is-flipped' : ''}`}>
         <div ref={frontRef} className="flip-card-face flip-card-front">
           {front}
