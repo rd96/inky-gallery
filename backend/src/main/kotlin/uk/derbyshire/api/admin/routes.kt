@@ -16,6 +16,5 @@ fun adminRoutes(userService: UserService, authService: AuthService) = routes(
     "/users/$USER_ID/activation-tokens" bind Method.DELETE to deleteUserActivationTokens(authService),
 
     "/user-links" bind Method.POST to postCreateUserLink(),
-    "/user-links/$USER_ID}" bind Method.DELETE to deleteUserLink(),
-
+    "/user-links/$USER_ID" bind Method.DELETE to deleteUserLink(),
 )
