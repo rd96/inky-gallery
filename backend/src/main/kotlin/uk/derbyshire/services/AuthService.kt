@@ -18,6 +18,7 @@ import uk.derbyshire.domain.auth.LoginFailure
 import uk.derbyshire.domain.auth.UserActivationToken
 import uk.derbyshire.domain.auth.LoginSuccess
 import uk.derbyshire.domain.auth.UserPendingActivation
+import uk.derbyshire.domain.users.CreateUserFailure
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.uuid.Uuid
@@ -147,7 +148,7 @@ class AuthService(
 
         if (!activationToken.isValid(clock.now())) return Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN)
 
-        val user = userService.findUser(activationToken.userId) ?: return Failure(ActivationFailure.USER_NOT_FOUND)
+        val user = userService.findUser(activationToken.userId) ?: return Failure(ActivationFailure.PENDING_USER_NOT_FOUND)
 
         if (user.activationStatus != ActivationStatus.PENDING) return Failure(ActivationFailure.USER_ALREADY_ACTIVATED)
         if (!user.enabled) return Failure(ActivationFailure.USER_DISABLED)
@@ -168,7 +169,7 @@ class AuthService(
 
         if (!activationToken.isValid(clock.now())) return@transaction Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN)
 
-        val user = userService.findUser(activationToken.userId) ?: return@transaction Failure(ActivationFailure.USER_NOT_FOUND)
+        val user = userService.findUser(activationToken.userId) ?: return@transaction Failure(ActivationFailure.PENDING_USER_NOT_FOUND)
 
         if (user.activationStatus != ActivationStatus.PENDING) return@transaction Failure(ActivationFailure.USER_ALREADY_ACTIVATED)
         if (!user.enabled) return@transaction Failure(ActivationFailure.USER_DISABLED)

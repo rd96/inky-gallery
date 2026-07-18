@@ -2,17 +2,21 @@ package uk.derbyshire.services
 
 import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Result4k
+import dev.forkhandles.result4k.Success
 import dev.forkhandles.result4k.asSuccess
 import org.http4k.config.Secret
-import org.slf4j.LoggerFactory
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.UserRepository
 import uk.derbyshire.domain.auth.ActivationFailure
 import uk.derbyshire.domain.users.ActivationStatus
+import uk.derbyshire.domain.users.CreateAdminFailure
+import uk.derbyshire.domain.users.CreateUserFailure
+import uk.derbyshire.domain.users.UpdateUserFailure
 import uk.derbyshire.domain.users.UserLoginDetail
+import uk.derbyshire.domain.users.UserSearchResult
 import uk.derbyshire.domain.users.UserSummary
-import java.sql.SQLException
+import kotlin.math.max
 import kotlin.uuid.Uuid
 
 class UserService(
@@ -20,24 +24,18 @@ class UserService(
     private val passwordHasherService: PasswordHasherService,
     private val database: DatabaseContext
 ) {
-    private val logger = LoggerFactory.getLogger(UserService::class.java)
-
     fun createPendingUser(username: String, displayName: String, role: Role): Result4k<Uuid, CreateUserFailure> {
         val normalisedUsername = normaliseUsername(username)
         val normalisedDisplayName = normaliseDisplayName(displayName)
 
         if (!validUsername(normalisedUsername)) return Failure(CreateUserFailure.INVALID_USERNAME)
+        if (!validDisplayName(normalisedDisplayName)) return Failure(CreateUserFailure.INVALID_DISPLAY_NAME)
 
         return database.transaction {
-            try {
-                userRepository.createUser(
-                    normalisedUsername, null, normalisedDisplayName, role, ActivationStatus.PENDING
-                ).asSuccess()
-            } catch (sqlException: SQLException) {
-                logger.warn("createUser failed with SQL exception", sqlException)
-                Failure(CreateUserFailure.EXISTING_USER)
-            }
-        }
+            userRepository.createUser(
+                normalisedUsername, null, normalisedDisplayName, role, ActivationStatus.PENDING
+            )
+        }?.let(::Success) ?: Failure(CreateUserFailure.USERNAME_ALREADY_IN_USE)
     }
 
     fun findUserLoginByUsername(username: String): UserLoginDetail? =
@@ -50,33 +48,45 @@ class UserService(
             userRepository.findUser(userId)
         }
 
-    fun createAdminUserIfMissing(username: String, password: Secret): Boolean =
-        database.transaction {
-            val hasExistingAdminUser = userRepository.hasAdminUser()
-            val passwordHash = validateAndHashPassword(password) ?: return@transaction false
+    fun hasAdminUser(): Boolean = database.transaction {
+        userRepository.hasAdminUser()
+    }
 
-            if (!hasExistingAdminUser) userRepository.createUser(
-                username, passwordHash, username, Role.ADMIN, ActivationStatus.ACTIVATED
-            )
+    fun createInitialAdminUser(username: String, password: Secret): Result4k<Unit, CreateAdminFailure> {
+        val normalisedUsername = normaliseUsername(username)
+        val normalisedDisplayName = normaliseDisplayName(normalisedUsername)
 
-            !hasExistingAdminUser
+        if (!validUsername(normalisedUsername)) return Failure(CreateAdminFailure.INVALID_USERNAME)
+        if (!validDisplayName(normalisedDisplayName)) return Failure(CreateAdminFailure.INVALID_DISPLAY_NAME)
+
+        val passwordHash = validateAndHashPassword(password) ?: return Failure(CreateAdminFailure.INVALID_PASSWORD)
+
+        return database.transaction {
+            if (userRepository.hasAdminUser()) return@transaction Failure(CreateAdminFailure.ADMIN_ALREADY_EXISTS)
+
+            userRepository.createUser(
+                normalisedUsername, passwordHash, normalisedDisplayName, Role.ADMIN, ActivationStatus.ACTIVATED
+            ) ?: return@transaction Failure(CreateAdminFailure.USERNAME_TAKEN)
+
+            Success(Unit)
         }
+    }
 
     fun activateUser(userId: Uuid, password: Secret): Result4k<Unit, ActivationFailure> {
         val passwordHash = validateAndHashPassword(password) ?: return Failure(ActivationFailure.PASSWORD_INVALID)
 
         val success = database.transaction {
-            userRepository.setUserPasswordAndStatus(userId, passwordHash, ActivationStatus.ACTIVATED) == 1
+            userRepository.setPendingUserPasswordAndStatusActivated(userId, passwordHash) == 1
         }
 
-        if (!success) return Failure(ActivationFailure.USER_NOT_FOUND)
+        if (!success) return Failure(ActivationFailure.PENDING_USER_NOT_FOUND)
 
         return Unit.asSuccess()
     }
 
-    fun searchAllUsers(nameSearch: String?, role: Role?, activationStatus: ActivationStatus?, enabled: Boolean?, page: Int) =
+    fun searchAllUsers(nameSearch: String?, role: Role?, activationStatus: ActivationStatus?, enabled: Boolean?, page: Int): UserSearchResult =
         database.transaction {
-            userRepository.searchUsers(nameSearch, role, activationStatus, enabled, USER_SEARCH_LIMIT, page)
+            userRepository.searchUsers(nameSearch, role, activationStatus, enabled, USER_SEARCH_LIMIT, max(1, page))
         }
 
     private fun validateAndHashPassword(password: Secret): String? = password.use {
@@ -84,32 +94,67 @@ class UserService(
         else null
     }
 
+    fun updateUser(userId: Uuid, username: String?, displayName: String?, enabled: Boolean?, role: Role?): Result4k<Unit, UpdateUserFailure> {
+        val normalisedUsername = username?.let(::normaliseUsername)
+        val normalisedDisplayName = displayName?.let(::normaliseDisplayName)
+
+        if (normalisedUsername != null && !validUsername(normalisedUsername)) return Failure(UpdateUserFailure.INVALID_USERNAME)
+        if (normalisedDisplayName != null && !validDisplayName(normalisedDisplayName)) return Failure(UpdateUserFailure.INVALID_DISPLAY_NAME)
+
+        return database.transaction {
+            val user = userRepository.findUser(userId) ?: return@transaction Failure(UpdateUserFailure.USER_NOT_FOUND)
+            if (username == null && displayName == null && enabled == null && role == null) return@transaction Success(Unit)
+
+            if (user.enabled && user.role == Role.ADMIN && (enabled == false || (role != null && role != Role.ADMIN))) {
+                // potential race condition here, ignoring because of the small user scope of the app
+                if (userRepository.countEnabledAdmins() == 1L) return@transaction Failure(UpdateUserFailure.CANNOT_DEMOTE_LAST_ADMIN)
+            }
+
+            val success = userRepository.updateUser(
+                userId,
+                normalisedUsername,
+                normalisedDisplayName,
+                enabled,
+                role,
+            )
+            // we could catch SQLException generated by this block outside the transaction layer (to rollback)
+            // and check the details for duplicate usernames
+
+            if (!success) return@transaction Failure(UpdateUserFailure.USER_NOT_FOUND)
+
+            Success(Unit)
+        }
+    }
+
     companion object {
         const val MIN_PASSWORD_LENGTH = 8
         const val MAX_PASSWORD_LENGTH = 100
+
         const val MAX_USERNAME_LENGTH = 30
-        val USERNAME_REGEX = Regex("^[a-z][a-z0-9._-]{1,${MAX_USERNAME_LENGTH - 2}}[a-z0-9]$")
-        val USERNAME_SPECIAL_CHAR_CHECK = Regex("[._-]{2,}")
+
+        const val MIN_DISPLAY_NAME_LENGTH = 2
+        const val MAX_DISPLAY_NAME_LENGTH = 30
+
+        private val USERNAME_REGEX = Regex("^[a-z][a-z0-9._-]{1,${MAX_USERNAME_LENGTH - 2}}[a-z0-9]$")
+        private val USERNAME_SPECIAL_CHAR_CHECK = Regex("[._-]{2,}")
+        private val DISPLAY_NAME_WHITESPACE_REGEX = Regex("\\s+")
 
         const val USER_SEARCH_LIMIT = 50
 
-        private fun validUsername(username: String): Boolean {
-            return USERNAME_REGEX.matchEntire(username) != null && !USERNAME_SPECIAL_CHAR_CHECK.containsMatchIn(username)
-        }
+        private fun validUsername(username: String) =
+            USERNAME_REGEX.matchEntire(username) != null && !USERNAME_SPECIAL_CHAR_CHECK.containsMatchIn(username)
+
+        private fun validDisplayName(displayName: String): Boolean =
+            displayName.length in MIN_DISPLAY_NAME_LENGTH..MAX_DISPLAY_NAME_LENGTH
 
         private fun normaliseUsername(username: String) =
             username.trim().lowercase()
 
         private fun normaliseDisplayName(displayName: String) =
-            displayName.trim().replace(Regex("\\s+"), " ")
+            displayName.trim().replace(DISPLAY_NAME_WHITESPACE_REGEX, " ")
 
         private fun validPassword(password: String) =
             password.length in MIN_PASSWORD_LENGTH..MAX_PASSWORD_LENGTH
     }
 }
 
-enum class CreateUserFailure(val description: String) {
-    INVALID_USERNAME("Invalid username"),
-    INVALID_PASSWORD("Invalid password"),
-    EXISTING_USER("User already exists"),
-}

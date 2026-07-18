@@ -4,12 +4,13 @@ import org.http4k.config.Secret
 import org.jetbrains.exposed.v1.core.LikePattern
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.core.lowerCase
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.andWhere
-import org.jetbrains.exposed.v1.jdbc.insertAndGetId
+import org.jetbrains.exposed.v1.jdbc.insertIgnoreAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.update
 import uk.derbyshire.domain.users.Role
@@ -21,14 +22,14 @@ import uk.derbyshire.domain.users.UserSummary
 import kotlin.uuid.Uuid
 
 class UserRepository {
-    fun createUser(username: String, passwordHash: String?, displayName: String, role: Role, activationStatus: ActivationStatus): Uuid =
-        UserTable.insertAndGetId {
+    fun createUser(username: String, passwordHash: String?, displayName: String, role: Role, activationStatus: ActivationStatus): Uuid? =
+        UserTable.insertIgnoreAndGetId {
             it[this.username] = username
             it[this.passwordHash] = passwordHash
             it[this.displayName] = displayName
             it[this.role] = role
             it[this.activationStatus] = activationStatus
-        }.value
+        }?.value
 
     fun hasAdminUser(): Boolean =
         UserTable
@@ -36,6 +37,11 @@ class UserRepository {
             .where { UserTable.role eq Role.ADMIN }
             .limit(1)
             .any()
+
+    fun countEnabledAdmins(): Long =
+        UserTable.select(UserTable.id)
+            .where { UserTable.enabled and (UserTable.role eq Role.ADMIN) }
+            .count()
 
     fun findUser(userId: Uuid): UserSummary? =
         UserTable.select(
@@ -73,10 +79,10 @@ class UserRepository {
                 )
             }
 
-    fun setUserPasswordAndStatus(userId: Uuid, passwordHash: String?, activationStatus: ActivationStatus) =
-        UserTable.update({ UserTable.id eq userId }) {
+    fun setPendingUserPasswordAndStatusActivated(userId: Uuid, passwordHash: String) =
+        UserTable.update({ (UserTable.id eq userId) and (UserTable.activationStatus eq ActivationStatus.PENDING) }) {
             it[UserTable.passwordHash] = passwordHash
-            it[UserTable.activationStatus] = activationStatus
+            it[UserTable.activationStatus] = ActivationStatus.ACTIVATED
         }
 
 
@@ -129,6 +135,14 @@ class UserRepository {
             total,
         )
     }
+
+    fun updateUser(userId: Uuid, username: String?, displayName: String?, enabled: Boolean?, role: Role?): Boolean =
+        UserTable.update({ UserTable.id eq userId }) { table ->
+            username?.let { table[this.username] = it }
+            displayName?.let { table[this.displayName] = it }
+            role?.let { table[this.role] = it }
+            enabled?.let { table[this.enabled] = it }
+        } == 1
 
     companion object {
         private fun searchLikePattern(search: String, escapeChar: Char = '!'): LikePattern {

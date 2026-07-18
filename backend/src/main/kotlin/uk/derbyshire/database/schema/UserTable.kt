@@ -16,7 +16,7 @@ object UserTable : UuidTable("users") {
     val username = varchar("username", length = UserService.MAX_USERNAME_LENGTH).uniqueIndex()
     val passwordHash = varchar("password_hash", length = 255).nullable()
 
-    val displayName = varchar("display_name", length = 100)
+    val displayName = varchar("display_name", length = UserService.MAX_DISPLAY_NAME_LENGTH)
 
     val role = enumerationByName<Role>("role", 20).default(Role.USER)
     val activationStatus = enumerationByName<ActivationStatus>("activation_status", 20).default(ActivationStatus.PENDING)
