@@ -31,16 +31,19 @@ export const ApiClient = {
     return request<T>(path)
   },
 
-  post<TResponse, TBody>(
+  post<TResponse, TBody = undefined>(
     path: string,
-    body: TBody,
+    body?: TBody,
   ): Promise<TResponse> {
     return request<TResponse>(path, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
+      headers:
+        body === undefined ? {} : { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
     })
+  },
+
+  delete<TResponse>(path: string): Promise<TResponse> {
+    return request<TResponse>(path, { method: 'DELETE' })
   },
 }
