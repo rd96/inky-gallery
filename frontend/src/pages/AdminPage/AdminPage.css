@@ -1,0 +1,344 @@
+.admin-page h1 {
+  margin: 0 0 1rem;
+  color: var(--inky-color-blue);
+  font-family: 'Silkscreen', system-ui, sans-serif;
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-filters {
+  display: contents;
+}
+
+.admin-search {
+  width: 100%;
+  max-width: 320px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--inky-color-blue);
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.admin-filters select {
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border: 1px solid var(--inky-color-blue);
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: #fff;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23091D5F' stroke-width='1.5'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 16px;
+}
+
+.admin-error {
+  color: var(--inky-color-red);
+  margin-bottom: 1rem;
+}
+
+.user-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.user-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(9, 29, 95, 0.1);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.status-badge--disabled {
+  background: rgba(158, 86, 74, 0.15);
+  color: var(--inky-color-red);
+}
+
+.status-badge--pending {
+  background: rgba(198, 180, 103, 0.25);
+  color: var(--inky-color-yellow);
+}
+
+.status-badge--admin {
+  background: rgba(9, 29, 95, 0.12);
+  color: var(--inky-color-blue);
+}
+
+.status-badge--pill {
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.status-badge--pill:hover:not(:disabled) {
+  filter: brightness(0.93);
+}
+
+.status-badge--pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.user-list-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.user-cell-names {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-cell-displayname {
+  color: var(--inky-color-black);
+}
+
+.user-cell-username {
+  font-size: 0.8rem;
+  color: var(--inky-color-black);
+  opacity: 0.6;
+  margin-top: 0.1rem;
+}
+
+.user-cell-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.user-actions-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.user-actions-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: rgba(5, 5, 20, 0.06);
+  color: var(--inky-color-black);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.user-actions-trigger:hover:not(:disabled) {
+  background: rgba(5, 5, 20, 0.12);
+}
+
+.user-actions-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.user-actions-dropdown {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 11rem;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  z-index: 5;
+}
+
+.user-actions-dropdown--up {
+  top: auto;
+  bottom: calc(100% + 0.4rem);
+}
+
+.user-actions-dropdown button {
+  border: none;
+  background: none;
+  padding: 0.55rem 0.85rem;
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--inky-color-black);
+  cursor: pointer;
+}
+
+.user-actions-dropdown button:hover:not(:disabled) {
+  background: rgba(9, 29, 95, 0.06);
+}
+
+.user-actions-dropdown button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.user-actions-dropdown button.user-actions-danger {
+  color: var(--inky-color-red);
+}
+
+.user-actions-divider {
+  border-top: 1px solid rgba(9, 29, 95, 0.1);
+  margin: 0.2rem 0;
+}
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.admin-new-user-toggle {
+  padding: 0.5rem 1rem;
+  margin-left: auto;
+  border: none;
+  border-radius: 6px;
+  background: var(--inky-color-green);
+  color: var(--inky-color-white);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.admin-new-user-toggle:hover {
+  background: var(--inky-color-blue);
+}
+
+.admin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(5, 5, 20, 0.5);
+  z-index: 10;
+}
+
+.create-user-flip-card {
+  width: 100%;
+  max-width: 480px;
+}
+
+.modal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 480px;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-card h2 {
+  margin: 0;
+  color: var(--inky-color-blue);
+  font-family: 'Silkscreen', system-ui, sans-serif;
+  font-size: 1.25rem;
+}
+
+.modal-description {
+  margin: 0;
+  color: var(--inky-color-black);
+  opacity: 0.75;
+}
+
+.modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.modal-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--inky-color-black);
+}
+
+.modal-fields input,
+.modal-fields select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--inky-color-blue);
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.activation-link-redacted {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: var(--inky-color-sand);
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  word-break: break-all;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.modal-actions .btn-primary {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--inky-color-green);
+  color: var(--inky-color-white);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.modal-actions .btn-primary:hover:not(:disabled) {
+  background: var(--inky-color-blue);
+}
+
+.modal-actions .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-actions .btn-secondary {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--inky-color-blue);
+  border-radius: 6px;
+  background: none;
+  color: var(--inky-color-blue);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
