@@ -1,7 +1,6 @@
 package uk.derbyshire.services
 
 import dev.forkhandles.result4k.Failure
-import dev.forkhandles.result4k.Result4k
 import dev.forkhandles.result4k.asSuccess
 import io.mockk.clearMocks
 import io.mockk.every
@@ -10,15 +9,21 @@ import io.mockk.verify
 import org.http4k.config.Secret
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import uk.derbyshire.domain.users.Role
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.UserRepository
+import uk.derbyshire.domain.auth.ActivationFailure
 import uk.derbyshire.domain.users.ActivationStatus
+import uk.derbyshire.domain.users.CreateAdminFailure
+import uk.derbyshire.domain.users.CreateUserFailure
+import uk.derbyshire.domain.users.Role
+import uk.derbyshire.domain.users.UpdateUserFailure
 import uk.derbyshire.domain.users.UserLoginDetail
-import java.sql.SQLException
+import uk.derbyshire.domain.users.UserSearchResult
+import uk.derbyshire.domain.users.UserSummary
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -35,169 +40,914 @@ class UserServiceTest {
 
     @BeforeEach
     fun setUp() {
-        clearMocks(userRepository, passwordHasherService, database)
-
-        every { passwordHasherService.hash(any()) } returns HASHED_PASSWORD
+        clearMocks(
+            userRepository,
+            passwordHasherService,
+            database,
+        )
 
         every {
-            database.transaction<CreateUserResult>(any())
+            database.transaction<Any?>(any())
         } answers {
-            firstArg<() -> CreateUserResult>().invoke()
+            firstArg<() -> Any?>().invoke()
         }
 
         every {
-            userRepository.createUser(any(), null, any(), any(), any())
+            passwordHasherService.hash(any())
+        } returns HASHED_PASSWORD
+
+        every {
+            userRepository.createUser(
+                username = any(),
+                passwordHash = null,
+                displayName = any(),
+                role = any(),
+                activationStatus = any(),
+            )
         } returns CREATED_USER_ID
     }
 
-    @ParameterizedTest
-    @ValueSource(
-        strings = [
-            "abc",
-            "user1",
-            "user.one",
-            "user_one",
-            "user-one",
-            "a1b",
-            "abc123",
-        ],
-    )
-    fun `createUser accepts valid usernames`(username: String) {
-        val result = userService.createPendingUser(username, VALID_DISPLAY_NAME, Role.USER)
+    @Nested
+    inner class CreatePendingUser {
+        @ParameterizedTest
+        @ValueSource(
+            strings = [
+                "abc",
+                "user1",
+                "user.one",
+                "user_one",
+                "user-one",
+                "a1b",
+                "abc123",
+            ],
+        )
+        fun `accepts valid usernames`(username: String) {
+            val result = userService.createPendingUser(
+                username = username,
+                displayName = VALID_DISPLAY_NAME,
+                role = Role.USER,
+            )
 
-        assertEquals(CREATED_USER_ID.asSuccess(), result)
+            assertEquals(CREATED_USER_ID.asSuccess(), result)
 
-        verify(exactly = 1) {
-            userRepository.createUser(username, null, VALID_DISPLAY_NAME, Role.USER, ActivationStatus.PENDING)
+            verify(exactly = 1) {
+                userRepository.createUser(
+                    username = username,
+                    passwordHash = null,
+                    displayName = VALID_DISPLAY_NAME,
+                    role = Role.USER,
+                    activationStatus = ActivationStatus.PENDING,
+                )
+            }
+        }
+
+        @Test
+        fun `accepts username at max length`() {
+            val username =
+                "a" + "b".repeat(UserService.MAX_USERNAME_LENGTH - 2) + "1"
+
+            val result = userService.createPendingUser(
+                username = username,
+                displayName = VALID_DISPLAY_NAME,
+                role = Role.USER,
+            )
+
+            assertEquals(CREATED_USER_ID.asSuccess(), result)
+
+            verify(exactly = 1) {
+                userRepository.createUser(
+                    username = username,
+                    passwordHash = null,
+                    displayName = VALID_DISPLAY_NAME,
+                    role = Role.USER,
+                    activationStatus = ActivationStatus.PENDING,
+                )
+            }
+        }
+
+        @ParameterizedTest
+        @ValueSource(
+            strings = [
+                "",
+                "a",
+                "ab",
+                "1ab",
+                ".ab",
+                "_ab",
+                "-ab",
+                "ab.",
+                "ab_",
+                "ab-",
+                "a b",
+                "a!b",
+                "a/b",
+                "a:b",
+                "a--b",
+                "a..b",
+                "a__b",
+                "a-.b",
+                "a-_b",
+                "a-b-c__d",
+            ],
+        )
+        fun `rejects invalid usernames`(username: String) {
+            val result = userService.createPendingUser(
+                username = username,
+                displayName = VALID_DISPLAY_NAME,
+                role = Role.USER,
+            )
+
+            assertEquals(
+                Failure(CreateUserFailure.INVALID_USERNAME),
+                result,
+            )
+
+            verify(exactly = 0) {
+                userRepository.createUser(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                )
+            }
+        }
+
+        @Test
+        fun `rejects username longer than max length`() {
+            val username =
+                "a" + "b".repeat(UserService.MAX_USERNAME_LENGTH - 1) + "1"
+
+            val result = userService.createPendingUser(
+                username = username,
+                displayName = VALID_DISPLAY_NAME,
+                role = Role.USER,
+            )
+
+            assertEquals(
+                Failure(CreateUserFailure.INVALID_USERNAME),
+                result,
+            )
+
+            verify(exactly = 0) {
+                userRepository.createUser(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                )
+            }
+        }
+
+        @Test
+        fun `normalises username before saving`() {
+            val result = userService.createPendingUser(
+                username = "  User-One  ",
+                displayName = VALID_DISPLAY_NAME,
+                role = Role.USER,
+            )
+
+            assertEquals(CREATED_USER_ID.asSuccess(), result)
+
+            verify(exactly = 1) {
+                userRepository.createUser(
+                    username = "user-one",
+                    passwordHash = null,
+                    displayName = VALID_DISPLAY_NAME,
+                    role = Role.USER,
+                    activationStatus = ActivationStatus.PENDING,
+                )
+            }
+        }
+
+        @Test
+        fun `normalises display name before saving`() {
+            val result = userService.createPendingUser(
+                username = "user-one",
+                displayName = "  Valid   Display   Name  ",
+                role = Role.USER,
+            )
+
+            assertEquals(CREATED_USER_ID.asSuccess(), result)
+
+            verify(exactly = 1) {
+                userRepository.createUser(
+                    username = "user-one",
+                    passwordHash = null,
+                    displayName = "Valid Display Name",
+                    role = Role.USER,
+                    activationStatus = ActivationStatus.PENDING,
+                )
+            }
+        }
+
+        @Test
+        fun `rejects display name shorter than minimum length`() {
+            val result = userService.createPendingUser(
+                username = "valid-user",
+                displayName = " A ",
+                role = Role.USER,
+            )
+
+            assertEquals(
+                Failure(CreateUserFailure.INVALID_DISPLAY_NAME),
+                result,
+            )
+
+            verify(exactly = 0) {
+                userRepository.createUser(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                )
+            }
+        }
+
+        @Test
+        fun `rejects display name longer than maximum length`() {
+            val result = userService.createPendingUser(
+                username = "valid-user",
+                displayName = "a".repeat(
+                    UserService.MAX_DISPLAY_NAME_LENGTH + 1,
+                ),
+                role = Role.USER,
+            )
+
+            assertEquals(
+                Failure(CreateUserFailure.INVALID_DISPLAY_NAME),
+                result,
+            )
+
+            verify(exactly = 0) {
+                userRepository.createUser(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                )
+            }
+        }
+
+        @Test
+        fun `returns username already in use when insert is ignored`() {
+            every {
+                userRepository.createUser(
+                    username = "existing-user",
+                    passwordHash = null,
+                    displayName = VALID_DISPLAY_NAME,
+                    role = Role.USER,
+                    activationStatus = ActivationStatus.PENDING,
+                )
+            } returns null
+
+            val result = userService.createPendingUser(
+                username = "existing-user",
+                displayName = VALID_DISPLAY_NAME,
+                role = Role.USER,
+            )
+
+            assertEquals(
+                Failure(CreateUserFailure.USERNAME_ALREADY_IN_USE),
+                result,
+            )
         }
     }
 
-    @Test
-    fun `createUser accepts username at max length`() {
-        val username = "a" + "b".repeat(UserService.MAX_USERNAME_LENGTH - 2) + "1"
+    @Nested
+    inner class FindUsers {
+        @Test
+        fun `normalises username before login lookup`() {
+            every {
+                userRepository.findUserLoginByUsername("user-one")
+            } returns FOUND_LOGIN_USER
 
-        val result = userService.createPendingUser(username, VALID_DISPLAY_NAME, Role.USER)
+            val result =
+                userService.findUserLoginByUsername("  User-One  ")
 
-        assertEquals(CREATED_USER_ID.asSuccess(), result)
+            assertEquals(FOUND_LOGIN_USER, result)
 
-        verify(exactly = 1) {
-            userRepository.createUser(username, null, VALID_DISPLAY_NAME, Role.USER, ActivationStatus.PENDING)
+            verify(exactly = 1) {
+                userRepository.findUserLoginByUsername("user-one")
+            }
+        }
+
+        @Test
+        fun `finds user by id`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns STANDARD_USER
+
+            val result = userService.findUser(CREATED_USER_ID)
+
+            assertEquals(STANDARD_USER, result)
+        }
+
+        @Test
+        fun `returns whether an admin exists`() {
+            every {
+                userRepository.hasAdminUser()
+            } returns true
+
+            val result = userService.hasAdminUser()
+
+            assertEquals(true, result)
         }
     }
 
-    @ParameterizedTest
-    @ValueSource(
-        strings = [
-            "",
-            "a",
-            "ab",
-            "1ab",
-            ".ab",
-            "_ab",
-            "-ab",
-            "ab.",
-            "ab_",
-            "ab-",
-            "a b",
-            "a!b",
-            "a/b",
-            "a:b",
-            "a--b",
-            "a..b",
-            "a__b",
-            "a-.b",
-            "a-_b",
-            "a-b-c__d",
-        ],
-    )
-    fun `createUser rejects invalid usernames`(username: String) {
-        val result = userService.createPendingUser(username, username, Role.USER)
+    @Nested
+    inner class CreateInitialAdminUser {
+        @Test
+        fun `creates activated admin`() {
+            every {
+                userRepository.hasAdminUser()
+            } returns false
 
-        assertEquals(Failure(CreateUserFailure.INVALID_USERNAME), result)
+            every {
+                userRepository.createUser(
+                    username = "admin-user",
+                    passwordHash = HASHED_PASSWORD,
+                    displayName = "admin-user",
+                    role = Role.ADMIN,
+                    activationStatus = ActivationStatus.ACTIVATED,
+                )
+            } returns CREATED_USER_ID
 
-        verify(exactly = 0) {
-            database.transaction<CreateUserResult>(any())
-            userRepository.createUser(any(), any(), any(), any(), any())
+            val result = userService.createInitialAdminUser(
+                username = "  Admin-User  ",
+                password = Secret(VALID_PASSWORD),
+            )
+
+            assertEquals(Unit.asSuccess(), result)
+
+            verify(exactly = 1) {
+                passwordHasherService.hash(VALID_PASSWORD)
+            }
+
+            verify(exactly = 1) {
+                userRepository.createUser(
+                    username = "admin-user",
+                    passwordHash = HASHED_PASSWORD,
+                    displayName = "admin-user",
+                    role = Role.ADMIN,
+                    activationStatus = ActivationStatus.ACTIVATED,
+                )
+            }
+        }
+
+        @Test
+        fun `rejects invalid username before hashing password`() {
+            val result = userService.createInitialAdminUser(
+                username = "a",
+                password = Secret(VALID_PASSWORD),
+            )
+
+            assertEquals(
+                Failure(CreateAdminFailure.INVALID_USERNAME),
+                result,
+            )
+
+            verify(exactly = 0) {
+                passwordHasherService.hash(any())
+            }
+
+            verify(exactly = 0) {
+                userRepository.hasAdminUser()
+            }
+        }
+
+        @Test
+        fun `rejects password shorter than minimum length`() {
+            val result = userService.createInitialAdminUser(
+                username = "admin-user",
+                password = Secret(
+                    "a".repeat(UserService.MIN_PASSWORD_LENGTH - 1),
+                ),
+            )
+
+            assertEquals(
+                Failure(CreateAdminFailure.INVALID_PASSWORD),
+                result,
+            )
+
+            verify(exactly = 0) {
+                passwordHasherService.hash(any())
+            }
+
+            verify(exactly = 0) {
+                userRepository.hasAdminUser()
+            }
+        }
+
+        @Test
+        fun `rejects password longer than maximum length`() {
+            val result = userService.createInitialAdminUser(
+                username = "admin-user",
+                password = Secret(
+                    "a".repeat(UserService.MAX_PASSWORD_LENGTH + 1),
+                ),
+            )
+
+            assertEquals(
+                Failure(CreateAdminFailure.INVALID_PASSWORD),
+                result,
+            )
+
+            verify(exactly = 0) {
+                passwordHasherService.hash(any())
+            }
+
+            verify(exactly = 0) {
+                userRepository.hasAdminUser()
+            }
+        }
+
+        @Test
+        fun `returns admin already exists when an admin exists`() {
+            every {
+                userRepository.hasAdminUser()
+            } returns true
+
+            val result = userService.createInitialAdminUser(
+                username = "admin-user",
+                password = Secret(VALID_PASSWORD),
+            )
+
+            assertEquals(
+                Failure(CreateAdminFailure.ADMIN_ALREADY_EXISTS),
+                result,
+            )
+
+            verify(exactly = 0) {
+                userRepository.createUser(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                )
+            }
+        }
+
+        @Test
+        fun `returns username taken when insert is ignored`() {
+            every {
+                userRepository.hasAdminUser()
+            } returns false
+
+            every {
+                userRepository.createUser(
+                    username = "admin-user",
+                    passwordHash = HASHED_PASSWORD,
+                    displayName = "admin-user",
+                    role = Role.ADMIN,
+                    activationStatus = ActivationStatus.ACTIVATED,
+                )
+            } returns null
+
+            val result = userService.createInitialAdminUser(
+                username = "admin-user",
+                password = Secret(VALID_PASSWORD),
+            )
+
+            assertEquals(
+                Failure(CreateAdminFailure.USERNAME_TAKEN),
+                result,
+            )
         }
     }
 
-    @Test
-    fun `createUser rejects username longer than max length`() {
-        val username = "a" + "b".repeat(UserService.MAX_USERNAME_LENGTH - 1) + "1"
+    @Nested
+    inner class ActivateUser {
+        @Test
+        fun `activates pending user`() {
+            every {
+                userRepository.setPendingUserPasswordAndStatusActivated(
+                    CREATED_USER_ID,
+                    HASHED_PASSWORD,
+                )
+            } returns 1
 
-        val result = userService.createPendingUser(username, username, Role.USER)
+            val result = userService.activateUser(
+                userId = CREATED_USER_ID,
+                password = Secret(VALID_PASSWORD),
+            )
 
-        assertEquals(Failure(CreateUserFailure.INVALID_USERNAME), result)
+            assertEquals(Unit.asSuccess(), result)
 
-        verify(exactly = 0) {
-            database.transaction<CreateUserResult>(any())
-            userRepository.createUser(any(), any(), any(), any(), any())
+            verify(exactly = 1) {
+                userRepository.setPendingUserPasswordAndStatusActivated(
+                    CREATED_USER_ID,
+                    HASHED_PASSWORD,
+                )
+            }
+        }
+
+        @Test
+        fun `rejects invalid password`() {
+            val result = userService.activateUser(
+                userId = CREATED_USER_ID,
+                password = Secret("short"),
+            )
+
+            assertEquals(
+                Failure(ActivationFailure.PASSWORD_INVALID),
+                result,
+            )
+
+            verify(exactly = 0) {
+                passwordHasherService.hash(any())
+            }
+
+            verify(exactly = 0) {
+                userRepository
+                    .setPendingUserPasswordAndStatusActivated(
+                        any(),
+                        any(),
+                    )
+            }
+        }
+
+        @Test
+        fun `returns pending user not found when no row is updated`() {
+            every {
+                userRepository.setPendingUserPasswordAndStatusActivated(
+                    CREATED_USER_ID,
+                    HASHED_PASSWORD,
+                )
+            } returns 0
+
+            val result = userService.activateUser(
+                userId = CREATED_USER_ID,
+                password = Secret(VALID_PASSWORD),
+            )
+
+            assertEquals(
+                Failure(ActivationFailure.PENDING_USER_NOT_FOUND),
+                result,
+            )
         }
     }
 
-    @Test
-    fun `findUserByUsername normalises username before lookup`() {
-        every { database.transaction<UserLoginDetail?>(any()) } answers { firstArg<() -> UserLoginDetail?>().invoke() }
-        every { userRepository.findUserLoginByUsername("user-one") } returns FOUND_USER
+    @Nested
+    inner class SearchAllUsers {
+        @Test
+        fun `clamps page below one to page one`() {
+            val expected = UserSearchResult(
+                users = emptyList(),
+                totalCount = 0,
+            )
 
-        val result = userService.findUserLoginByUsername("  User-One  ")
+            every {
+                userRepository.searchUsers(
+                    nameSearch = "user",
+                    role = Role.USER,
+                    activationStatus = ActivationStatus.PENDING,
+                    enabled = true,
+                    limit = UserService.USER_SEARCH_LIMIT,
+                    page = 1,
+                )
+            } returns expected
 
-        assertEquals(FOUND_USER, result)
-        verify(exactly = 1) { userRepository.findUserLoginByUsername("user-one") }
-    }
+            val result = userService.searchAllUsers(
+                nameSearch = "user",
+                role = Role.USER,
+                activationStatus = ActivationStatus.PENDING,
+                enabled = true,
+                page = -5,
+            )
 
-    @Test
-    fun `createUser normalises username before saving`() {
-        val result = userService.createPendingUser("  User-One  ", VALID_DISPLAY_NAME, Role.USER)
+            assertEquals(expected, result)
+        }
 
-        assertEquals(CREATED_USER_ID.asSuccess(), result)
+        @Test
+        fun `passes valid page through unchanged`() {
+            val expected = UserSearchResult(
+                users = emptyList(),
+                totalCount = 0,
+            )
 
-        verify(exactly = 1) {
-            userRepository.createUser("user-one", null, VALID_DISPLAY_NAME, Role.USER, ActivationStatus.PENDING)
+            every {
+                userRepository.searchUsers(
+                    nameSearch = null,
+                    role = null,
+                    activationStatus = null,
+                    enabled = null,
+                    limit = UserService.USER_SEARCH_LIMIT,
+                    page = 3,
+                )
+            } returns expected
+
+            val result = userService.searchAllUsers(
+                nameSearch = null,
+                role = null,
+                activationStatus = null,
+                enabled = null,
+                page = 3,
+            )
+
+            assertEquals(expected, result)
         }
     }
 
-//    @Test
-//    fun `createUser rejects password shorter than minimum length`() {
-//        val result = userService.createPendingUser(
-//            username = "valid-user",
-//            password = Secret("a".repeat(UserService.MIN_PASSWORD_LENGTH - 1)),
-//        )
-//
-//        assertEquals(Failure(CreateUserFailure.INVALID_PASSWORD), result)
-//
-//        verify(exactly = 0) {
-//            passwordHasherService.hash(any())
-//            database.transaction<CreateUserResult>(any())
-//            userRepository.createUser(any(), any())
-//        }
-//    }
-//
-//    @Test
-//    fun `createUser rejects password longer than maximum length`() {
-//        val result = userService.createUser(
-//            username = "valid-user",
-//            password = Secret("a".repeat(UserService.MAX_PASSWORD_LENGTH + 1)),
-//        )
-//
-//        assertEquals(Failure(CreateUserFailure.INVALID_PASSWORD), result)
-//
-//        verify(exactly = 0) {
-//            passwordHasherService.hash(any())
-//            database.transaction<CreateUserResult>(any())
-//            userRepository.createUser(any(), any(), any(), any(), any())
-//        }
-//    }
+    @Nested
+    inner class UpdateUser {
+        @Test
+        fun `rejects invalid username before lookup`() {
+            val result = userService.updateUser(
+                userId = CREATED_USER_ID,
+                username = "a",
+                displayName = null,
+                enabled = null,
+                role = null,
+            )
 
-    @Test
-    fun `createUser returns existing user failure when insert fails`() {
-        every {
-            userRepository.createUser("existing-user", null, VALID_DISPLAY_NAME, Role.USER, ActivationStatus.PENDING)
-        } throws SQLException("duplicate username")
+            assertEquals(
+                Failure(UpdateUserFailure.INVALID_USERNAME),
+                result,
+            )
 
-        val result = userService.createPendingUser("existing-user", VALID_DISPLAY_NAME, Role.USER)
+            verify(exactly = 0) {
+                userRepository.findUser(any())
+            }
+        }
 
-        assertEquals(Failure(CreateUserFailure.EXISTING_USER), result)
+        @Test
+        fun `rejects invalid display name before lookup`() {
+            val result = userService.updateUser(
+                userId = CREATED_USER_ID,
+                username = null,
+                displayName = " A ",
+                enabled = null,
+                role = null,
+            )
+
+            assertEquals(
+                Failure(UpdateUserFailure.INVALID_DISPLAY_NAME),
+                result,
+            )
+
+            verify(exactly = 0) {
+                userRepository.findUser(any())
+            }
+        }
+
+        @Test
+        fun `returns user not found when user does not exist`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns null
+
+            val result = userService.updateUser(
+                userId = CREATED_USER_ID,
+                username = "new-username",
+                displayName = null,
+                enabled = null,
+                role = null,
+            )
+
+            assertEquals(
+                Failure(UpdateUserFailure.USER_NOT_FOUND),
+                result,
+            )
+
+            verify(exactly = 0) {
+                userRepository.updateUser(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                )
+            }
+        }
+
+        @Test
+        fun `accepts empty update when user exists`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns STANDARD_USER
+
+            val result = userService.updateUser(
+                userId = CREATED_USER_ID,
+                username = null,
+                displayName = null,
+                enabled = null,
+                role = null,
+            )
+
+            assertEquals(Unit.asSuccess(), result)
+
+            verify(exactly = 0) {
+                userRepository.updateUser(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                )
+            }
+        }
+
+        @Test
+        fun `normalises supplied username and display name`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns STANDARD_USER
+
+            every {
+                userRepository.updateUser(
+                    userId = CREATED_USER_ID,
+                    username = "new-username",
+                    displayName = "New Display Name",
+                    enabled = null,
+                    role = null,
+                )
+            } returns true
+
+            val result = userService.updateUser(
+                userId = CREATED_USER_ID,
+                username = "  New-Username  ",
+                displayName = "  New   Display   Name  ",
+                enabled = null,
+                role = null,
+            )
+
+            assertEquals(Unit.asSuccess(), result)
+
+            verify(exactly = 1) {
+                userRepository.updateUser(
+                    userId = CREATED_USER_ID,
+                    username = "new-username",
+                    displayName = "New Display Name",
+                    enabled = null,
+                    role = null,
+                )
+            }
+        }
+
+        @Test
+        fun `prevents disabling sole enabled admin`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns ADMIN_USER
+
+            every {
+                userRepository.countEnabledAdmins()
+            } returns 1
+
+            val result = userService.updateUser(
+                userId = CREATED_USER_ID,
+                username = null,
+                displayName = null,
+                enabled = false,
+                role = null,
+            )
+
+            assertEquals(
+                Failure(UpdateUserFailure.CANNOT_DEMOTE_LAST_ADMIN),
+                result,
+            )
+
+            verify(exactly = 0) {
+                userRepository.updateUser(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                )
+            }
+        }
+
+        @Test
+        fun `prevents demoting sole enabled admin`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns ADMIN_USER
+
+            every {
+                userRepository.countEnabledAdmins()
+            } returns 1
+
+            val result = userService.updateUser(
+                userId = CREATED_USER_ID,
+                username = null,
+                displayName = null,
+                enabled = null,
+                role = Role.USER,
+            )
+
+            assertEquals(
+                Failure(UpdateUserFailure.CANNOT_DEMOTE_LAST_ADMIN),
+                result,
+            )
+
+            verify(exactly = 0) {
+                userRepository.updateUser(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                )
+            }
+        }
+
+        @Test
+        fun `allows disabling admin when another enabled admin exists`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns ADMIN_USER
+
+            every {
+                userRepository.countEnabledAdmins()
+            } returns 2
+
+            every {
+                userRepository.updateUser(
+                    userId = CREATED_USER_ID,
+                    username = null,
+                    displayName = null,
+                    enabled = false,
+                    role = null,
+                )
+            } returns true
+
+            val result = userService.updateUser(
+                userId = CREATED_USER_ID,
+                username = null,
+                displayName = null,
+                enabled = false,
+                role = null,
+            )
+
+            assertEquals(Unit.asSuccess(), result)
+        }
+
+        @Test
+        fun `does not count admins for unrelated admin update`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns ADMIN_USER
+
+            every {
+                userRepository.updateUser(
+                    userId = CREATED_USER_ID,
+                    username = null,
+                    displayName = "Updated Admin",
+                    enabled = null,
+                    role = null,
+                )
+            } returns true
+
+            val result = userService.updateUser(
+                userId = CREATED_USER_ID,
+                username = null,
+                displayName = "Updated Admin",
+                enabled = null,
+                role = null,
+            )
+
+            assertEquals(Unit.asSuccess(), result)
+
+            verify(exactly = 0) {
+                userRepository.countEnabledAdmins()
+            }
+        }
+
+        @Test
+        fun `returns user not found when update affects no rows`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns STANDARD_USER
+
+            every {
+                userRepository.updateUser(
+                    userId = CREATED_USER_ID,
+                    username = "new-username",
+                    displayName = null,
+                    enabled = null,
+                    role = null,
+                )
+            } returns false
+
+            val result = userService.updateUser(
+                userId = CREATED_USER_ID,
+                username = "new-username",
+                displayName = null,
+                enabled = null,
+                role = null,
+            )
+
+            assertEquals(
+                Failure(UpdateUserFailure.USER_NOT_FOUND),
+                result,
+            )
+        }
     }
 
     private companion object {
@@ -205,16 +955,38 @@ class UserServiceTest {
         const val HASHED_PASSWORD = "hashed-password"
         const val VALID_DISPLAY_NAME = "Valid Display Name"
 
-        val CREATED_USER_ID: Uuid = Uuid.random()
-        val FOUND_USER = UserLoginDetail(
-            id = Uuid.random(),
+        val CREATED_USER_ID: Uuid =
+            Uuid.parse("00000000-0000-0000-0000-000000000001")
+
+        val FOUND_LOGIN_USER = UserLoginDetail(
+            id = Uuid.parse(
+                "00000000-0000-0000-0000-000000000002",
+            ),
             username = "user-one",
             passwordHash = Secret(HASHED_PASSWORD),
             role = Role.USER,
             activationStatus = ActivationStatus.PENDING,
             enabled = true,
         )
+
+        val STANDARD_USER = UserSummary(
+            id = CREATED_USER_ID,
+            username = "standard-user",
+            displayName = "Standard User",
+            role = Role.USER,
+            activationStatus = ActivationStatus.ACTIVATED,
+            enabled = true,
+            createdAt = Instant.parse("2026-01-01T00:00:00Z"),
+        )
+
+        val ADMIN_USER = UserSummary(
+            id = CREATED_USER_ID,
+            username = "admin-user",
+            displayName = "Admin User",
+            role = Role.ADMIN,
+            activationStatus = ActivationStatus.ACTIVATED,
+            enabled = true,
+            createdAt = Instant.parse("2026-01-01T00:00:00Z"),
+        )
     }
 }
-
-private typealias CreateUserResult = Result4k<Uuid, CreateUserFailure>
