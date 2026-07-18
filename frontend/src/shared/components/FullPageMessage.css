@@ -1,0 +1,48 @@
+.full-page-message {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--inky-color-white);
+  padding: 2rem;
+}
+
+.full-page-message-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 3rem 2.5rem;
+  border-radius: 16px;
+  background: #fff;
+  color: var(--inky-color-black);
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.full-page-message-card h1 {
+  margin: 0;
+  color: var(--inky-color-blue);
+  font-family: 'Silkscreen', system-ui, sans-serif;
+  font-size: 1.5rem;
+  line-height: 1.4;
+}
+
+.full-page-message-card p {
+  margin: 0.75rem 0 1.75rem;
+  color: var(--inky-color-black);
+  opacity: 0.7;
+}
+
+.full-page-message-card button {
+  width: 100%;
+  padding: 0.7rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--inky-color-green);
+  color: var(--inky-color-white);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.full-page-message-card button:hover {
+  background: var(--inky-color-blue);
+}

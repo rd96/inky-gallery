@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
+import FullPageMessage from '../../shared/components/FullPageMessage'
 import { useAuth } from './useAuth'
 
 export function RequireAuth() {
@@ -11,12 +12,12 @@ export function RequireAuth() {
 
     case 'error':
       return (
-        <main>
-          <p>Unable to connect to the server.</p>
-          <button type="button" onClick={() => void refresh()}>
-            Try again
-          </button>
-        </main>
+        <FullPageMessage
+          heading="Unable to connect"
+          message="Unable to connect to the server."
+          actionLabel="Try again"
+          onAction={() => void refresh()}
+        />
       )
 
     case 'unauthenticated':
