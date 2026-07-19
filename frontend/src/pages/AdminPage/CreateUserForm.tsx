@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type SubmitEvent } from 'react'
+import { useRef, useState, type SubmitEvent } from 'react'
 import { AdminApi, type CreateUserResult } from '../../features/admin/api/adminApi'
 import type { Role } from '../../features/auth/types'
-import { ApiError } from '../../shared/api/ApiError'
+import { formatApiError } from '../../shared/api/ApiError'
 import FlipCard from '../../shared/components/FlipCard'
+import { useEscapeKey } from '../../shared/hooks/useEscapeKey'
 import ActivationLinkCard from './ActivationLinkCard'
 
 type CreateUserFormProps = {
@@ -37,16 +38,7 @@ export default function CreateUserForm({ onCreated }: CreateUserFormProps) {
     close()
   }
 
-  useEffect(() => {
-    if (!open) return
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') handleDismiss()
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  })
+  useEscapeKey(handleDismiss, open)
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -63,11 +55,7 @@ export default function CreateUserForm({ onCreated }: CreateUserFormProps) {
       }
     } catch (cause) {
       if (!cancelledRef.current) {
-        setError(
-          cause instanceof ApiError
-            ? cause.message
-            : 'Something went wrong. Please try again.',
-        )
+        setError(formatApiError(cause))
       }
     } finally {
       if (!cancelledRef.current) {

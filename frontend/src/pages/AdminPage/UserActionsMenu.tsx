@@ -1,23 +1,25 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { AdminApi } from '../../features/admin/api/adminApi'
 import type { AdminUser } from '../../features/admin/types'
 import type { Role } from '../../features/auth/types'
-import { ApiError } from '../../shared/api/ApiError'
+import { useIsSelf } from '../../features/auth/useIsSelf'
+import { formatApiError } from '../../shared/api/ApiError'
+import { useEscapeKey } from '../../shared/hooks/useEscapeKey'
+import { useOutsideClick } from '../../shared/hooks/useOutsideClick'
 import EditUserModal from './EditUserModal'
 
 type UserActionsMenuProps = {
   user: AdminUser
-  isSelf: boolean
   onChanged: () => void
   onError: (message: string) => void
 }
 
 export default function UserActionsMenu({
   user,
-  isSelf,
   onChanged,
   onError,
 }: UserActionsMenuProps) {
+  const isSelf = useIsSelf(user.username)
   const [open, setOpen] = useState(false)
   const [openUpward, setOpenUpward] = useState(false)
   const [togglingEnabled, setTogglingEnabled] = useState(false)
@@ -35,34 +37,8 @@ export default function UserActionsMenu({
     setOpenUpward(dropdown.getBoundingClientRect().bottom > window.innerHeight)
   }, [open])
 
-  function reportError(cause: unknown) {
-    onError(
-      cause instanceof ApiError
-        ? cause.message
-        : 'Something went wrong. Please try again.',
-    )
-  }
-
-  useEffect(() => {
-    if (!open) return
-
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpen(false)
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOpen(false)
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open])
+  useEscapeKey(() => setOpen(false), open)
+  useOutsideClick(menuRef, () => setOpen(false), open)
 
   async function toggleEnabled() {
     setOpen(false)
@@ -72,7 +48,7 @@ export default function UserActionsMenu({
       await AdminApi.updateUser(user.id, { enabled: !user.enabled })
       onChanged()
     } catch (cause) {
-      reportError(cause)
+      onError(formatApiError(cause))
     } finally {
       setTogglingEnabled(false)
     }
@@ -87,7 +63,7 @@ export default function UserActionsMenu({
       await AdminApi.updateUser(user.id, { role: nextRole })
       onChanged()
     } catch (cause) {
-      reportError(cause)
+      onError(formatApiError(cause))
     } finally {
       setTogglingRole(false)
     }

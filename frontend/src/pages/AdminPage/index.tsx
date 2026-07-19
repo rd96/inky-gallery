@@ -2,14 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ADMIN_USER_PAGE_SIZE, AdminApi } from '../../features/admin/api/adminApi'
 import type { ActivationStatus, AdminUser } from '../../features/admin/types'
 import type { Role } from '../../features/auth/types'
-import { useAuth } from '../../features/auth/useAuth'
 import CreateUserForm from './CreateUserForm'
 import UserList from './UserList'
 import './AdminPage.css'
 
 export default function AdminPage() {
-  const { auth } = useAuth()
-  const currentUsername = auth.status === 'authenticated' ? auth.user.username : null
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<Role | ''>('')
@@ -35,8 +32,9 @@ export default function AdminPage() {
       activationStatus: ActivationStatus | '',
       enabled: '' | 'true' | 'false',
       pageNumber: number,
+      options?: { silent?: boolean },
     ) => {
-      setLoading(true)
+      if (!options?.silent) setLoading(true)
       setError(null)
 
       try {
@@ -52,7 +50,7 @@ export default function AdminPage() {
       } catch {
         setError('Unable to load users. Please try again.')
       } finally {
-        setLoading(false)
+        if (!options?.silent) setLoading(false)
       }
     },
     [],
@@ -100,6 +98,7 @@ export default function AdminPage() {
       activationStatusFilter,
       enabledFilter,
       page,
+      { silent: true },
     )
   }
 
@@ -160,12 +159,7 @@ export default function AdminPage() {
         <p>Loading…</p>
       ) : (
         <>
-          <UserList
-            users={users}
-            currentUsername={currentUsername}
-            onChanged={refreshUsers}
-            onError={setError}
-          />
+          <UserList users={users} onChanged={refreshUsers} onError={setError} />
           {totalPages > 1 && (
             <div className="admin-pagination">
               <button

@@ -1,8 +1,10 @@
-import { useEffect, useState, type SubmitEvent } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import { AdminApi } from '../../features/admin/api/adminApi'
 import type { AdminUser } from '../../features/admin/types'
 import { useAuth } from '../../features/auth/useAuth'
-import { ApiError } from '../../shared/api/ApiError'
+import { useIsSelf } from '../../features/auth/useIsSelf'
+import { formatApiError } from '../../shared/api/ApiError'
+import { useEscapeKey } from '../../shared/hooks/useEscapeKey'
 
 type EditUserModalProps = {
   user: AdminUser
@@ -12,6 +14,7 @@ type EditUserModalProps = {
 
 export default function EditUserModal({ user, onClose, onSaved }: EditUserModalProps) {
   const { auth, completeLogin } = useAuth()
+  const isSelf = useIsSelf(user.username)
   const [username, setUsername] = useState(user.username)
   const [displayName, setDisplayName] = useState(user.displayName)
   const [submitting, setSubmitting] = useState(false)
@@ -24,14 +27,7 @@ export default function EditUserModal({ user, onClose, onSaved }: EditUserModalP
     onClose()
   }
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') handleBackdropClick()
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  })
+  useEscapeKey(handleBackdropClick)
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -41,17 +37,13 @@ export default function EditUserModal({ user, onClose, onSaved }: EditUserModalP
     try {
       await AdminApi.updateUser(user.id, { username, displayName })
 
-      if (auth.status === 'authenticated' && auth.user.username === user.username) {
+      if (isSelf && auth.status === 'authenticated') {
         completeLogin({ ...auth.user, username, displayName })
       }
 
       onSaved()
     } catch (cause) {
-      setError(
-        cause instanceof ApiError
-          ? cause.message
-          : 'Something went wrong. Please try again.',
-      )
+      setError(formatApiError(cause))
     } finally {
       setSubmitting(false)
     }

@@ -1,25 +1,22 @@
 import { useState } from 'react'
 import { AdminApi } from '../../features/admin/api/adminApi'
 import type { AdminUser } from '../../features/admin/types'
-import { ApiError } from '../../shared/api/ApiError'
+import { formatApiError } from '../../shared/api/ApiError'
+import { useEscapeKey } from '../../shared/hooks/useEscapeKey'
 import ActivationLinkCard from './ActivationLinkCard'
 import UserActionsMenu from './UserActionsMenu'
 
 type UserListItemProps = {
   user: AdminUser
-  isSelf: boolean
   onChanged: () => void
   onError: (message: string) => void
 }
 
-export default function UserListItem({
-  user,
-  isSelf,
-  onChanged,
-  onError,
-}: UserListItemProps) {
+export default function UserListItem({ user, onChanged, onError }: UserListItemProps) {
   const [generatingLink, setGeneratingLink] = useState(false)
   const [newActivationToken, setNewActivationToken] = useState<string | null>(null)
+
+  useEscapeKey(() => setNewActivationToken(null), newActivationToken !== null)
 
   async function generateActivationLink() {
     setGeneratingLink(true)
@@ -28,11 +25,7 @@ export default function UserListItem({
       const result = await AdminApi.createActivationToken(user.id)
       setNewActivationToken(result.activationToken)
     } catch (cause) {
-      onError(
-        cause instanceof ApiError
-          ? cause.message
-          : 'Something went wrong. Please try again.',
-      )
+      onError(formatApiError(cause))
     } finally {
       setGeneratingLink(false)
     }
@@ -66,12 +59,7 @@ export default function UserListItem({
             {generatingLink ? 'Generating…' : 'Pending · Generate new link'}
           </button>
         )}
-        <UserActionsMenu
-          user={user}
-          isSelf={isSelf}
-          onChanged={onChanged}
-          onError={onError}
-        />
+        <UserActionsMenu user={user} onChanged={onChanged} onError={onError} />
       </div>
 
       {newActivationToken && (

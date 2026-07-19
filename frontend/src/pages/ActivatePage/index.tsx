@@ -2,7 +2,7 @@ import { useEffect, useState, type SubmitEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { UserApi } from '../../features/auth/api/userApi'
 import { useAuth } from '../../features/auth/useAuth'
-import { ApiError } from '../../shared/api/ApiError'
+import { formatApiError } from '../../shared/api/ApiError'
 import '../LoginPage/LoginPage.css'
 import '../LoginPage/LoginCard.css'
 import './ActivatePage.css'
@@ -63,11 +63,7 @@ export default function ActivatePage() {
       completeLogin(user)
       navigate('/', { replace: true })
     } catch (cause) {
-      setError(
-        cause instanceof ApiError
-          ? cause.message
-          : 'Something went wrong. Please try again.',
-      )
+      setError(formatApiError(cause))
     } finally {
       setSubmitting(false)
     }
