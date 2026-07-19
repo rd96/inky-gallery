@@ -3,7 +3,7 @@ import { useAuth } from '../../features/auth/useAuth'
 import './AppLayout.css'
 
 export default function AppLayout() {
-  const { auth } = useAuth()
+  const { auth, logout } = useAuth()
   const isAdmin = auth.status === 'authenticated' && auth.user.role === 'ADMIN'
 
   return (
@@ -16,6 +16,9 @@ export default function AppLayout() {
           </NavLink>
           {isAdmin && <NavLink to="/admin">Admin</NavLink>}
         </nav>
+        <button type="button" className="app-nav-logout" onClick={() => void logout()}>
+          Log out
+        </button>
       </header>
       <main className="app-content">
         <Outlet />

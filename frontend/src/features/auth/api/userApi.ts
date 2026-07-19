@@ -68,9 +68,14 @@ async function activate(request: ActivateRequest): Promise<User> {
   return user
 }
 
+function logout(): Promise<void> {
+  return ApiClient.post<void>('/api/auth/logout')
+}
+
 export const UserApi = {
   getCurrentUser,
   login,
+  logout,
   getActivationDetails,
   activate,
 }

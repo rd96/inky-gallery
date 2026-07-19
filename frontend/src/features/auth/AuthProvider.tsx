@@ -39,6 +39,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setAuth({ status: 'authenticated', user })
   }, [])
 
+  const logout = useCallback(async () => {
+    await UserApi.logout()
+    setAuth({ status: 'unauthenticated' })
+  }, [])
+
   useEffect(() => {
     void refresh()
   }, [refresh])
@@ -48,8 +53,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
       auth,
       completeLogin,
       refresh,
+      logout,
     }),
-    [auth, completeLogin, refresh],
+    [auth, completeLogin, refresh, logout],
   )
 
   return (

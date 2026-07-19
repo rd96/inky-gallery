@@ -39,6 +39,20 @@
   color: var(--inky-color-yellow);
 }
 
+.app-nav-logout {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--inky-color-white);
+  opacity: 0.7;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.app-nav-logout:hover {
+  opacity: 1;
+}
+
 .app-content {
   padding: 2rem;
 }
