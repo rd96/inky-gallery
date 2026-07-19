@@ -6,6 +6,7 @@ import org.http4k.core.Status
 import org.http4k.core.with
 import uk.derbyshire.api.admin.QueryUsersResponseDTO.Companion.toQueryUsersResponseDto
 import uk.derbyshire.api.admin.UserResponseDTO.Companion.toUserResponseDto
+import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.domain.users.UserSearchResult
@@ -17,6 +18,7 @@ import kotlin.uuid.Uuid
 
 fun queryUsers(userService: UserService) = { request: Request ->
     val searchRequest = QueryUsersRequestDTO.lens(request)
+    val currentUser = CurrentUser(request)
 
     val results = userService.searchAllUsers(
         searchRequest.nameSearch,
@@ -24,7 +26,7 @@ fun queryUsers(userService: UserService) = { request: Request ->
         searchRequest.activationStatus,
         searchRequest.enabled,
         searchRequest.page,
-    ).toQueryUsersResponseDto()
+    ).toQueryUsersResponseDto(currentUser.userId)
 
     Response(Status.OK).with(QueryUsersResponseDTO.lens of results)
 }
@@ -48,8 +50,8 @@ private data class QueryUsersResponseDTO(
     companion object {
         val lens = Json.autoBody<QueryUsersResponseDTO>().toLens()
 
-        fun UserSearchResult.toQueryUsersResponseDto() = QueryUsersResponseDTO(
-            users = users.map { it.toUserResponseDto() },
+        fun UserSearchResult.toQueryUsersResponseDto(currentUserId: Uuid) = QueryUsersResponseDTO(
+            users = users.map { it.toUserResponseDto(currentUserId) },
             totalCount = totalCount,
         )
     }
@@ -63,9 +65,10 @@ private data class UserResponseDTO(
     val activationStatus: ActivationStatus,
     val enabled: Boolean,
     val createdAt: Instant,
+    val isSelf: Boolean,
 ) {
     companion object {
-        fun UserSummary.toUserResponseDto() = UserResponseDTO(
+        fun UserSummary.toUserResponseDto(currentUserId: Uuid) = UserResponseDTO(
             userId = id,
             username = username,
             displayName = displayName,
@@ -73,6 +76,7 @@ private data class UserResponseDTO(
             activationStatus = activationStatus,
             enabled = enabled,
             createdAt = createdAt,
+            isSelf = id == currentUserId,
         )
     }
 }
