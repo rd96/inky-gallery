@@ -2,7 +2,6 @@ import { useState, type SubmitEvent } from 'react'
 import { AdminApi } from '../../features/admin/api/adminApi'
 import type { AdminUser } from '../../features/admin/types'
 import { useAuth } from '../../features/auth/useAuth'
-import { useIsSelf } from '../../features/auth/useIsSelf'
 import { formatApiError } from '../../shared/api/ApiError'
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey'
 
@@ -14,7 +13,7 @@ type EditUserModalProps = {
 
 export default function EditUserModal({ user, onClose, onSaved }: EditUserModalProps) {
   const { auth, completeLogin } = useAuth()
-  const isSelf = useIsSelf(user.username)
+  const isSelf = user.isSelf
   const [username, setUsername] = useState(user.username)
   const [displayName, setDisplayName] = useState(user.displayName)
   const [submitting, setSubmitting] = useState(false)
