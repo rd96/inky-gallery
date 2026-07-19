@@ -28,8 +28,14 @@ export default function FlipCard({
 
   useLayoutEffect(() => {
     const activeFace = flipped ? backRef.current : frontRef.current
-    setHeight(activeFace?.scrollHeight)
-  })
+    if (!activeFace) return
+
+    setHeight(activeFace.scrollHeight)
+
+    const observer = new ResizeObserver(() => setHeight(activeFace.scrollHeight))
+    observer.observe(activeFace)
+    return () => observer.disconnect()
+  }, [flipped])
 
   return (
     <div
