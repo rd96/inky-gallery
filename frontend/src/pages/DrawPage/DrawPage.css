@@ -38,6 +38,30 @@
   color: #ffffff;
 }
 
+.toolbar-button.danger {
+  border-color: var(--inky-color-red);
+  color: var(--inky-color-red);
+}
+
+.toolbar-button.danger:hover {
+  background: var(--inky-color-red);
+  color: #ffffff;
+}
+
+.toolbar-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toolbar-button.danger:disabled:hover {
+  background: none;
+  color: var(--inky-color-red);
+}
+
+.clear-button {
+  margin-left: auto;
+}
+
 .stroke-width-control {
   display: flex;
   align-items: center;
