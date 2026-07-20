@@ -1,0 +1,9 @@
+.draw-page {
+  display: flex;
+  justify-content: center;
+}
+
+.draw-canvas {
+  border: 1px solid var(--inky-color-blue);
+  border-radius: 12px;
+}

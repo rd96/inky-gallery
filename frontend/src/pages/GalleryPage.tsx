@@ -1,13 +1,13 @@
-import { useAuth } from '../features/auth/useAuth'
+import { Link } from 'react-router-dom'
+import './GalleryPage.css'
 
 export default function GalleryPage() {
-  const { auth } = useAuth()
-
-  if (auth.status !== 'authenticated') return null
-
   return (
-    <>
-      <h1>Welcome {auth.user.username}</h1>
-    </>
+    <div className="gallery-empty">
+      <p className="gallery-empty-message">You don't have any drawings yet.</p>
+      <Link to="/draw" className="gallery-empty-cta">
+        Start new drawing
+      </Link>
+    </div>
   )
 }
