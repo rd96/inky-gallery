@@ -1,6 +1,62 @@
 .draw-page {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.draw-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  width: 800px;
+}
+
+.palette-mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.palette-mode-toggle button {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--inky-color-blue);
+  border-radius: 6px;
+  background: none;
+  color: var(--inky-color-blue);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.palette-mode-toggle button.active {
+  background: var(--inky-color-blue);
+  color: #ffffff;
+}
+
+.palette-swatches {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.palette-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(9, 29, 95, 0.3);
+  cursor: pointer;
+  padding: 0;
+}
+
+.palette-swatch.active {
+  border: 3px solid var(--inky-color-blue);
+}
+
+.palette-color-input {
+  width: 44px;
+  height: 32px;
+  border: 1px solid var(--inky-color-blue);
+  border-radius: 6px;
+  padding: 0;
+  cursor: pointer;
 }
 
 .draw-canvas {
