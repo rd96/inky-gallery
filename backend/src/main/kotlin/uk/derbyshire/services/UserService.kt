@@ -13,18 +13,18 @@ import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.domain.users.CreateAdminFailure
 import uk.derbyshire.domain.users.CreateUserFailure
 import uk.derbyshire.domain.users.UpdateUserFailure
+import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.domain.users.UserLoginDetail
 import uk.derbyshire.domain.users.UserSearchResult
 import uk.derbyshire.domain.users.UserSummary
 import kotlin.math.max
-import kotlin.uuid.Uuid
 
 class UserService(
     private val userRepository: UserRepository,
     private val passwordHasherService: PasswordHasherService,
     private val database: DatabaseContext
 ) {
-    fun createPendingUser(username: String, displayName: String, role: Role): Result4k<Uuid, CreateUserFailure> {
+    fun createPendingUser(username: String, displayName: String, role: Role): Result4k<UserId, CreateUserFailure> {
         val normalisedUsername = normaliseUsername(username)
         val normalisedDisplayName = normaliseDisplayName(displayName)
 
@@ -35,7 +35,7 @@ class UserService(
             userRepository.createUser(
                 normalisedUsername, null, normalisedDisplayName, role, ActivationStatus.PENDING
             )
-        }?.let(::Success) ?: Failure(CreateUserFailure.USERNAME_ALREADY_IN_USE)
+        }?.let { Success(UserId(it)) } ?: Failure(CreateUserFailure.USERNAME_ALREADY_IN_USE)
     }
 
     fun findUserLoginByUsername(username: String): UserLoginDetail? =
@@ -43,7 +43,7 @@ class UserService(
             userRepository.findUserLoginByUsername(normaliseUsername(username))
         }
 
-    fun findUser(userId: Uuid): UserSummary? =
+    fun findUser(userId: UserId): UserSummary? =
         database.transaction {
             userRepository.findUser(userId)
         }
@@ -72,7 +72,7 @@ class UserService(
         }
     }
 
-    fun activateUser(userId: Uuid, password: Secret): Result4k<Unit, ActivationFailure> {
+    fun activateUser(userId: UserId, password: Secret): Result4k<Unit, ActivationFailure> {
         val passwordHash = validateAndHashPassword(password) ?: return Failure(ActivationFailure.PASSWORD_INVALID)
 
         val success = database.transaction {
@@ -94,7 +94,7 @@ class UserService(
         else null
     }
 
-    fun updateUser(userId: Uuid, username: String?, displayName: String?, enabled: Boolean?, role: Role?): Result4k<Unit, UpdateUserFailure> {
+    fun updateUser(userId: UserId, username: String?, displayName: String?, enabled: Boolean?, role: Role?): Result4k<Unit, UpdateUserFailure> {
         val normalisedUsername = username?.let(::normaliseUsername)
         val normalisedDisplayName = displayName?.let(::normaliseDisplayName)
 

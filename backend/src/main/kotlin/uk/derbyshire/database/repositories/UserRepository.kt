@@ -16,6 +16,7 @@ import org.jetbrains.exposed.v1.jdbc.update
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.database.schema.UserTable
 import uk.derbyshire.domain.users.ActivationStatus
+import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.domain.users.UserLoginDetail
 import uk.derbyshire.domain.users.UserSearchResult
 import uk.derbyshire.domain.users.UserSummary
@@ -43,7 +44,7 @@ class UserRepository {
             .where { UserTable.enabled and (UserTable.role eq Role.ADMIN) }
             .count()
 
-    fun findUser(userId: Uuid): UserSummary? =
+    fun findUser(userId: UserId): UserSummary? =
         UserTable.select(
             UserTable.id,
             UserTable.username,
@@ -53,7 +54,7 @@ class UserRepository {
             UserTable.enabled,
             UserTable.createdAt,
         )
-            .where { UserTable.id eq userId }
+            .where { UserTable.id eq userId.value }
             .singleOrNull()
             ?.let(::toUserSummary)
 
@@ -70,7 +71,7 @@ class UserRepository {
             .singleOrNull()
             ?.let {
                 UserLoginDetail(
-                    it[UserTable.id].value,
+                    UserId(it[UserTable.id].value),
                     it[UserTable.username],
                     it[UserTable.passwordHash]?.let(::Secret),
                     it[UserTable.role],
@@ -79,8 +80,8 @@ class UserRepository {
                 )
             }
 
-    fun setPendingUserPasswordAndStatusActivated(userId: Uuid, passwordHash: String) =
-        UserTable.update({ (UserTable.id eq userId) and (UserTable.activationStatus eq ActivationStatus.PENDING) }) {
+    fun setPendingUserPasswordAndStatusActivated(userId: UserId, passwordHash: String) =
+        UserTable.update({ (UserTable.id eq userId.value) and (UserTable.activationStatus eq ActivationStatus.PENDING) }) {
             it[UserTable.passwordHash] = passwordHash
             it[UserTable.activationStatus] = ActivationStatus.ACTIVATED
         }
@@ -136,8 +137,8 @@ class UserRepository {
         )
     }
 
-    fun updateUser(userId: Uuid, username: String?, displayName: String?, enabled: Boolean?, role: Role?): Boolean =
-        UserTable.update({ UserTable.id eq userId }) { table ->
+    fun updateUser(userId: UserId, username: String?, displayName: String?, enabled: Boolean?, role: Role?): Boolean =
+        UserTable.update({ UserTable.id eq userId.value }) { table ->
             username?.let { table[this.username] = it }
             displayName?.let { table[this.displayName] = it }
             role?.let { table[this.role] = it }
@@ -158,7 +159,7 @@ class UserRepository {
         }
 
         private fun toUserSummary(row: ResultRow) = UserSummary(
-            row[UserTable.id].value,
+            UserId(row[UserTable.id].value),
             row[UserTable.username],
             row[UserTable.displayName],
             row[UserTable.role],

@@ -12,8 +12,8 @@ import uk.derbyshire.api.filters.ErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.api.helpers.Path
 import uk.derbyshire.domain.auth.UserPendingActivation
+import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.services.AuthService
-import kotlin.uuid.Uuid
 
 fun postCreateUserActivationToken(authService: AuthService) = { request: Request ->
     val user = CurrentUser(request)
@@ -31,7 +31,7 @@ fun postCreateUserActivationToken(authService: AuthService) = { request: Request
 }
 
 data class PostCreateUserActivationTokenResponseDTO(
-    val userId: Uuid,
+    val userId: UserId,
     val activationToken: String,
 ) {
     companion object {

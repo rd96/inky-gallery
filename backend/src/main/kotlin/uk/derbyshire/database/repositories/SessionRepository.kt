@@ -9,6 +9,7 @@ import org.jetbrains.exposed.v1.jdbc.update
 import uk.derbyshire.database.schema.SessionTable
 import uk.derbyshire.database.schema.UserTable
 import uk.derbyshire.domain.auth.SessionUser
+import uk.derbyshire.domain.users.UserId
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -30,7 +31,7 @@ class SessionRepository {
                 SessionUser(
                     it[SessionTable.id].value,
                     it[SessionTable.expiresAt],
-                    it[UserTable.id].value,
+                    UserId(it[UserTable.id].value),
                     it[UserTable.username],
                     it[UserTable.role],
                     it[UserTable.displayName],
@@ -57,9 +58,9 @@ class SessionRepository {
         }
     }
 
-    fun createSession(userId: Uuid, tokenHash: String, expiresAt: Instant) {
+    fun createSession(userId: UserId, tokenHash: String, expiresAt: Instant) {
         SessionTable.insert {
-            it[SessionTable.userId] = userId
+            it[SessionTable.userId] = userId.value
             it[SessionTable.tokenHash] = tokenHash
             it[SessionTable.expiresAt] = expiresAt
         }

@@ -11,10 +11,10 @@ import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.domain.users.UserSearchResult
 import uk.derbyshire.domain.users.ActivationStatus
+import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.domain.users.UserSummary
 import uk.derbyshire.services.UserService
 import kotlin.time.Instant
-import kotlin.uuid.Uuid
 
 fun queryUsers(userService: UserService) = { request: Request ->
     val searchRequest = QueryUsersRequestDTO.lens(request)
@@ -50,7 +50,7 @@ private data class QueryUsersResponseDTO(
     companion object {
         val lens = Json.autoBody<QueryUsersResponseDTO>().toLens()
 
-        fun UserSearchResult.toQueryUsersResponseDto(currentUserId: Uuid) = QueryUsersResponseDTO(
+        fun UserSearchResult.toQueryUsersResponseDto(currentUserId: UserId) = QueryUsersResponseDTO(
             users = users.map { it.toUserResponseDto(currentUserId) },
             totalCount = totalCount,
         )
@@ -58,7 +58,7 @@ private data class QueryUsersResponseDTO(
 }
 
 private data class UserResponseDTO(
-    val userId: Uuid,
+    val userId: UserId,
     val username: String,
     val displayName: String,
     val role: Role,
@@ -68,7 +68,7 @@ private data class UserResponseDTO(
     val isSelf: Boolean,
 ) {
     companion object {
-        fun UserSummary.toUserResponseDto(currentUserId: Uuid) = UserResponseDTO(
+        fun UserSummary.toUserResponseDto(currentUserId: UserId) = UserResponseDTO(
             userId = id,
             username = username,
             displayName = displayName,

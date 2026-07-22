@@ -1,10 +1,10 @@
 package uk.derbyshire.domain.auth
 
+import uk.derbyshire.domain.users.UserId
 import kotlin.time.Instant
-import kotlin.uuid.Uuid
 
 data class ActivationToken(
-    val userId: Uuid,
+    val userId: UserId,
     val expiresAt: Instant,
     val usedAt: Instant?,
     val revokedAt: Instant?,

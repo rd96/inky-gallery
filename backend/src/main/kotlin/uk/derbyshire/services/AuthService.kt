@@ -19,9 +19,9 @@ import uk.derbyshire.domain.auth.UserActivationToken
 import uk.derbyshire.domain.auth.LoginSuccess
 import uk.derbyshire.domain.auth.UserPendingActivation
 import uk.derbyshire.domain.users.CreateUserFailure
+import uk.derbyshire.domain.users.UserId
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
-import kotlin.uuid.Uuid
 
 class AuthService(
     private val sessionRepository: SessionRepository,
@@ -55,7 +55,7 @@ class AuthService(
             )
         }
 
-    fun createSession(userId: Uuid): Secret {
+    fun createSession(userId: UserId): Secret {
         val token = sessionTokenService.generate()
         val tokenHash = sessionTokenService.hash(token)
 
@@ -88,7 +88,7 @@ class AuthService(
         ).asSuccess()
     }
 
-    fun createPendingUser(username: String, displayName: String, role: Role, createdBy: Uuid): Result4k<UserPendingActivation, CreateUserFailure> {
+    fun createPendingUser(username: String, displayName: String, role: Role, createdBy: UserId): Result4k<UserPendingActivation, CreateUserFailure> {
         val userId = userService.createPendingUser(username, displayName, role).onFailure { return it }
         val token = sessionTokenService.generate()
         val tokenHash = sessionTokenService.hash(token)
@@ -111,7 +111,7 @@ class AuthService(
         ).asSuccess()
     }
 
-    fun createUserActivationToken(userId: Uuid, createdBy: Uuid): Result4k<UserPendingActivation, String> {
+    fun createUserActivationToken(userId: UserId, createdBy: UserId): Result4k<UserPendingActivation, String> {
         val user = userService.findUser(userId) ?: return Failure("User $userId not found")
 
         if (user.activationStatus != ActivationStatus.PENDING) return Failure("User $userId is already activated")
@@ -189,7 +189,7 @@ class AuthService(
         }
     }
 
-    fun revokeUserActivationTokens(userId: Uuid): Result4k<Unit, String> {
+    fun revokeUserActivationTokens(userId: UserId): Result4k<Unit, String> {
         userService.findUser(userId) ?: return Failure("User $userId not found")
 
         context.transaction {
