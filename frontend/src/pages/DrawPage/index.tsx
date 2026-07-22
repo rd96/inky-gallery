@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from 'react-sketch-canvas'
 import { INKY_PALETTE } from './inkyPalette'
 import './DrawPage.css'
@@ -13,6 +13,19 @@ type History = {
 const MIN_STROKE_WIDTH = 1
 const MAX_STROKE_WIDTH = 50
 const BLANK_HISTORY: History = { snapshots: [[]], index: 0 }
+const STORAGE_KEY = 'inky-gallery:draw-in-progress'
+
+function loadStoredHistory(): History {
+  const saved = localStorage.getItem(STORAGE_KEY)
+  if (!saved) return BLANK_HISTORY
+
+  try {
+    const paths: CanvasPath[] = JSON.parse(saved)
+    return paths.length > 0 ? { snapshots: [paths], index: 0 } : BLANK_HISTORY
+  } catch {
+    return BLANK_HISTORY
+  }
+}
 
 export default function DrawPage() {
   const canvasRef = useRef<ReactSketchCanvasRef>(null)
@@ -26,7 +39,25 @@ export default function DrawPage() {
   // own the history ourselves: every completed stroke snapshots the full
   // path list via exportPaths(), and undo/redo replay a snapshot via
   // resetCanvas() + loadPaths().
-  const [history, setHistory] = useState<History>(BLANK_HISTORY)
+  const [history, setHistory] = useState<History>(loadStoredHistory)
+
+  // Restore into the canvas itself once on mount - the initial history
+  // state above already has the saved paths, but the canvas needs its ref
+  // to be ready before loadPaths() can be called.
+  useEffect(() => {
+    const paths = history.snapshots[history.index]
+    if (paths.length > 0) canvasRef.current?.loadPaths(paths)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const paths = history.snapshots[history.index]
+    if (paths.length === 0) {
+      localStorage.removeItem(STORAGE_KEY)
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(paths))
+    }
+  }, [history])
 
   function toggleEraser() {
     const next = !isErasing
