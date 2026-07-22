@@ -13,7 +13,7 @@ type EditUserModalProps = {
 
 export default function EditUserModal({ user, onClose, onSaved }: EditUserModalProps) {
   const { auth, completeLogin } = useAuth()
-  const isSelf = user.isSelf
+  const isSelf = auth.status === 'authenticated' && auth.user.userId === user.id
   const [username, setUsername] = useState(user.username)
   const [displayName, setDisplayName] = useState(user.displayName)
   const [submitting, setSubmitting] = useState(false)

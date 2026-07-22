@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { AdminApi } from '../../features/admin/api/adminApi'
 import type { AdminUser } from '../../features/admin/types'
 import type { Role } from '../../features/auth/types'
+import { useAuth } from '../../features/auth/useAuth'
 import { formatApiError } from '../../shared/api/ApiError'
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey'
 import { useOutsideClick } from '../../shared/hooks/useOutsideClick'
@@ -18,7 +19,8 @@ export default function UserActionsMenu({
   onChanged,
   onError,
 }: UserActionsMenuProps) {
-  const isSelf = user.isSelf
+  const { auth } = useAuth()
+  const isSelf = auth.status === 'authenticated' && auth.user.userId === user.id
   const [open, setOpen] = useState(false)
   const [openUpward, setOpenUpward] = useState(false)
   const [togglingEnabled, setTogglingEnabled] = useState(false)

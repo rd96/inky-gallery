@@ -12,7 +12,6 @@ type UserResponseDTO = {
   activationStatus: AdminUser['activationStatus']
   enabled: boolean
   createdAt: string
-  isSelf: boolean
 }
 
 type QueryUsersRequest = {
@@ -63,7 +62,6 @@ async function searchUsers(params: SearchUsersParams): Promise<UserSearchResult>
       activationStatus: user.activationStatus,
       enabled: user.enabled,
       createdAt: user.createdAt,
-      isSelf: user.isSelf,
     })),
     totalCount: response.totalCount,
   }

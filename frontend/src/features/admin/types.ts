@@ -10,5 +10,4 @@ export type AdminUser = {
   activationStatus: ActivationStatus
   enabled: boolean
   createdAt: string
-  isSelf: boolean
 }
