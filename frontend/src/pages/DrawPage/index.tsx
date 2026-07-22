@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from 'react-sketch-canvas'
+import { useAuth } from '../../features/auth/useAuth'
 import { INKY_PALETTE } from './inkyPalette'
 import './DrawPage.css'
 
@@ -13,10 +14,16 @@ type History = {
 const MIN_STROKE_WIDTH = 1
 const MAX_STROKE_WIDTH = 50
 const BLANK_HISTORY: History = { snapshots: [[]], index: 0 }
-const STORAGE_KEY = 'inky-gallery:draw-in-progress'
 
-function loadStoredHistory(): History {
-  const saved = localStorage.getItem(STORAGE_KEY)
+// Namespaced per user so a shared device keeps everyone's in-progress
+// drawing separate - switching users just switches which key gets read,
+// with no need to clear anything on logout.
+function getStorageKey(userId: string) {
+  return `inky-gallery:draw-in-progress:${userId}`
+}
+
+function loadStoredHistory(storageKey: string): History {
+  const saved = localStorage.getItem(storageKey)
   if (!saved) return BLANK_HISTORY
 
   try {
@@ -28,6 +35,11 @@ function loadStoredHistory(): History {
 }
 
 export default function DrawPage() {
+  const { auth } = useAuth()
+  // DrawPage only ever renders inside RequireAuth, so this is always
+  // populated in practice; the fallback just satisfies the type checker.
+  const storageKey = getStorageKey(auth.status === 'authenticated' ? auth.user.userId : '')
+
   const canvasRef = useRef<ReactSketchCanvasRef>(null)
   const [mode, setMode] = useState<PaletteMode>('inky')
   const [strokeColor, setStrokeColor] = useState(INKY_PALETTE[0].hex)
@@ -39,7 +51,7 @@ export default function DrawPage() {
   // own the history ourselves: every completed stroke snapshots the full
   // path list via exportPaths(), and undo/redo replay a snapshot via
   // resetCanvas() + loadPaths().
-  const [history, setHistory] = useState<History>(loadStoredHistory)
+  const [history, setHistory] = useState<History>(() => loadStoredHistory(storageKey))
 
   // Restore into the canvas itself once on mount - the initial history
   // state above already has the saved paths, but the canvas needs its ref
@@ -53,11 +65,11 @@ export default function DrawPage() {
   useEffect(() => {
     const paths = history.snapshots[history.index]
     if (paths.length === 0) {
-      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(storageKey)
     } else {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(paths))
+      localStorage.setItem(storageKey, JSON.stringify(paths))
     }
-  }, [history])
+  }, [history, storageKey])
 
   function toggleEraser() {
     const next = !isErasing
