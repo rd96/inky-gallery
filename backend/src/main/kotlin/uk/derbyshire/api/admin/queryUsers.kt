@@ -65,7 +65,6 @@ private data class UserResponseDTO(
     val activationStatus: ActivationStatus,
     val enabled: Boolean,
     val createdAt: Instant,
-    val isSelf: Boolean,
 ) {
     companion object {
         fun UserSummary.toUserResponseDto(currentUserId: UserId) = UserResponseDTO(
@@ -76,7 +75,6 @@ private data class UserResponseDTO(
             activationStatus = activationStatus,
             enabled = enabled,
             createdAt = createdAt,
-            isSelf = id == currentUserId,
         )
     }
 }
