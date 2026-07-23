@@ -1,4 +1,4 @@
-package uk.derbyshire.api.users
+package uk.derbyshire.api.user
 
 import org.http4k.core.Method
 import org.http4k.routing.bind

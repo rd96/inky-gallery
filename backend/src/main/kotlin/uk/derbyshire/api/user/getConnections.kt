@@ -1,4 +1,4 @@
-package uk.derbyshire.api.users
+package uk.derbyshire.api.user
 
 import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Success
@@ -9,8 +9,8 @@ import org.http4k.core.with
 import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
-import uk.derbyshire.api.users.GetConnectionsResponseDTO.Companion.toDto
-import uk.derbyshire.api.users.UserConnectionDTO.Companion.toDto
+import uk.derbyshire.api.user.GetConnectionsResponseDTO.Companion.toDto
+import uk.derbyshire.api.user.UserConnectionDTO.Companion.toDto
 import uk.derbyshire.domain.connections.UserConnection
 import uk.derbyshire.domain.connections.UserConnections
 import uk.derbyshire.domain.users.UserId

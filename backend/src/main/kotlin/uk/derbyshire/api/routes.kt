@@ -7,7 +7,7 @@ import uk.derbyshire.ServerConfig
 import uk.derbyshire.api.admin.adminRoutes
 import uk.derbyshire.api.auth.authRoutes
 import uk.derbyshire.api.filters.AuthChecker
-import uk.derbyshire.api.users.userRoutes
+import uk.derbyshire.api.user.userRoutes
 import uk.derbyshire.services.AuthService
 import uk.derbyshire.services.ConnectionsService
 import uk.derbyshire.services.UserService
