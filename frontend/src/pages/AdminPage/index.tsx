@@ -159,7 +159,7 @@ export default function AdminPage() {
         <p>Loading…</p>
       ) : (
         <>
-          <UserList users={users} onChanged={refreshUsers} onError={setError} />
+          <UserList users={users} onError={setError} />
           {totalPages > 1 && (
             <div className="admin-pagination">
               <button

@@ -11,3 +11,16 @@ export type AdminUser = {
   enabled: boolean
   createdAt: string
 }
+
+export type UserConnection = {
+  connectionId: string
+  userId: string
+  username: string
+  displayName: string
+  enabled: boolean
+}
+
+export type UserConnections = {
+  senders: UserConnection[]
+  recipients: UserConnection[]
+}

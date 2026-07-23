@@ -1,18 +1,17 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AdminApi } from '../../features/admin/api/adminApi'
 import type { AdminUser } from '../../features/admin/types'
 import { formatApiError } from '../../shared/api/ApiError'
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey'
 import ActivationLinkCard from './ActivationLinkCard'
-import UserActionsMenu from './UserActionsMenu'
 
 type UserListItemProps = {
   user: AdminUser
-  onChanged: () => void
   onError: (message: string) => void
 }
 
-export default function UserListItem({ user, onChanged, onError }: UserListItemProps) {
+export default function UserListItem({ user, onError }: UserListItemProps) {
   const [generatingLink, setGeneratingLink] = useState(false)
   const [newActivationToken, setNewActivationToken] = useState<string | null>(null)
 
@@ -33,20 +32,22 @@ export default function UserListItem({ user, onChanged, onError }: UserListItemP
 
   return (
     <li className="user-list-item">
-      <div className="user-cell">
-        <div className="user-cell-names">
-          <span className="user-cell-displayname">{user.displayName}</span>
-          <span className="user-cell-username">{user.username}</span>
+      <Link to={`/admin/users/${user.id}`} state={user} className="user-cell-link">
+        <div className="user-cell">
+          <div className="user-cell-names">
+            <span className="user-cell-displayname">{user.displayName}</span>
+            <span className="user-cell-username">{user.username}</span>
+          </div>
+          <div className="user-cell-badges">
+            {user.role === 'ADMIN' && (
+              <span className="status-badge status-badge--admin">Admin</span>
+            )}
+            {!user.enabled && (
+              <span className="status-badge status-badge--disabled">Disabled</span>
+            )}
+          </div>
         </div>
-        <div className="user-cell-badges">
-          {user.role === 'ADMIN' && (
-            <span className="status-badge status-badge--admin">Admin</span>
-          )}
-          {!user.enabled && (
-            <span className="status-badge status-badge--disabled">Disabled</span>
-          )}
-        </div>
-      </div>
+      </Link>
 
       <div className="user-list-item-actions">
         {user.activationStatus === 'PENDING' && (
@@ -59,7 +60,6 @@ export default function UserListItem({ user, onChanged, onError }: UserListItemP
             {generatingLink ? 'Generating…' : 'Pending · Generate new link'}
           </button>
         )}
-        <UserActionsMenu user={user} onChanged={onChanged} onError={onError} />
       </div>
 
       {newActivationToken && (

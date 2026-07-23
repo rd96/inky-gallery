@@ -1,0 +1,186 @@
+.btn-secondary {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--inky-color-blue);
+  border-radius: 6px;
+  background: none;
+  color: var(--inky-color-blue);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(9, 29, 95, 0.06);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.user-detail-back {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: var(--inky-color-blue);
+  text-decoration: none;
+}
+
+.user-detail-back:hover {
+  text-decoration: underline;
+}
+
+.user-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.user-detail-displayname {
+  color: var(--inky-color-blue);
+  font-family: 'Silkscreen', system-ui, sans-serif;
+  font-size: 1.4rem;
+}
+
+.user-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+}
+
+.user-detail-actions .user-actions-danger {
+  color: var(--inky-color-red);
+  border-color: var(--inky-color-red);
+}
+
+.connections-section h2 {
+  margin: 0 0 1rem;
+  color: var(--inky-color-blue);
+  font-family: 'Silkscreen', system-ui, sans-serif;
+  font-size: 1.1rem;
+}
+
+.connections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: start;
+  gap: 1.5rem;
+}
+
+.connection-column {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.connection-column h3 {
+  margin: 0 0 0.75rem;
+  color: var(--inky-color-black);
+  font-size: 0.95rem;
+}
+
+.connection-column-empty {
+  margin: 0 0 0.75rem;
+  color: var(--inky-color-black);
+  opacity: 0.6;
+  font-size: 0.9rem;
+}
+
+.connection-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.connection-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(9, 29, 95, 0.1);
+}
+
+.connection-list-item:last-child {
+  border-bottom: none;
+}
+
+.connection-remove-btn {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 6px;
+  background: rgba(5, 5, 20, 0.06);
+  color: var(--inky-color-red);
+  cursor: pointer;
+}
+
+.connection-remove-btn:hover:not(:disabled) {
+  background: rgba(5, 5, 20, 0.12);
+}
+
+.connection-remove-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.connection-add-btn {
+  width: 100%;
+}
+
+.user-typeahead-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.user-typeahead-input-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--inky-color-blue);
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.user-typeahead-results {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid rgba(9, 29, 95, 0.1);
+  border-radius: 8px;
+}
+
+.user-typeahead-status {
+  padding: 0.5rem 0.75rem;
+  color: var(--inky-color-black);
+  opacity: 0.6;
+  font-size: 0.85rem;
+}
+
+.user-typeahead-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.user-typeahead-result:hover:not(:disabled) {
+  background: rgba(9, 29, 95, 0.06);
+}
+
+.user-typeahead-result:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

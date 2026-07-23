@@ -1,5 +1,5 @@
 import { ApiClient } from '../../../shared/api/ApiClient'
-import type { ActivationStatus, AdminUser } from '../types'
+import type { ActivationStatus, AdminUser, UserConnections } from '../types'
 import type { Role } from '../../auth/types'
 
 export const ADMIN_USER_PAGE_SIZE = 50
@@ -40,6 +40,18 @@ export type SearchUsersParams = {
   page: number
 }
 
+function toAdminUser(user: UserResponseDTO): AdminUser {
+  return {
+    id: user.userId,
+    username: user.username,
+    displayName: user.displayName,
+    role: user.role,
+    activationStatus: user.activationStatus,
+    enabled: user.enabled,
+    createdAt: user.createdAt,
+  }
+}
+
 async function searchUsers(params: SearchUsersParams): Promise<UserSearchResult> {
   const response = await ApiClient.query<QueryUsersResponse, QueryUsersRequest>(
     '/api/admin/users',
@@ -54,17 +66,14 @@ async function searchUsers(params: SearchUsersParams): Promise<UserSearchResult>
   )
 
   return {
-    users: response.users.map(user => ({
-      id: user.userId,
-      username: user.username,
-      displayName: user.displayName,
-      role: user.role,
-      activationStatus: user.activationStatus,
-      enabled: user.enabled,
-      createdAt: user.createdAt,
-    })),
+    users: response.users.map(toAdminUser),
     totalCount: response.totalCount,
   }
+}
+
+async function getUser(id: string): Promise<AdminUser> {
+  const response = await ApiClient.get<UserResponseDTO>(`/api/admin/users/${id}`)
+  return toAdminUser(response)
 }
 
 type CreateUserRequest = {
@@ -107,9 +116,30 @@ function createActivationToken(id: string): Promise<CreateActivationTokenResult>
   )
 }
 
+function getUserConnections(id: string): Promise<UserConnections> {
+  return ApiClient.get<UserConnections>(`/api/admin/users/${id}/connections`)
+}
+
+type CreateConnectionRequest = {
+  senderUserId: string
+  recipientUserId: string
+}
+
+function createConnection(request: CreateConnectionRequest): Promise<void> {
+  return ApiClient.post<void, CreateConnectionRequest>('/api/admin/connections', request)
+}
+
+function deleteConnection(connectionId: string): Promise<void> {
+  return ApiClient.delete<void>(`/api/admin/connections/${connectionId}`)
+}
+
 export const AdminApi = {
   searchUsers,
+  getUser,
   createUser,
   updateUser,
   createActivationToken,
+  getUserConnections,
+  createConnection,
+  deleteConnection,
 }

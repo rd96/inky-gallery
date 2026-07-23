@@ -4,6 +4,7 @@ import ActivatePage from './pages/ActivatePage'
 import GalleryPage from './pages/GalleryPage'
 import DrawPage from './pages/DrawPage'
 import AdminPage from './pages/AdminPage'
+import UserDetailPage from './pages/UserDetailPage'
 import AppLayout from './shared/components/AppLayout'
 import {
   RedirectIfAuthenticated,
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/draw" element={<DrawPage />} />
           <Route element={<RequireAdmin />}>
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/users/:userId" element={<UserDetailPage />} />
           </Route>
         </Route>
       </Route>

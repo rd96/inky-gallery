@@ -99,11 +99,22 @@
   cursor: not-allowed;
 }
 
+.user-cell-link {
+  display: contents;
+  color: inherit;
+  text-decoration: none;
+}
+
 .user-cell {
   display: flex;
   align-items: center;
   gap: 0.6rem;
   min-width: 0;
+  flex: 1;
+}
+
+.user-cell-link:hover .user-cell-displayname {
+  text-decoration: underline;
 }
 
 .user-list-item-actions {
