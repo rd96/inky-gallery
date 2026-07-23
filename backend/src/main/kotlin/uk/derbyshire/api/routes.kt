@@ -7,15 +7,19 @@ import uk.derbyshire.ServerConfig
 import uk.derbyshire.api.admin.adminRoutes
 import uk.derbyshire.api.auth.authRoutes
 import uk.derbyshire.api.filters.AuthChecker
+import uk.derbyshire.api.users.userRoutes
 import uk.derbyshire.services.AuthService
+import uk.derbyshire.services.ConnectionsService
 import uk.derbyshire.services.UserService
 
 fun apiRoutes(
     authChecker: AuthChecker,
     userService: UserService,
     authService: AuthService,
+    connectionsService: ConnectionsService,
     serverConfig: ServerConfig,
 ) = routes(
     "/auth" bind authRoutes(authChecker, authService, serverConfig),
-    "/admin" bind authChecker.requireAdmin().then(adminRoutes(userService, authService))
+    "/admin" bind authChecker.requireAdmin().then(adminRoutes(userService, authService, connectionsService)),
+    "/user" bind authChecker.requireUser().then(userRoutes(connectionsService))
 )

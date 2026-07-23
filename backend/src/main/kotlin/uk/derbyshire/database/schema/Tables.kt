@@ -8,6 +8,7 @@ class Tables {
             UserTable,
             SessionTable,
             ActivationTokenTable,
+            ConnectionsTable,
         )
     }
 }

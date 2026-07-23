@@ -43,6 +43,11 @@ class UserService(
             userRepository.findUserLoginByUsername(normaliseUsername(username))
         }
 
+    fun userExists(userId: UserId): Boolean =
+        database.transaction {
+            userRepository.userExists(userId)
+        }
+
     fun findUser(userId: UserId): UserSummary? =
         database.transaction {
             userRepository.findUser(userId)

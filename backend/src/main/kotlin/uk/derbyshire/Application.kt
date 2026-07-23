@@ -6,9 +6,11 @@ import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.DatabaseMigrator
 import uk.derbyshire.database.DatabaseSetup
 import uk.derbyshire.database.repositories.ActivationTokenRepository
+import uk.derbyshire.database.repositories.ConnectionsRepository
 import uk.derbyshire.database.repositories.SessionRepository
 import uk.derbyshire.database.repositories.UserRepository
 import uk.derbyshire.services.AuthService
+import uk.derbyshire.services.ConnectionsService
 import uk.derbyshire.services.UserService
 import kotlin.time.Clock
 
@@ -41,6 +43,7 @@ class Repositories {
     val userRepository = UserRepository()
     val sessionRepository = SessionRepository()
     val activationTokenRepository = ActivationTokenRepository()
+    val connectionsRepository = ConnectionsRepository()
 }
 
 class Services(repositories: Repositories, database: DatabaseContext, clock: Clock) {
@@ -49,4 +52,5 @@ class Services(repositories: Repositories, database: DatabaseContext, clock: Clo
 
     val userService = UserService(repositories.userRepository, passwordHasherService, database)
     val authService = AuthService(repositories.sessionRepository, repositories.activationTokenRepository, userService, sessionTokenService, passwordHasherService, database, clock)
+    val connectionsService = ConnectionsService(repositories.connectionsRepository, userService, database)
 }

@@ -145,6 +145,11 @@ class UserRepository {
             enabled?.let { table[this.enabled] = it }
         } == 1
 
+    fun userExists(userId: UserId): Boolean =
+        UserTable.select(UserTable.id)
+            .where { UserTable.id eq userId.value }
+            .any()
+
     companion object {
         private fun searchLikePattern(search: String, escapeChar: Char = '!'): LikePattern {
             val escapedSearch = search
