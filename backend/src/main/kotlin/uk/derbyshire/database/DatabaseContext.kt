@@ -31,9 +31,10 @@ class DatabaseContext(config: DatabaseConfig): Closeable {
                     this.username = username
                     this.password = password
 
-                    maximumPoolSize = 5
+                    maximumPoolSize = 10
                     isAutoCommit = false
-                    transactionIsolation = "TRANSACTION_REPEATABLE_READ"
+                    transactionIsolation = "TRANSACTION_READ_COMMITTED"
+                    leakDetectionThreshold = 30000
 
                     validate()
                 }

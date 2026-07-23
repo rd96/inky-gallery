@@ -19,6 +19,7 @@ class SessionRepository {
             .select(
                 SessionTable.id,
                 SessionTable.expiresAt,
+                SessionTable.lastSeenAt,
                 UserTable.id,
                 UserTable.username,
                 UserTable.role,
@@ -31,6 +32,7 @@ class SessionRepository {
                 SessionUser(
                     it[SessionTable.id].value,
                     it[SessionTable.expiresAt],
+                    it[SessionTable.lastSeenAt],
                     UserId(it[UserTable.id].value),
                     it[UserTable.username],
                     it[UserTable.role],

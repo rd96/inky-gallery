@@ -22,6 +22,7 @@ import uk.derbyshire.domain.users.CreateUserFailure
 import uk.derbyshire.domain.users.UserId
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.minutes
 
 class AuthService(
     private val sessionRepository: SessionRepository,
@@ -45,7 +46,9 @@ class AuthService(
                 return@transaction null
             }
 
-            sessionRepository.updateLastSeen(sessionUser.sessionId, clock.now())
+            if (sessionUser.lastSeen < clock.now().minus(1.minutes)) {
+                sessionRepository.updateLastSeen(sessionUser.sessionId, clock.now())
+            }
 
             AuthenticatedUser(
                 sessionUser.userId,

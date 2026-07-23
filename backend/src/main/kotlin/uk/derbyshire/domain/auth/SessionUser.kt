@@ -9,6 +9,7 @@ import kotlin.uuid.Uuid
 data class SessionUser(
     val sessionId: Uuid,
     val expiresAt: Instant,
+    val lastSeen: Instant,
     val userId: UserId,
     val username: String,
     val role: Role,
