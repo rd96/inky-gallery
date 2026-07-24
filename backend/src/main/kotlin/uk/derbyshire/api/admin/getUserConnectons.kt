@@ -14,13 +14,13 @@ import uk.derbyshire.api.helpers.Path
 import uk.derbyshire.domain.connections.UserConnection
 import uk.derbyshire.domain.connections.UserConnections
 import uk.derbyshire.domain.users.UserId
-import uk.derbyshire.services.ConnectionsService
+import uk.derbyshire.services.ConnectionService
 import kotlin.uuid.Uuid
 
-fun getUserConnections(connectionsService: ConnectionsService) = request@{ request: Request ->
+fun getUserConnections(connectionService: ConnectionService) = request@{ request: Request ->
     val userId = Path.userId(request)
 
-    when (val connections = connectionsService.getAllConnectionsForUser(userId)) {
+    when (val connections = connectionService.getAllConnectionsForUser(userId)) {
         is Success -> Response(Status.OK).with(GetUserConnectionsResponseDTO.lens of connections.value.toDto())
         is Failure -> connections.reason.description.toErrorResponseDTO(Status.NOT_FOUND)
     }

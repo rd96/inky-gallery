@@ -10,35 +10,35 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insertIgnoreAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import uk.derbyshire.database.schema.ConnectionsTable
+import uk.derbyshire.database.schema.ConnectionTable
 import uk.derbyshire.database.schema.UserTable
 import uk.derbyshire.domain.connections.UserConnection
 import uk.derbyshire.domain.users.UserId
 import kotlin.uuid.Uuid
 
-class ConnectionsRepository {
+class ConnectionRepository {
     fun insertConnection(senderUserId: UserId, recipientUserId: UserId, createdBy: UserId) =
-        ConnectionsTable.insertIgnoreAndGetId {
+        ConnectionTable.insertIgnoreAndGetId {
                 it[this.senderUserId] = senderUserId.value
                 it[this.recipientUserId] = recipientUserId.value
                 it[this.createdBy] = createdBy.value
             }?.value
 
     fun deleteConnection(connectionId: Uuid) = transaction {
-        ConnectionsTable.deleteWhere { ConnectionsTable.id eq connectionId }
+        ConnectionTable.deleteWhere { ConnectionTable.id eq connectionId }
     }
 
     private fun getConnectionsForUser(userId: UserId, ownerColumn: Column<EntityID<Uuid>>, connectedUserColumn: Column<EntityID<Uuid>>, onlyEnabled: Boolean = false): List<UserConnection> =
-        ConnectionsTable
+        ConnectionTable
             .innerJoin(UserTable) {
                 connectedUserColumn eq UserTable.id
             }
             .select(
-                ConnectionsTable.id,
+                ConnectionTable.id,
                 UserTable.id,
                 UserTable.username,
                 UserTable.displayName,
-                ConnectionsTable.createdAt,
+                ConnectionTable.createdAt,
                 UserTable.enabled,
             )
             .where {
@@ -47,11 +47,11 @@ class ConnectionsRepository {
             }
             .map {
                 UserConnection(
-                    connectionId = it[ConnectionsTable.id].value,
+                    connectionId = it[ConnectionTable.id].value,
                     userId = UserId(it[UserTable.id].value),
                     username = it[UserTable.username],
                     displayName = it[UserTable.displayName],
-                    createdAt = it[ConnectionsTable.createdAt],
+                    createdAt = it[ConnectionTable.createdAt],
                     enabled = it[UserTable.enabled],
                 )
             }
@@ -59,16 +59,16 @@ class ConnectionsRepository {
     fun getRecipientsFor(userId: UserId, onlyEnabled: Boolean): List<UserConnection> =
         getConnectionsForUser(
             userId = userId,
-            ownerColumn = ConnectionsTable.senderUserId,
-            connectedUserColumn = ConnectionsTable.recipientUserId,
+            ownerColumn = ConnectionTable.senderUserId,
+            connectedUserColumn = ConnectionTable.recipientUserId,
             onlyEnabled = onlyEnabled,
         )
 
     fun getSendersFor(userId: UserId, onlyEnabled: Boolean): List<UserConnection> =
         getConnectionsForUser(
             userId = userId,
-            ownerColumn = ConnectionsTable.recipientUserId,
-            connectedUserColumn = ConnectionsTable.senderUserId,
+            ownerColumn = ConnectionTable.recipientUserId,
+            connectedUserColumn = ConnectionTable.senderUserId,
             onlyEnabled = onlyEnabled,
         )
 

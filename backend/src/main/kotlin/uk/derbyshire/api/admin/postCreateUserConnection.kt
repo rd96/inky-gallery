@@ -9,13 +9,13 @@ import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.domain.users.UserId
-import uk.derbyshire.services.ConnectionsService
+import uk.derbyshire.services.ConnectionService
 
-fun postCreateUserConnection(connectionsService: ConnectionsService) = { request: Request ->
+fun postCreateUserConnection(connectionService: ConnectionService) = { request: Request ->
     val user = CurrentUser(request)
     val connectionRequest = PostCreateUserConnectionRequestDTO.lens(request)
 
-    val result = connectionsService.createUserConnection(
+    val result = connectionService.createUserConnection(
         senderUserId = connectionRequest.senderUserId,
         recipientUserId = connectionRequest.recipientUserId,
         createdBy = user.userId,

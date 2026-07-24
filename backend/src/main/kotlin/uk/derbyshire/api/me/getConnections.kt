@@ -1,4 +1,4 @@
-package uk.derbyshire.api.user
+package uk.derbyshire.api.me
 
 import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Success
@@ -9,17 +9,17 @@ import org.http4k.core.with
 import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
-import uk.derbyshire.api.user.GetConnectionsResponseDTO.Companion.toDto
-import uk.derbyshire.api.user.UserConnectionDTO.Companion.toDto
+import uk.derbyshire.api.me.GetConnectionsResponseDTO.Companion.toDto
+import uk.derbyshire.api.me.UserConnectionDTO.Companion.toDto
 import uk.derbyshire.domain.connections.UserConnection
 import uk.derbyshire.domain.connections.UserConnections
 import uk.derbyshire.domain.users.UserId
-import uk.derbyshire.services.ConnectionsService
+import uk.derbyshire.services.ConnectionService
 
-fun getConnections(connectionsService: ConnectionsService) = { request: Request ->
+fun getConnections(connectionService: ConnectionService) = { request: Request ->
     val currentUser = CurrentUser(request)
 
-    when (val connections = connectionsService.getActiveConnectionsForUser(currentUser.userId)) {
+    when (val connections = connectionService.getActiveConnectionsForUser(currentUser.userId)) {
         is Success -> Response(Status.OK).with(GetConnectionsResponseDTO.lens of connections.value.toDto())
         is Failure -> connections.reason.description.toErrorResponseDTO(Status.NOT_FOUND)
     }

@@ -5,7 +5,7 @@ import dev.forkhandles.result4k.Result4k
 import dev.forkhandles.result4k.asResultOr
 import dev.forkhandles.result4k.asSuccess
 import uk.derbyshire.database.DatabaseContext
-import uk.derbyshire.database.repositories.ConnectionsRepository
+import uk.derbyshire.database.repositories.ConnectionRepository
 import uk.derbyshire.domain.connections.CreateConnectionFailure
 import uk.derbyshire.domain.connections.GetConnectionsFailure
 import uk.derbyshire.domain.connections.UserConnection
@@ -13,8 +13,8 @@ import uk.derbyshire.domain.connections.UserConnections
 import uk.derbyshire.domain.users.UserId
 import kotlin.uuid.Uuid
 
-class ConnectionsService(
-    private val connectionsRepository: ConnectionsRepository,
+class ConnectionService(
+    private val connectionRepository: ConnectionRepository,
     private val userService: UserService,
     private val context: DatabaseContext,
 ) {
@@ -23,14 +23,14 @@ class ConnectionsService(
         if (!userService.userExists(recipientUserId)) return Failure(CreateConnectionFailure.RECIPIENT_NOT_FOUND)
 
         return context.transaction {
-            connectionsRepository.insertConnection(senderUserId, recipientUserId, createdBy)
+            connectionRepository.insertConnection(senderUserId, recipientUserId, createdBy)
                 .asResultOr { CreateConnectionFailure.RECIPIENT_NOT_FOUND }
         }
     }
 
     fun deleteUserConnection(connectionId: Uuid) {
         context.transaction {
-            connectionsRepository.deleteConnection(connectionId)
+            connectionRepository.deleteConnection(connectionId)
         }
     }
 
@@ -50,12 +50,12 @@ class ConnectionsService(
 
     private fun findRecipientsFor(userId: UserId, onlyEnabled: Boolean = false): List<UserConnection> =
         context.transaction {
-            connectionsRepository.getRecipientsFor(userId, onlyEnabled)
+            connectionRepository.getRecipientsFor(userId, onlyEnabled)
         }
 
     private fun findSendersFor(userId: UserId, onlyEnabled: Boolean = false): List<UserConnection> =
         context.transaction {
-            connectionsRepository.getSendersFor(userId, onlyEnabled)
+            connectionRepository.getSendersFor(userId, onlyEnabled)
         }
 
 }

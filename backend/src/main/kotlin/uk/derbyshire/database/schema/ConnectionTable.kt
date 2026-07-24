@@ -6,7 +6,7 @@ import org.jetbrains.exposed.v1.core.neq
 import org.jetbrains.exposed.v1.datetime.CurrentTimestamp
 import org.jetbrains.exposed.v1.datetime.timestamp
 
-object ConnectionsTable : UuidTable("connections") {
+object ConnectionTable : UuidTable("connections") {
     val senderUserId = reference("user_id", UserTable.id, ReferenceOption.CASCADE)
     val recipientUserId = reference("recipient_id", UserTable.id, ReferenceOption.CASCADE)
 
