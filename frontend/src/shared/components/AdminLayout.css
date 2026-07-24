@@ -1,0 +1,24 @@
+.admin-tabs {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(9, 29, 95, 0.15);
+}
+
+.admin-tabs a {
+  padding: 0.6rem 0.1rem;
+  color: var(--inky-color-blue);
+  opacity: 0.6;
+  text-decoration: none;
+  font-size: 0.95rem;
+  border-bottom: 2px solid transparent;
+}
+
+.admin-tabs a:hover {
+  opacity: 1;
+}
+
+.admin-tabs a.active {
+  opacity: 1;
+  border-bottom-color: var(--inky-color-blue);
+}

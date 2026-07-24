@@ -133,6 +133,20 @@ function deleteConnection(connectionId: string): Promise<void> {
   return ApiClient.delete<void>(`/api/admin/connections/${connectionId}`)
 }
 
+export type CreateDeviceModelRequest = {
+  deviceName: string
+  landscapeWidthPx: number
+  landscapeHeightPx: number
+  colourSwatch?: string[]
+}
+
+function createDeviceModel(request: CreateDeviceModelRequest): Promise<void> {
+  return ApiClient.post<void, CreateDeviceModelRequest>(
+    '/api/admin/device-models',
+    request,
+  )
+}
+
 export const AdminApi = {
   searchUsers,
   getUser,
@@ -142,4 +156,5 @@ export const AdminApi = {
   getUserConnections,
   createConnection,
   deleteConnection,
+  createDeviceModel,
 }

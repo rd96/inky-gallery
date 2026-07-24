@@ -4,7 +4,9 @@ import ActivatePage from './pages/ActivatePage'
 import GalleryPage from './pages/GalleryPage'
 import DrawPage from './pages/DrawPage'
 import AdminPage from './pages/AdminPage'
+import DeviceModelsPage from './pages/DeviceModelsPage'
 import UserDetailPage from './pages/UserDetailPage'
+import AdminLayout from './shared/components/AdminLayout'
 import AppLayout from './shared/components/AppLayout'
 import {
   RedirectIfAuthenticated,
@@ -29,7 +31,10 @@ export default function App() {
           <Route path="/" element={<GalleryPage />} />
           <Route path="/draw" element={<DrawPage />} />
           <Route element={<RequireAdmin />}>
-            <Route path="/admin" element={<AdminPage />} />
+            <Route element={<AdminLayout />}>
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/device-models" element={<DeviceModelsPage />} />
+            </Route>
             <Route path="/admin/users/:userId" element={<UserDetailPage />} />
           </Route>
         </Route>
