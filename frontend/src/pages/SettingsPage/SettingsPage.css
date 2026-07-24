@@ -2,6 +2,17 @@
   max-width: 640px;
 }
 
+.settings-back {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: var(--inky-color-blue);
+  text-decoration: none;
+}
+
+.settings-back:hover {
+  text-decoration: underline;
+}
+
 .settings-page h1 {
   margin: 0 0 1.5rem;
   color: var(--inky-color-blue);
