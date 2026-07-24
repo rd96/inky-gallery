@@ -1,5 +1,8 @@
 package uk.derbyshire.database.repositories
 
+import dev.forkhandles.result4k.Failure
+import dev.forkhandles.result4k.Result4k
+import dev.forkhandles.result4k.Success
 import org.http4k.config.Secret
 import org.jetbrains.exposed.v1.core.LikePattern
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -9,13 +12,16 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.core.lowerCase
 import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.andWhere
 import org.jetbrains.exposed.v1.jdbc.insertIgnoreAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.update
+import org.postgresql.util.PSQLState
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.database.schema.UserTable
 import uk.derbyshire.domain.users.ActivationStatus
+import uk.derbyshire.domain.users.UpdateUserFailure
 import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.domain.users.UserLoginDetail
 import uk.derbyshire.domain.users.UserSearchResult
@@ -137,13 +143,21 @@ class UserRepository {
         )
     }
 
-    fun updateUser(userId: UserId, username: String?, displayName: String?, enabled: Boolean?, role: Role?): Boolean =
-        UserTable.update({ UserTable.id eq userId.value }) { table ->
-            username?.let { table[this.username] = it }
-            displayName?.let { table[this.displayName] = it }
-            role?.let { table[this.role] = it }
-            enabled?.let { table[this.enabled] = it }
-        } == 1
+    fun updateUser(userId: UserId, username: String?, displayName: String?, enabled: Boolean?, role: Role?): Result4k<Unit, UpdateUserFailure> =
+        try {
+            val success = UserTable.update({ UserTable.id eq userId.value }) { table ->
+                username?.let { table[this.username] = it }
+                displayName?.let { table[this.displayName] = it }
+                role?.let { table[this.role] = it }
+                enabled?.let { table[this.enabled] = it }
+            } == 1
+
+            if (success) Success(Unit) else Failure(UpdateUserFailure.USER_NOT_FOUND)
+        } catch (e: ExposedSQLException) {
+            if (e.sqlState == PSQLState.UNIQUE_VIOLATION.state) Failure(UpdateUserFailure.USERNAME_ALREADY_IN_USE)
+            else throw e
+        }
+
 
     fun userExists(userId: UserId): Boolean =
         UserTable.select(UserTable.id)
