@@ -3,11 +3,11 @@ package uk.derbyshire.auth
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.*
-import uk.derbyshire.services.SessionTokenService
+import uk.derbyshire.services.SecureTokenService
 import java.security.SecureRandom
 import kotlin.test.Test
 
-class SessionTokenServiceTest {
+class SecureTokenServiceTest {
     @Test
     fun `generate creates a 256-bit URL-safe token without padding`() {
         val random = mockk<SecureRandom>()
@@ -16,7 +16,7 @@ class SessionTokenServiceTest {
             generatedBytes.copyInto(firstArg<ByteArray>())
         }
 
-        val token = SessionTokenService(random).generate()
+        val token = SecureTokenService(random).generate()
 
         assertEquals(
             "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
@@ -29,7 +29,7 @@ class SessionTokenServiceTest {
 
     @Test
     fun `hash returns the SHA-256 digest as lowercase hexadecimal`() {
-        val hash = SessionTokenService().hash("test-token")
+        val hash = SecureTokenService().hash("test-token")
 
         assertEquals(
             "4c5dc9b7708905f77f5e5d16316b5dfb425e68cb326dcd55a860e90a7707031e",
@@ -41,7 +41,7 @@ class SessionTokenServiceTest {
 
     @Test
     fun `hash encodes the token using UTF-8`() {
-        val hash = SessionTokenService().hash("pässwörd")
+        val hash = SecureTokenService().hash("pässwörd")
 
         assertEquals(
             "46970bef70aced8123f0d5d094717e2a5cd412041e03b26376049fe65b2834a4",

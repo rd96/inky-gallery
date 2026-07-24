@@ -5,7 +5,7 @@ import java.security.SecureRandom
 import java.util.Base64
 import java.util.HexFormat
 
-class SessionTokenService(
+class SecureTokenService(
     private val random: SecureRandom = SecureRandom(),
 ) {
     private val hex = HexFormat.of()
