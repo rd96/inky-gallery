@@ -51,6 +51,7 @@ class DeviceRepository {
                 DeviceModelTable.landscapeHeightPx,
                 DeviceTable.orientation,
                 DeviceModelTable.colourSwatch,
+                DeviceTable.enabled,
             )
             .where { DeviceTable.userId eq userId.value }
             .map {
@@ -61,7 +62,8 @@ class DeviceRepository {
                     landscapeWidthPx = it[DeviceModelTable.landscapeWidthPx],
                     landscapeHeightPx = it[DeviceModelTable.landscapeHeightPx],
                     orientation = it[DeviceTable.orientation],
-                    colourSwatch = it[DeviceModelTable.colourSwatch]?.map(HexColour::parse)
+                    colourSwatch = it[DeviceModelTable.colourSwatch]?.map(HexColour::parse),
+                    enabled = it[DeviceTable.enabled],
                 )
             }
 

@@ -29,6 +29,7 @@ data class GetMyDevicesResponseDTO(
     val heightPx: Int,
     val orientation: Orientation,
     val colourSwatch: List<HexColour>? = null,
+    val enabled: Boolean,
 ) {
     companion object {
         val lens = Json.autoBody<List<GetMyDevicesResponseDTO>>().toLens()
@@ -42,6 +43,7 @@ data class GetMyDevicesResponseDTO(
                 heightPx = it.heightPx,
                 orientation = it.orientation,
                 colourSwatch = it.colourSwatch,
+                enabled = it.enabled,
             )
         }
     }

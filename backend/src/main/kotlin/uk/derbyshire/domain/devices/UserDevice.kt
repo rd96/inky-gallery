@@ -10,6 +10,7 @@ data class UserDevice(
     private val landscapeHeightPx: Int,
     val orientation: Orientation,
     val colourSwatch: List<HexColour>?,
+    val enabled: Boolean,
 ) {
     val widthPx = when (orientation) {
         Orientation.LANDSCAPE -> landscapeWidthPx
