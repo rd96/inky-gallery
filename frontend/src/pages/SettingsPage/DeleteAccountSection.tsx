@@ -13,6 +13,7 @@ export default function DeleteAccountSection() {
   function closeConfirm() {
     if (submitting) return
     setConfirming(false)
+    setError(null)
   }
 
   useEscapeKey(closeConfirm, confirming)
