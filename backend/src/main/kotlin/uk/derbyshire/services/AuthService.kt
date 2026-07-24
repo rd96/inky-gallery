@@ -5,7 +5,6 @@ import dev.forkhandles.result4k.Result4k
 import dev.forkhandles.result4k.asSuccess
 import dev.forkhandles.result4k.onFailure
 import org.http4k.config.Secret
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import uk.derbyshire.domain.auth.AuthenticatedUser
 import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.database.DatabaseContext

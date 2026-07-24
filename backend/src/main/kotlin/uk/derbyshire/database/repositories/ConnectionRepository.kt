@@ -9,7 +9,6 @@ import org.jetbrains.exposed.v1.core.innerJoin
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insertIgnoreAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import uk.derbyshire.database.schema.ConnectionTable
 import uk.derbyshire.database.schema.UserTable
 import uk.derbyshire.domain.connections.UserConnection
