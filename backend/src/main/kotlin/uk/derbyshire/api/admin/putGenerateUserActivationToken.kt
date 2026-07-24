@@ -14,6 +14,7 @@ import uk.derbyshire.api.helpers.Path
 import uk.derbyshire.domain.auth.UserPendingActivation
 import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.services.AuthService
+import kotlin.time.Instant
 
 fun putGenerateUserActivationToken(authService: AuthService) = { request: Request ->
     val user = CurrentUser(request)
@@ -33,6 +34,7 @@ fun putGenerateUserActivationToken(authService: AuthService) = { request: Reques
 data class PutGenerateUserActivationTokenResponseDTO(
     val userId: UserId,
     val activationToken: String,
+    val expiresAt: Instant,
 ) {
     companion object {
         val lens = Json.autoBody<PutGenerateUserActivationTokenResponseDTO>().toLens()
@@ -40,6 +42,7 @@ data class PutGenerateUserActivationTokenResponseDTO(
         fun UserPendingActivation.toDto() = PutGenerateUserActivationTokenResponseDTO(
             userId = userId,
             activationToken = activationToken,
+            expiresAt = expiresAt,
         )
     }
 }
