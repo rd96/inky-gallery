@@ -8,7 +8,7 @@ import OrientationPicker from './OrientationPicker'
 type EditDeviceModalProps = {
   device: UserDevice
   onClose: () => void
-  onSaved: (device: UserDevice) => void
+  onSaved: () => void
 }
 
 export default function EditDeviceModal({ device, onClose, onSaved }: EditDeviceModalProps) {
@@ -47,7 +47,7 @@ export default function EditDeviceModal({ device, onClose, onSaved }: EditDevice
         enabled,
       })
 
-      onSaved({ ...device, deviceNickname, orientation, enabled })
+      onSaved()
     } catch (cause) {
       setError(formatApiError(cause))
     } finally {

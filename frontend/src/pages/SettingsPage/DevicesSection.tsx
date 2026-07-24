@@ -3,6 +3,7 @@ import { DeviceModelsApi } from '../../features/devices/api/deviceModelsApi'
 import { MyDevicesApi } from '../../features/devices/api/myDevicesApi'
 import type { DeviceModel, UserDevice } from '../../features/devices/types'
 import { formatApiError } from '../../shared/api/ApiError'
+import ColourSwatch from '../../shared/components/ColourSwatch'
 import EditDeviceModal from './EditDeviceModal'
 import RegisterDeviceForm from './RegisterDeviceForm'
 
@@ -13,6 +14,7 @@ export default function DevicesSection() {
   const [error, setError] = useState<string | null>(null)
   const [registering, setRegistering] = useState(false)
   const [editingDevice, setEditingDevice] = useState<UserDevice | null>(null)
+  const [togglingDeviceId, setTogglingDeviceId] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([MyDevicesApi.getMyDevices(), DeviceModelsApi.getDeviceModels()])
@@ -29,6 +31,18 @@ export default function DevicesSection() {
       setDevices(await MyDevicesApi.getMyDevices())
     } catch (cause) {
       setError(formatApiError(cause))
+    }
+  }
+
+  async function toggleEnabled(device: UserDevice) {
+    setTogglingDeviceId(device.deviceId)
+    try {
+      await MyDevicesApi.updateDevice(device.deviceId, { enabled: !device.enabled })
+      await refreshDevices()
+    } catch (cause) {
+      setError(formatApiError(cause))
+    } finally {
+      setTogglingDeviceId(null)
     }
   }
 
@@ -67,21 +81,19 @@ export default function DevicesSection() {
                 </span>
               </div>
               <div className="user-list-item-actions">
-                {device.colourSwatch && device.colourSwatch.length > 0 && (
-                  <div className="device-model-swatch">
-                    {device.colourSwatch.map((colour, index) => (
-                      <span
-                        key={`${colour}-${index}`}
-                        className="device-model-swatch-dot"
-                        style={{ backgroundColor: colour }}
-                        title={colour}
-                      />
-                    ))}
-                  </div>
-                )}
-                {!device.enabled && (
-                  <span className="status-badge status-badge--disabled">Disabled</span>
-                )}
+                <ColourSwatch colours={device.colourSwatch ?? []} />
+                <button
+                  type="button"
+                  className={`status-badge status-badge--pill ${device.enabled ? 'status-badge--enabled' : 'status-badge--disabled'}`}
+                  onClick={() => void toggleEnabled(device)}
+                  disabled={togglingDeviceId === device.deviceId}
+                >
+                  {togglingDeviceId === device.deviceId
+                    ? 'Saving…'
+                    : device.enabled
+                      ? 'Enabled'
+                      : 'Disabled'}
+                </button>
                 <button
                   type="button"
                   className="btn-secondary"
@@ -110,11 +122,9 @@ export default function DevicesSection() {
         <EditDeviceModal
           device={editingDevice}
           onClose={() => setEditingDevice(null)}
-          onSaved={updated => {
-            setDevices(current =>
-              current.map(d => (d.deviceId === updated.deviceId ? updated : d)),
-            )
+          onSaved={() => {
             setEditingDevice(null)
+            void refreshDevices()
           }}
         />
       )}

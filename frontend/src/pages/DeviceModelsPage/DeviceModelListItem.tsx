@@ -1,3 +1,4 @@
+import ColourSwatch from '../../shared/components/ColourSwatch'
 import type { DeviceModel } from '../../features/devices/types'
 
 type DeviceModelListItemProps = {
@@ -13,18 +14,7 @@ export default function DeviceModelListItem({ deviceModel }: DeviceModelListItem
           {deviceModel.landscapeWidthPx} × {deviceModel.landscapeHeightPx}px
         </span>
       </div>
-      {deviceModel.colourSwatch && deviceModel.colourSwatch.length > 0 && (
-        <div className="device-model-swatch">
-          {deviceModel.colourSwatch.map((colour, index) => (
-            <span
-              key={`${colour}-${index}`}
-              className="device-model-swatch-dot"
-              style={{ backgroundColor: colour }}
-              title={colour}
-            />
-          ))}
-        </div>
-      )}
+      <ColourSwatch colours={deviceModel.colourSwatch ?? []} />
     </li>
   )
 }

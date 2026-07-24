@@ -53,20 +53,6 @@
   margin-top: 0.1rem;
 }
 
-.device-model-swatch {
-  display: flex;
-  gap: 0.35rem;
-  flex-shrink: 0;
-}
-
-.device-model-swatch-dot {
-  display: inline-block;
-  width: 1rem;
-  height: 1rem;
-  border-radius: 50%;
-  border: 1px solid rgba(9, 29, 95, 0.2);
-}
-
 .device-model-dimensions-field {
   display: flex;
   flex-direction: column;
