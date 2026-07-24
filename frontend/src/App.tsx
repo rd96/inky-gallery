@@ -5,6 +5,7 @@ import GalleryPage from './pages/GalleryPage'
 import DrawPage from './pages/DrawPage'
 import AdminPage from './pages/AdminPage'
 import DeviceModelsPage from './pages/DeviceModelsPage'
+import SettingsPage from './pages/SettingsPage'
 import UserDetailPage from './pages/UserDetailPage'
 import AdminLayout from './shared/components/AdminLayout'
 import AppLayout from './shared/components/AppLayout'
@@ -30,6 +31,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<GalleryPage />} />
           <Route path="/draw" element={<DrawPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route element={<RequireAdmin />}>
             <Route element={<AdminLayout />}>
               <Route path="/admin" element={<AdminPage />} />

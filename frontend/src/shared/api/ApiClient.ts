@@ -55,6 +55,14 @@ export const ApiClient = {
     })
   },
 
+  patch<TResponse, TBody>(path: string, body: TBody): Promise<TResponse> {
+    return request<TResponse>(path, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  },
+
   query<TResponse, TBody>(path: string, body: TBody): Promise<TResponse> {
     return request<TResponse>(path, {
       method: 'QUERY',

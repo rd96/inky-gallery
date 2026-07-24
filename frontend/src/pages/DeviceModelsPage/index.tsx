@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { DevicesApi } from '../../features/devices/api/devicesApi'
+import { DeviceModelsApi } from '../../features/devices/api/deviceModelsApi'
 import type { DeviceModel } from '../../features/devices/types'
 import CreateDeviceModelForm from './CreateDeviceModelForm'
 import DeviceModelList from './DeviceModelList'
@@ -17,7 +17,7 @@ export default function DeviceModelsPage() {
     setError(null)
 
     try {
-      const result = await DevicesApi.getDeviceModels()
+      const result = await DeviceModelsApi.getDeviceModels()
       setDeviceModels(result)
     } catch {
       setError('Unable to load device models. Please try again.')

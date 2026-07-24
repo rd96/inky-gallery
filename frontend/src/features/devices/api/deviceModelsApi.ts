@@ -20,10 +20,10 @@ function toDeviceModel(dto: DeviceModelResponseDTO): DeviceModel {
 }
 
 async function getDeviceModels(): Promise<DeviceModel[]> {
-  const response = await ApiClient.get<DeviceModelResponseDTO[]>('/api/devices/models')
+  const response = await ApiClient.get<DeviceModelResponseDTO[]>('/api/search/device-models')
   return response.map(toDeviceModel)
 }
 
-export const DevicesApi = {
+export const DeviceModelsApi = {
   getDeviceModels,
 }

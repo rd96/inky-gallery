@@ -103,7 +103,7 @@ export type UpdateUserRequest = {
 }
 
 function updateUser(id: string, patch: UpdateUserRequest): Promise<void> {
-  return ApiClient.put<void, UpdateUserRequest>(`/api/admin/users/${id}`, patch)
+  return ApiClient.patch<void, UpdateUserRequest>(`/api/admin/users/${id}`, patch)
 }
 
 export type CreateActivationTokenResult = {
@@ -111,8 +111,9 @@ export type CreateActivationTokenResult = {
 }
 
 function createActivationToken(id: string): Promise<CreateActivationTokenResult> {
-  return ApiClient.post<CreateActivationTokenResult>(
+  return ApiClient.put<CreateActivationTokenResult, undefined>(
     `/api/admin/users/${id}/activation-tokens`,
+    undefined,
   )
 }
 

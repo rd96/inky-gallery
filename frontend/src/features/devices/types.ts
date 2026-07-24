@@ -5,3 +5,16 @@ export type DeviceModel = {
   landscapeHeightPx: number
   colourSwatch: string[] | null
 }
+
+export type Orientation = 'LANDSCAPE' | 'PORTRAIT'
+
+export type UserDevice = {
+  deviceId: string
+  deviceNickname: string
+  modelName: string
+  widthPx: number
+  heightPx: number
+  orientation: Orientation
+  colourSwatch: string[] | null
+  enabled: boolean
+}

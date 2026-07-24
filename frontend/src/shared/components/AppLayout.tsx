@@ -9,16 +9,17 @@ export default function AppLayout() {
   return (
     <div className="app-layout">
       <header className="app-nav">
-        <span className="app-nav-brand">Inky Gallery</span>
-        <nav>
-          <NavLink to="/" end>
-            Gallery
-          </NavLink>
-          {isAdmin && <NavLink to="/admin">Admin</NavLink>}
-        </nav>
-        <button type="button" className="app-nav-logout" onClick={() => void logout()}>
-          Log out
-        </button>
+        <NavLink to="/" end className="app-nav-brand">
+          Inky Gallery
+        </NavLink>
+        <nav>{isAdmin && <NavLink to="/admin">Admin</NavLink>}</nav>
+        <div className="app-nav-actions">
+          <NavLink to="/settings">Settings</NavLink>
+          <span className="app-nav-divider" aria-hidden="true" />
+          <button type="button" className="app-nav-logout" onClick={() => void logout()}>
+            Log out
+          </button>
+        </div>
       </header>
       <main className="app-content">
         <Outlet />

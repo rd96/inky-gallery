@@ -16,6 +16,11 @@
   color: var(--inky-color-white);
   font-family: 'Silkscreen', system-ui, sans-serif;
   font-size: 1.1rem;
+  text-decoration: none;
+}
+
+.app-nav-brand:hover {
+  opacity: 0.85;
 }
 
 .app-nav nav {
@@ -23,24 +28,39 @@
   gap: 1.5rem;
 }
 
-.app-nav nav a {
+.app-nav nav a,
+.app-nav-actions a {
   color: var(--inky-color-white);
   opacity: 0.85;
   text-decoration: none;
   font-size: 0.95rem;
 }
 
-.app-nav nav a:hover {
+.app-nav nav a:hover,
+.app-nav-actions a:hover {
   opacity: 1;
 }
 
-.app-nav nav a.active {
+.app-nav nav a.active,
+.app-nav-actions a.active {
   opacity: 1;
   color: var(--inky-color-yellow);
 }
 
-.app-nav-logout {
+.app-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   margin-left: auto;
+}
+
+.app-nav-divider {
+  width: 1px;
+  height: 1.1rem;
+  background: rgba(235, 242, 245, 0.3);
+}
+
+.app-nav-logout {
   background: none;
   border: none;
   color: var(--inky-color-white);
