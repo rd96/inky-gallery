@@ -309,14 +309,48 @@
   font-size: 1rem;
 }
 
-.activation-link-redacted {
-  display: block;
+.activation-link-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
   padding: 0.5rem 0.75rem;
+  border: none;
   border-radius: 6px;
   background: var(--inky-color-sand);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.activation-link-field:hover {
+  filter: brightness(0.97);
+}
+
+.activation-link-field--copied {
+  animation: activation-copy-pop 0.25s ease;
+}
+
+.activation-link-redacted {
+  display: block;
   font-size: 0.9rem;
   letter-spacing: 0.05em;
   word-break: break-all;
+  color: var(--inky-color-black);
+}
+
+.activation-link-hint {
+  flex-shrink: 0;
+  color: var(--inky-color-blue);
+  font-size: 0.8rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.activation-link-field:hover .activation-link-hint,
+.activation-link-field--copied .activation-link-hint {
+  opacity: 1;
 }
 
 .modal-actions {
@@ -341,6 +375,18 @@
 .modal-actions .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@keyframes activation-copy-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .modal-actions .btn-secondary {

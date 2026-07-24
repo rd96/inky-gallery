@@ -84,8 +84,6 @@ type CreateUserRequest = {
 
 export type CreateUserResult = {
   userId: string
-  activationToken: string
-  expiresAt: string
 }
 
 function createUser(request: CreateUserRequest): Promise<CreateUserResult> {
@@ -108,6 +106,7 @@ function updateUser(id: string, patch: UpdateUserRequest): Promise<void> {
 
 export type CreateActivationTokenResult = {
   activationToken: string
+  expiresAt: string
 }
 
 function createActivationToken(id: string): Promise<CreateActivationTokenResult> {

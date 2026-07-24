@@ -1,5 +1,5 @@
 import { useRef, useState, type SubmitEvent } from 'react'
-import { AdminApi, type CreateUserResult } from '../../features/admin/api/adminApi'
+import { AdminApi } from '../../features/admin/api/adminApi'
 import type { Role } from '../../features/auth/types'
 import { formatApiError } from '../../shared/api/ApiError'
 import FlipCard from '../../shared/components/FlipCard'
@@ -10,6 +10,13 @@ type CreateUserFormProps = {
   onCreated: () => void
 }
 
+type CreatedUser = {
+  userId: string
+  username: string
+  activationToken: string
+  expiresAt: string
+}
+
 export default function CreateUserForm({ onCreated }: CreateUserFormProps) {
   const [open, setOpen] = useState(false)
   const [username, setUsername] = useState('')
@@ -17,9 +24,7 @@ export default function CreateUserForm({ onCreated }: CreateUserFormProps) {
   const [role, setRole] = useState<Role>('USER')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [created, setCreated] = useState<
-    (CreateUserResult & { username: string }) | null
-  >(null)
+  const [created, setCreated] = useState<CreatedUser | null>(null)
   const cancelledRef = useRef(false)
 
   function close() {
@@ -47,11 +52,12 @@ export default function CreateUserForm({ onCreated }: CreateUserFormProps) {
     setError(null)
 
     try {
-      const result = await AdminApi.createUser({ username, displayName, role })
+      const { userId } = await AdminApi.createUser({ username, displayName, role })
+      const { activationToken, expiresAt } = await AdminApi.createActivationToken(userId)
       onCreated()
 
       if (!cancelledRef.current) {
-        setCreated({ ...result, username })
+        setCreated({ userId, username, activationToken, expiresAt })
       }
     } catch (cause) {
       if (!cancelledRef.current) {

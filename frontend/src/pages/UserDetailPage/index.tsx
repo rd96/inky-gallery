@@ -27,7 +27,10 @@ export default function UserDetailPage() {
   const [togglingEnabled, setTogglingEnabled] = useState(false)
   const [togglingRole, setTogglingRole] = useState(false)
   const [generatingLink, setGeneratingLink] = useState(false)
-  const [newActivationToken, setNewActivationToken] = useState<string | null>(null)
+  const [newActivation, setNewActivation] = useState<{
+    activationToken: string
+    expiresAt: string
+  } | null>(null)
   const [editing, setEditing] = useState(false)
 
   useEffect(() => {
@@ -82,7 +85,7 @@ export default function UserDetailPage() {
 
     try {
       const result = await AdminApi.createActivationToken(user.id)
-      setNewActivationToken(result.activationToken)
+      setNewActivation(result)
     } catch (cause) {
       setError(formatApiError(cause))
     } finally {
@@ -183,12 +186,13 @@ export default function UserDetailPage() {
         />
       )}
 
-      {newActivationToken && (
-        <div className="admin-modal-backdrop" onClick={() => setNewActivationToken(null)}>
+      {newActivation && (
+        <div className="admin-modal-backdrop" onClick={() => setNewActivation(null)}>
           <ActivationLinkCard
             username={user.username}
-            activationToken={newActivationToken}
-            onDone={() => setNewActivationToken(null)}
+            activationToken={newActivation.activationToken}
+            expiresAt={newActivation.expiresAt}
+            onDone={() => setNewActivation(null)}
           />
         </div>
       )}
