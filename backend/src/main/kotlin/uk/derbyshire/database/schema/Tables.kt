@@ -8,7 +8,9 @@ class Tables {
             UserTable,
             SessionTable,
             ActivationTokenTable,
-            ConnectionsTable,
+            ConnectionTable,
+            DeviceModelTable,
+            DeviceTable,
         )
     }
 }

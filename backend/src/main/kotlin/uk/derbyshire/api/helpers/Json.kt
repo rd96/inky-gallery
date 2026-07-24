@@ -5,6 +5,7 @@ import org.http4k.format.ConfigurableJackson
 import org.http4k.format.asConfigurable
 import org.http4k.format.text
 import org.http4k.format.withStandardMappings
+import uk.derbyshire.domain.devices.HexColour
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -20,6 +21,10 @@ object Json : ConfigurableJackson(
         .text(
             { value -> Instant.parse(value) },
             { instant -> instant.toString() },
+        )
+        .text(
+            { value -> HexColour.parse(value) },
+            { hexColour -> hexColour.toString() },
         )
         .done(),
 )

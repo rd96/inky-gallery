@@ -31,7 +31,7 @@ class Server(private val services: Services, val serverConfig: ServerConfig) {
             .then(errorHandler.catchUnexpectedErrors())
             .then(ServerFilters.CatchLensFailure)
             .then(routes(
-                "/api" bind apiRoutes(authChecker, services.userService, services.authService, services.connectionsService, serverConfig),
+                "/api" bind apiRoutes(authChecker, services.userService, services.authService, services.connectionService, services.deviceService, serverConfig),
                 "/" bind Method.GET to static(ResourceLoader.Classpath("public")),
             ))
 
