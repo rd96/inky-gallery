@@ -56,10 +56,39 @@
   font-size: 1rem;
 }
 
-.settings-success {
-  margin: 0;
-  color: var(--inky-color-green);
+.profile-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 360px;
+  margin: -0.5rem -0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-display:hover {
+  background: rgba(9, 29, 95, 0.06);
+}
+
+.profile-displayname {
+  color: var(--inky-color-black);
+  font-size: 1rem;
+}
+
+.profile-edit-icon {
+  color: var(--inky-color-blue);
   font-size: 0.9rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.profile-display:hover .profile-edit-icon {
+  opacity: 1;
 }
 
 .btn-primary {
@@ -171,4 +200,9 @@
   border: 2px solid currentColor;
   border-radius: 4px;
   background: rgba(9, 29, 95, 0.1);
+}
+
+.status-badge--enabled {
+  background: rgba(40, 95, 85, 0.15);
+  color: var(--inky-color-green);
 }
