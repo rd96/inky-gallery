@@ -1,12 +1,13 @@
 package uk.derbyshire
 
 import uk.derbyshire.services.PasswordHasherService
-import uk.derbyshire.services.SessionTokenService
+import uk.derbyshire.services.SecureTokenService
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.DatabaseMigrator
 import uk.derbyshire.database.DatabaseSetup
 import uk.derbyshire.database.repositories.ActivationTokenRepository
 import uk.derbyshire.database.repositories.ConnectionRepository
+import uk.derbyshire.database.repositories.DeviceApiKeyRepository
 import uk.derbyshire.database.repositories.DeviceModelRepository
 import uk.derbyshire.database.repositories.DeviceRepository
 import uk.derbyshire.database.repositories.SessionRepository
@@ -49,14 +50,15 @@ class Repositories {
     val connectionRepository = ConnectionRepository()
     val deviceModelRepository = DeviceModelRepository()
     val deviceRepository = DeviceRepository()
+    val apiKeyRepository = DeviceApiKeyRepository()
 }
 
 class Services(repositories: Repositories, database: DatabaseContext, clock: Clock) {
     private val passwordHasherService = PasswordHasherService()
-    private val sessionTokenService = SessionTokenService()
+    private val secureTokenService = SecureTokenService()
 
     val userService = UserService(repositories.userRepository, passwordHasherService, database)
-    val authService = AuthService(repositories.sessionRepository, repositories.activationTokenRepository, userService, sessionTokenService, passwordHasherService, database, clock)
+    val authService = AuthService(repositories.sessionRepository, repositories.activationTokenRepository, repositories.apiKeyRepository, userService, secureTokenService, passwordHasherService, database, clock)
     val connectionService = ConnectionService(repositories.connectionRepository, userService, database)
     val deviceService = DeviceService(repositories.deviceModelRepository, repositories.deviceRepository, database)
 }
