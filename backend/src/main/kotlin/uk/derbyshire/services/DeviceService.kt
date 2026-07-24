@@ -33,9 +33,26 @@ class DeviceService(
             deviceModelRepository.getDeviceModels()
         }
 
-    fun registerDevice(deviceModelId: Uuid, userId: UserId, deviceName: String, orientation: Orientation) =
+    fun registerDevice(userId: UserId, deviceModelId: Uuid, deviceNickname: String, orientation: Orientation): Result4k<Uuid, RegisterDeviceFailure> {
+        if (deviceNickname.length > MAX_DEVICE_NICKNAME_LENGTH) return Failure(RegisterDeviceFailure.NICKNAME_TOO_LONG)
+
+        return context.transaction {
+            deviceRepository.insertDevice(userId, deviceModelId, deviceNickname, orientation)
+        }.asResultOr { RegisterDeviceFailure.NICKNAME_ALREADY_IN_USE_FOR_USER }
+    }
+
+    fun updateDevice(userId: UserId, deviceId: Uuid, deviceNickname: String?, orientation: Orientation?, enabled: Boolean?): Result4k<Unit, UpdateDeviceFailure> {
+        if (deviceNickname != null && deviceNickname.length > MAX_DEVICE_NICKNAME_LENGTH) return Failure(UpdateDeviceFailure.DEVICE_NICKNAME_TOO_LONG)
+
+        return context.transaction {
+            deviceRepository.updateDevice(userId, deviceId, deviceNickname, orientation, enabled)
+        }
+    }
+
+
+    fun getDevicesForUser(userId: UserId): List<UserDevice> =
         context.transaction {
-            deviceRepository.insertDevice(deviceModelId, userId, deviceName, orientation)
+            deviceRepository.getDevicesForUser(userId)
         }
 
     companion object {
