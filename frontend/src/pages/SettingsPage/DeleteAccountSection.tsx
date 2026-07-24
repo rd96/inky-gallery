@@ -5,7 +5,7 @@ import { formatApiError } from '../../shared/api/ApiError'
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey'
 
 export default function DeleteAccountSection() {
-  const { logout } = useAuth()
+  const { refresh } = useAuth()
   const [confirming, setConfirming] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +24,7 @@ export default function DeleteAccountSection() {
 
     try {
       await SettingsApi.deleteAccount()
-      await logout()
+      await refresh()
     } catch (cause) {
       setError(formatApiError(cause))
       setSubmitting(false)
