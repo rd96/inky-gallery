@@ -6,12 +6,15 @@ import org.http4k.core.Status
 import org.http4k.core.cookie.cookie
 import org.http4k.core.then
 import org.http4k.core.with
+import org.http4k.filter.ServerFilters
 import org.http4k.lens.RequestKey
+import uk.derbyshire.domain.auth.AuthenticatedDevice
 import uk.derbyshire.domain.auth.AuthenticatedUser
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.services.AuthService
 
 val CurrentUser = RequestKey.required<AuthenticatedUser>("currentUser")
+val DeviceUser = RequestKey.required<AuthenticatedDevice>("deviceUser")
 
 class AuthChecker(
     private val authService: AuthService,
@@ -39,4 +42,8 @@ class AuthChecker(
                 }
             }
         )
+
+    fun requireDevice() = ServerFilters.BearerAuth(DeviceUser) { apiKey ->
+        authService.authenticateApiKey(apiKey)
+    }
 }

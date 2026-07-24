@@ -12,8 +12,10 @@ import uk.derbyshire.domain.users.Role
 import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.ActivationTokenRepository
+import uk.derbyshire.database.repositories.DeviceApiKeyRepository
 import uk.derbyshire.database.repositories.SessionRepository
 import uk.derbyshire.domain.auth.ActivationFailure
+import uk.derbyshire.domain.auth.AuthenticatedDevice
 import uk.derbyshire.domain.auth.LoginFailure
 import uk.derbyshire.domain.auth.UserActivationToken
 import uk.derbyshire.domain.auth.LoginSuccess
@@ -27,15 +29,16 @@ import kotlin.time.Duration.Companion.minutes
 class AuthService(
     private val sessionRepository: SessionRepository,
     private val activationTokenRepository: ActivationTokenRepository,
+    private val apiKeyRepository: DeviceApiKeyRepository,
     private val userService: UserService,
-    private val sessionTokenService: SessionTokenService,
+    private val secureTokenService: SecureTokenService,
     private val passwordHasherService: PasswordHasherService,
     private val context: DatabaseContext,
     private val clock: Clock,
 ) {
     fun authenticateSession(token: String): AuthenticatedUser? =
         context.transaction {
-            val tokenHash = sessionTokenService.hash(token)
+            val tokenHash = secureTokenService.hash(token)
 
             val sessionUser = sessionRepository.findUserBySessionTokenHash(tokenHash) ?: return@transaction null
 
@@ -58,9 +61,23 @@ class AuthService(
             )
         }
 
+    fun authenticateApiKey(apiKey: String): AuthenticatedDevice? =
+        context.transaction {
+            val apiKeyHash = secureTokenService.hash(apiKey)
+
+            val apiKeyUser = apiKeyRepository.findUserByApiKeyHash(apiKeyHash) ?: return@transaction null
+
+            if (apiKeyUser.revokedAt != null || !apiKeyUser.userEnabled || !apiKeyUser.deviceEnabled) return@transaction null
+
+            AuthenticatedDevice(
+                userId = apiKeyUser.userId,
+                deviceId = apiKeyUser.deviceId,
+            )
+        }
+
     fun createSession(userId: UserId): Secret {
-        val token = sessionTokenService.generate()
-        val tokenHash = sessionTokenService.hash(token)
+        val token = secureTokenService.generate()
+        val tokenHash = secureTokenService.hash(token)
 
         context.transaction {
             sessionRepository.createSession(userId, tokenHash, clock.now() + SESSION_EXPIRES_AFTER)
@@ -93,8 +110,8 @@ class AuthService(
 
     fun createPendingUser(username: String, displayName: String, role: Role, createdBy: UserId): Result4k<UserPendingActivation, CreateUserFailure> {
         val userId = userService.createPendingUser(username, displayName, role).onFailure { return it }
-        val token = sessionTokenService.generate()
-        val tokenHash = sessionTokenService.hash(token)
+        val token = secureTokenService.generate()
+        val tokenHash = secureTokenService.hash(token)
         val expiresAt = clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER
 
         transaction {
@@ -114,14 +131,14 @@ class AuthService(
         ).asSuccess()
     }
 
-    fun createUserActivationToken(userId: UserId, createdBy: UserId): Result4k<UserPendingActivation, String> {
+    fun generateUserActivationToken(userId: UserId, createdBy: UserId): Result4k<UserPendingActivation, String> {
         val user = userService.findUser(userId) ?: return Failure("User $userId not found")
 
         if (user.activationStatus != ActivationStatus.PENDING) return Failure("User $userId is already activated")
         if (!user.enabled) return Failure("User $userId is not enabled")
 
-        val token = sessionTokenService.generate()
-        val tokenHash = sessionTokenService.hash(token)
+        val token = secureTokenService.generate()
+        val tokenHash = secureTokenService.hash(token)
         val expiresAt = clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER
 
         transaction {
@@ -143,7 +160,7 @@ class AuthService(
     }
 
     fun getActivationDetails(activationToken: Secret): Result4k<UserActivationToken, ActivationFailure> {
-        val tokenHash = activationToken.use(sessionTokenService::hash)
+        val tokenHash = activationToken.use(secureTokenService::hash)
 
         val activationToken = context.transaction {
             activationTokenRepository.getByTokenHash(tokenHash)
@@ -164,7 +181,7 @@ class AuthService(
     }
 
     fun activateUser(activationToken: Secret, password: Secret): Result4k<LoginSuccess, ActivationFailure> = context.transaction {
-        val tokenHash = activationToken.use(sessionTokenService::hash)
+        val tokenHash = activationToken.use(secureTokenService::hash)
 
         val activationToken = context.transaction {
             activationTokenRepository.getByTokenHash(tokenHash)
@@ -185,7 +202,7 @@ class AuthService(
     }
 
     fun logout(token: String) {
-        val tokenHash = sessionTokenService.hash(token)
+        val tokenHash = secureTokenService.hash(token)
 
         context.transaction {
             sessionRepository.deleteByTokenHash(tokenHash)
