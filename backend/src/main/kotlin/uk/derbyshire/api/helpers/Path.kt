@@ -1,6 +1,5 @@
 package uk.derbyshire.api.helpers
 
-import org.http4k.core.Request
 import org.http4k.lens.Path as Path4k
 import org.http4k.lens.string
 import uk.derbyshire.domain.users.UserId

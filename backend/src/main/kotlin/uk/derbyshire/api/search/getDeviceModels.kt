@@ -1,6 +1,6 @@
 package uk.derbyshire.api.search
 
-import org.http4k.core.Request
+import org.http4k.core.HttpHandler
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.with
@@ -11,7 +11,7 @@ import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.services.DeviceService
 import kotlin.uuid.Uuid
 
-fun getDeviceModels(deviceService: DeviceService) = { request: Request ->
+fun getDeviceModels(deviceService: DeviceService): HttpHandler = {
     val devices = deviceService.getDeviceModels()
 
     Response(Status.OK).with(GetDeviceModelsResponseDTO.lens of devices.toDto())
