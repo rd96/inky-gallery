@@ -1,10 +1,10 @@
-package uk.derbyshire.api.devices
+package uk.derbyshire.api.search
 
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.with
-import uk.derbyshire.api.devices.GetDeviceModelsResponseDTO.Companion.toDto
+import uk.derbyshire.api.search.GetDeviceModelsResponseDTO.Companion.toDto
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.domain.devices.DeviceModel
 import uk.derbyshire.domain.devices.HexColour
