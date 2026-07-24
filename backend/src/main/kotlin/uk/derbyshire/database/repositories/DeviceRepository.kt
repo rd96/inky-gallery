@@ -1,15 +1,26 @@
 package uk.derbyshire.database.repositories
 
+import dev.forkhandles.result4k.Failure
+import dev.forkhandles.result4k.Success
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.insertIgnoreAndGetId
+import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.update
+import org.postgresql.util.PSQLState
+import uk.derbyshire.database.schema.DeviceModelTable
 import uk.derbyshire.database.schema.DeviceTable
+import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.domain.devices.Orientation
+import uk.derbyshire.domain.devices.UpdateDeviceFailure
+import uk.derbyshire.domain.devices.UserDevice
 import uk.derbyshire.domain.users.UserId
 import kotlin.uuid.Uuid
 
 class DeviceRepository {
     fun insertDevice(userId: UserId, deviceModelId: Uuid, deviceNickname: String, orientation: Orientation) =
         DeviceTable.insertIgnoreAndGetId {
-            it[this.id] = deviceModelId
             it[this.userId] = userId.value
             it[this.deviceModelId] = deviceModelId
             it[this.deviceNickname] = deviceNickname

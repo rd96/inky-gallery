@@ -1,8 +1,10 @@
 package uk.derbyshire.services
 
+import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Result4k
 import dev.forkhandles.result4k.Success
 import dev.forkhandles.result4k.asFailure
+import dev.forkhandles.result4k.asResultOr
 import dev.forkhandles.result4k.onFailure
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.DeviceModelRepository
@@ -11,6 +13,9 @@ import uk.derbyshire.domain.devices.CreateDeviceModelFailure
 import uk.derbyshire.domain.devices.DeviceModel
 import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.domain.devices.Orientation
+import uk.derbyshire.domain.devices.RegisterDeviceFailure
+import uk.derbyshire.domain.devices.UpdateDeviceFailure
+import uk.derbyshire.domain.devices.UserDevice
 import uk.derbyshire.domain.users.UserId
 import kotlin.uuid.Uuid
 
@@ -20,13 +25,13 @@ class DeviceService(
     private val context: DatabaseContext,
 ) {
     fun createDeviceModel(deviceName: String, landscapeWidthPx: Int, landscapeHeightPx: Int, colourSwatch: List<HexColour>? = null): Result4k<Uuid, CreateDeviceModelFailure> {
+        if (deviceName.length > MAX_DEVICE_MODEL_NAME_LENGTH) return Failure(CreateDeviceModelFailure.MODAL_NAME_TOO_LONG)
         validateDimensions(width = landscapeWidthPx, height = landscapeHeightPx).onFailure { return it }
 
         return context.transaction {
             deviceModelRepository.insertModel(deviceName, landscapeWidthPx, landscapeHeightPx, colourSwatch)
-        }?.let(::Success) ?: CreateDeviceModelFailure.MODEL_NAME_ALREADY_TAKEN.asFailure()
+        }.asResultOr { CreateDeviceModelFailure.MODEL_NAME_ALREADY_TAKEN }
     }
-
 
     fun getDeviceModels(): List<DeviceModel> =
         context.transaction {
@@ -60,6 +65,9 @@ class DeviceService(
         const val MIN_DEVICE_DIMENSION_PX = 100
 
         const val MAX_TOTAL_PIXELS = 10_000_000L
+
+        const val MAX_DEVICE_NICKNAME_LENGTH = 50
+        const val MAX_DEVICE_MODEL_NAME_LENGTH = 50
 
         private fun validateDimensions(width: Int, height: Int): Result4k<Unit, CreateDeviceModelFailure> {
             if (width !in MIN_DEVICE_DIMENSION_PX..MAX_DEVICE_DIMENSION_PX) return CreateDeviceModelFailure.INVALID_WIDTH.asFailure()
