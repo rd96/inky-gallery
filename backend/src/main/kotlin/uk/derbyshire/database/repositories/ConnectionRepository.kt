@@ -24,9 +24,8 @@ class ConnectionRepository {
                 it[this.createdBy] = createdBy.value
             }?.value
 
-    fun deleteConnection(connectionId: Uuid) = transaction {
+    fun deleteConnection(connectionId: Uuid) =
         ConnectionTable.deleteWhere { ConnectionTable.id eq connectionId }
-    }
 
     private fun getConnectionsForUser(userId: UserId, ownerColumn: Column<EntityID<Uuid>>, connectedUserColumn: Column<EntityID<Uuid>>, onlyEnabled: Boolean = false): List<UserConnection> =
         ConnectionTable

@@ -106,17 +106,17 @@ class AuthService(
         ).asSuccess()
     }
 
-    fun generateUserActivationToken(userId: UserId, createdBy: UserId): Result4k<UserPendingActivation, String> {
-        val user = userRepository.findUser(userId) ?: return Failure("User $userId not found")
+    fun generateUserActivationToken(userId: UserId, createdBy: UserId): Result4k<UserPendingActivation, String> =
+        context.transaction {
+            val user = userRepository.findUser(userId) ?: return@transaction Failure("User $userId not found")
 
-        if (user.activationStatus != ActivationStatus.PENDING) return Failure("User $userId is already activated")
-        if (!user.enabled) return Failure("User $userId is not enabled")
+            if (user.activationStatus != ActivationStatus.PENDING) return@transaction Failure("User $userId is already activated")
+            if (!user.enabled) return@transaction Failure("User $userId is not enabled")
 
-        val token = secureTokenService.generate()
-        val tokenHash = secureTokenService.hash(token)
-        val expiresAt = clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER
+            val token = secureTokenService.generate()
+            val tokenHash = secureTokenService.hash(token)
+            val expiresAt = clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER
 
-        transaction {
             activationTokenRepository.revokeActivationTokensForUser(userId, clock.now())
             activationTokenRepository.createActivationToken(
                 userId,
@@ -125,14 +125,13 @@ class AuthService(
                 createdBy,
                 clock.now(),
             )
-        }
 
-        return UserPendingActivation(
-            userId = userId,
-            activationToken = token,
-            expiresAt = expiresAt,
-        ).asSuccess()
-    }
+            UserPendingActivation(
+                userId = userId,
+                activationToken = token,
+                expiresAt = expiresAt,
+            ).asSuccess()
+        }
 
     fun getActivationDetails(activationToken: Secret): Result4k<UserActivationToken, ActivationFailure> {
         val tokenHash = activationToken.use(secureTokenService::hash)
