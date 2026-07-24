@@ -64,7 +64,7 @@ class UserService(
         if (!validUsername(normalisedUsername)) return Failure(CreateAdminFailure.INVALID_USERNAME)
         if (!validDisplayName(normalisedDisplayName)) return Failure(CreateAdminFailure.INVALID_DISPLAY_NAME)
 
-        val passwordHash = validateAndHashPassword(password) ?: return Failure(CreateAdminFailure.INVALID_PASSWORD)
+        val passwordHash = password.use(passwordHasherService::validateAndHashPassword) ?: return Failure(CreateAdminFailure.INVALID_PASSWORD)
 
         return database.transaction {
             if (userRepository.hasAdminUser()) return@transaction Failure(CreateAdminFailure.ADMIN_ALREADY_EXISTS)
@@ -77,27 +77,10 @@ class UserService(
         }
     }
 
-    fun activateUser(userId: UserId, password: Secret): Result4k<Unit, ActivationFailure> {
-        val passwordHash = validateAndHashPassword(password) ?: return Failure(ActivationFailure.PASSWORD_INVALID)
-
-        val success = database.transaction {
-            userRepository.setPendingUserPasswordAndStatusActivated(userId, passwordHash) == 1
-        }
-
-        if (!success) return Failure(ActivationFailure.PENDING_USER_NOT_FOUND)
-
-        return Unit.asSuccess()
-    }
-
     fun searchAllUsers(nameSearch: String?, role: Role?, activationStatus: ActivationStatus?, enabled: Boolean?, page: Int): UserSearchResult =
         database.transaction {
             userRepository.searchUsers(nameSearch, role, activationStatus, enabled, USER_SEARCH_LIMIT, max(1, page))
         }
-
-    private fun validateAndHashPassword(password: Secret): String? = password.use {
-        if (validPassword(it)) passwordHasherService.hash(it)
-        else null
-    }
 
     fun updateUser(userId: UserId, username: String?, displayName: String?, enabled: Boolean?, role: Role?): Result4k<Unit, UpdateUserFailure> {
         val normalisedUsername = username?.let(::normaliseUsername)
@@ -126,9 +109,6 @@ class UserService(
     }
 
     companion object {
-        const val MIN_PASSWORD_LENGTH = 8
-        const val MAX_PASSWORD_LENGTH = 100
-
         const val MAX_USERNAME_LENGTH = 30
 
         const val MIN_DISPLAY_NAME_LENGTH = 2
@@ -152,8 +132,7 @@ class UserService(
         private fun normaliseDisplayName(displayName: String) =
             displayName.trim().replace(DISPLAY_NAME_WHITESPACE_REGEX, " ")
 
-        private fun validPassword(password: String) =
-            password.length in MIN_PASSWORD_LENGTH..MAX_PASSWORD_LENGTH
+
     }
 }
 

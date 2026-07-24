@@ -6,29 +6,23 @@ import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.with
-import uk.derbyshire.api.admin.PostCreateUserResponseDTO.Companion.toDto
-import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
-import uk.derbyshire.domain.auth.UserPendingActivation
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.domain.users.UserId
-import uk.derbyshire.services.AuthService
-import kotlin.time.Instant
+import uk.derbyshire.services.UserService
 
-fun postCreateUser(authService: AuthService) = request@{ request: Request ->
-    val user = CurrentUser(request)
+fun postCreateUser(userService: UserService) = request@{ request: Request ->
     val userRequest = PostCreateUserRequestDTO.lens(request)
 
-    val pendingUserResult = authService.createPendingUser(
+    val pendingUserResult = userService.createPendingUser(
         username = userRequest.username,
         displayName = userRequest.displayName,
         role = userRequest.role,
-        createdBy = user.userId,
     )
 
     when (pendingUserResult) {
-        is Success -> Response(Status.OK).with(PostCreateUserResponseDTO.lens of pendingUserResult.value.toDto())
+        is Success -> Response(Status.OK).with(PostCreateUserResponseDTO.lens of PostCreateUserResponseDTO(pendingUserResult.value))
         is Failure -> pendingUserResult.reason.description.toErrorResponseDTO()
     }
 }
@@ -45,16 +39,8 @@ data class PostCreateUserRequestDTO(
 
 data class PostCreateUserResponseDTO(
     val userId: UserId,
-    val activationToken: String,
-    val expiresAt: Instant,
 ) {
     companion object {
         val lens = Json.autoBody<PostCreateUserResponseDTO>().toLens()
-
-        fun UserPendingActivation.toDto() = PostCreateUserResponseDTO(
-            userId = userId,
-            activationToken = activationToken,
-            expiresAt = expiresAt,
-        )
     }
 }

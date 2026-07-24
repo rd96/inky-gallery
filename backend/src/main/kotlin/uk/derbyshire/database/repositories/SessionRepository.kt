@@ -67,4 +67,8 @@ class SessionRepository {
             it[SessionTable.expiresAt] = expiresAt
         }
     }
+
+    fun deleteSessionsForUser(userId: UserId) {
+        SessionTable.deleteWhere { SessionTable.userId eq userId.value }
+    }
 }

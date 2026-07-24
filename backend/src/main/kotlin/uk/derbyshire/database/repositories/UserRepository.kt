@@ -20,6 +20,7 @@ import org.jetbrains.exposed.v1.jdbc.update
 import org.postgresql.util.PSQLState
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.database.schema.UserTable
+import uk.derbyshire.domain.auth.ActivationFailure
 import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.domain.users.UpdateUserFailure
 import uk.derbyshire.domain.users.UserId
@@ -86,11 +87,15 @@ class UserRepository {
                 )
             }
 
-    fun setPendingUserPasswordAndStatusActivated(userId: UserId, passwordHash: String) =
-        UserTable.update({ (UserTable.id eq userId.value) and (UserTable.activationStatus eq ActivationStatus.PENDING) }) {
+    fun setPendingUserPasswordAndStatusActivated(userId: UserId, passwordHash: String): Result4k<Unit, ActivationFailure> {
+        val result = UserTable.update({ (UserTable.id eq userId.value) and (UserTable.activationStatus eq ActivationStatus.PENDING) }) {
             it[UserTable.passwordHash] = passwordHash
             it[UserTable.activationStatus] = ActivationStatus.ACTIVATED
         }
+
+        return if (result == 0) Failure(ActivationFailure.PENDING_USER_NOT_FOUND)
+        else Success(Unit)
+    }
 
 
     fun searchUsers(nameSearch: String?, role: Role?, activationStatus: ActivationStatus?, enabled: Boolean?, limit: Int, page: Int): UserSearchResult {
@@ -163,6 +168,12 @@ class UserRepository {
         UserTable.select(UserTable.id)
             .where { UserTable.id eq userId.value }
             .any()
+
+    fun disableUser(userId: UserId) {
+        UserTable.update({ UserTable.id eq userId.value }) {
+            it[enabled] = false
+        }
+    }
 
     companion object {
         private fun searchLikePattern(search: String, escapeChar: Char = '!'): LikePattern {

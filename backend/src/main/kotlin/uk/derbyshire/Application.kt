@@ -58,7 +58,7 @@ class Services(repositories: Repositories, database: DatabaseContext, clock: Clo
     private val secureTokenService = SecureTokenService()
 
     val userService = UserService(repositories.userRepository, passwordHasherService, database)
-    val authService = AuthService(repositories.sessionRepository, repositories.activationTokenRepository, repositories.apiKeyRepository, userService, secureTokenService, passwordHasherService, database, clock)
+    val authService = AuthService(repositories.sessionRepository, repositories.activationTokenRepository, repositories.apiKeyRepository, repositories.userRepository, secureTokenService, passwordHasherService, database, clock)
     val connectionService = ConnectionService(repositories.connectionRepository, userService, database)
     val deviceService = DeviceService(repositories.deviceModelRepository, repositories.deviceRepository, database)
 }

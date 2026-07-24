@@ -12,7 +12,7 @@ import uk.derbyshire.services.UserService
 
 fun adminRoutes(userService: UserService, authService: AuthService, connectionService: ConnectionService, deviceService: DeviceService) = routes(
     "/users" bind Method.QUERY to queryUsers(userService),
-    "/users" bind Method.POST to postCreateUser(authService),
+    "/users" bind Method.POST to postCreateUser(userService),
     "/users/$USER_ID" bind Method.GET to getUser(userService),
     "/users/$USER_ID" bind Method.PATCH to patchUser(userService),
 

@@ -24,6 +24,6 @@ fun apiRoutes(
 ) = routes(
     "/auth" bind authRoutes(authChecker, authService, serverConfig),
     "/admin" bind authChecker.requireAdmin().then(adminRoutes(userService, authService, connectionService, deviceService)),
-    "/me" bind authChecker.requireUser().then(userRoutes(connectionService, deviceService, userService)),
+    "/me" bind authChecker.requireUser().then(userRoutes(connectionService, deviceService, userService, authService, serverConfig)),
     "/search" bind authChecker.requireUser().then(searchRoutes(deviceService))
 )
