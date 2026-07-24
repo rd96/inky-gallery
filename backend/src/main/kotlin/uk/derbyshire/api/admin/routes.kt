@@ -14,9 +14,9 @@ fun adminRoutes(userService: UserService, authService: AuthService, connectionSe
     "/users" bind Method.QUERY to queryUsers(userService),
     "/users" bind Method.POST to postCreateUser(authService),
     "/users/$USER_ID" bind Method.GET to getUser(userService),
-    "/users/$USER_ID" bind Method.PUT to patchUser(userService),
+    "/users/$USER_ID" bind Method.PATCH to patchUser(userService),
 
-    "/users/$USER_ID/activation-tokens" bind Method.POST to postCreateUserActivationToken(authService),
+    "/users/$USER_ID/activation-tokens" bind Method.PUT to putGenerateUserActivationToken(authService),
     "/users/$USER_ID/activation-tokens" bind Method.DELETE to deleteUserActivationTokens(authService),
 
     "/users/$USER_ID/connections" bind Method.GET to getUserConnections(connectionService),
