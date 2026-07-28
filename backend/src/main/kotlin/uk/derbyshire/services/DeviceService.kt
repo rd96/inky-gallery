@@ -16,6 +16,9 @@ import uk.derbyshire.domain.devices.Orientation
 import uk.derbyshire.domain.devices.RegisterDeviceFailure
 import uk.derbyshire.domain.devices.UpdateDeviceFailure
 import uk.derbyshire.domain.devices.UserDevice
+import uk.derbyshire.domain.drawings.DrawingLimits.MAX_DIMENSION_PX
+import uk.derbyshire.domain.drawings.DrawingLimits.MAX_TOTAL_PIXELS
+import uk.derbyshire.domain.drawings.DrawingLimits.MIN_DIMENSION_PX
 import uk.derbyshire.domain.users.UserId
 import kotlin.uuid.Uuid
 
@@ -54,24 +57,18 @@ class DeviceService(
         }
     }
 
-
     fun getDevicesForUser(userId: UserId): List<UserDevice> =
         context.transaction {
             deviceRepository.getDevicesForUser(userId)
         }
 
     companion object {
-        const val MAX_DEVICE_DIMENSION_PX = 10_000
-        const val MIN_DEVICE_DIMENSION_PX = 100
-
-        const val MAX_TOTAL_PIXELS = 10_000_000L
-
         const val MAX_DEVICE_NICKNAME_LENGTH = 50
         const val MAX_DEVICE_MODEL_NAME_LENGTH = 50
 
         private fun validateDimensions(width: Int, height: Int): Result4k<Unit, CreateDeviceModelFailure> {
-            if (width !in MIN_DEVICE_DIMENSION_PX..MAX_DEVICE_DIMENSION_PX) return CreateDeviceModelFailure.INVALID_WIDTH.asFailure()
-            if (height !in MIN_DEVICE_DIMENSION_PX..MAX_DEVICE_DIMENSION_PX) return CreateDeviceModelFailure.INVALID_HEIGHT.asFailure()
+            if (width !in MIN_DIMENSION_PX..MAX_DIMENSION_PX) return CreateDeviceModelFailure.INVALID_WIDTH.asFailure()
+            if (height !in MIN_DIMENSION_PX..MAX_DIMENSION_PX) return CreateDeviceModelFailure.INVALID_HEIGHT.asFailure()
             if (width < height) return CreateDeviceModelFailure.DIMENSIONS_NOT_IN_LANDSCAPE.asFailure()
             if (width.toLong() * height > MAX_TOTAL_PIXELS) return CreateDeviceModelFailure.TOTAL_SIZE_TOO_LARGE.asFailure()
             return Success(Unit)
