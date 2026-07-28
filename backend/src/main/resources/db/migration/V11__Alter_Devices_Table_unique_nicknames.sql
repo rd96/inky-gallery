@@ -1,0 +1,1 @@
+ALTER TABLE devices ADD CONSTRAINT unique_user_id_device_nickname UNIQUE (user_id, device_nickname);
