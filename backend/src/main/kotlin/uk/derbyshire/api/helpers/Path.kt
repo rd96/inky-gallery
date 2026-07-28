@@ -17,4 +17,8 @@ object Path {
     private const val DEVICE_ID_PARAM_NAME = "deviceId"
     const val DEVICE_ID = "{$DEVICE_ID_PARAM_NAME}"
     val deviceId = Path4k.string().map(Uuid::parse).of(DEVICE_ID_PARAM_NAME)
+
+    private const val DRAWING_ID_PARAM_NAME = "drawingId"
+    const val DRAWING_ID = "{$DRAWING_ID_PARAM_NAME}"
+    val drawingId = Path4k.string().map(Uuid::parse).of(DRAWING_ID_PARAM_NAME)
 }

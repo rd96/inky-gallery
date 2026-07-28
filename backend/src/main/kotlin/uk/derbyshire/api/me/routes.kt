@@ -5,12 +5,15 @@ import org.http4k.routing.bind
 import org.http4k.routing.routes
 import uk.derbyshire.ServerConfig
 import uk.derbyshire.api.helpers.Path.DEVICE_ID
+import uk.derbyshire.api.helpers.Path.DRAWING_ID
+import uk.derbyshire.api.helpers.Path.USER_ID
 import uk.derbyshire.services.AuthService
 import uk.derbyshire.services.ConnectionService
 import uk.derbyshire.services.DeviceService
+import uk.derbyshire.services.DrawingService
 import uk.derbyshire.services.UserService
 
-fun userRoutes(connectionService: ConnectionService, deviceService: DeviceService, userService: UserService, authService: AuthService, serverConfig: ServerConfig) = routes(
+fun userRoutes(connectionService: ConnectionService, deviceService: DeviceService, userService: UserService, authService: AuthService, drawingService: DrawingService, serverConfig: ServerConfig) = routes(
     "/connections" bind Method.GET to getConnections(connectionService),
     "/devices" bind Method.GET to getMyDevices(deviceService),
     "/devices" bind Method.POST to postRegisterDevice(deviceService),
@@ -19,4 +22,10 @@ fun userRoutes(connectionService: ConnectionService, deviceService: DeviceServic
 //
     "" bind Method.PATCH to patchOwnUser(userService),
     "" bind Method.DELETE to deleteOwnUser(authService, serverConfig),
+
+//    "/connections/recipients/$USER_ID/devices" bind Method.GET to getRecipientDevices(authService, serverConfig),
+    "/drawings" bind Method.GET to getMyDrawings(drawingService),
+    "/drawings" bind Method.POST to postCreateDrawing(drawingService),
+
+    "/drawings/$DRAWING_ID" bind Method.GET to getDrawing(drawingService),
 )

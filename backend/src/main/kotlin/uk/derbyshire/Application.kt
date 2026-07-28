@@ -10,11 +10,14 @@ import uk.derbyshire.database.repositories.ConnectionRepository
 import uk.derbyshire.database.repositories.DeviceApiKeyRepository
 import uk.derbyshire.database.repositories.DeviceModelRepository
 import uk.derbyshire.database.repositories.DeviceRepository
+import uk.derbyshire.database.repositories.DrawingRepository
 import uk.derbyshire.database.repositories.SessionRepository
 import uk.derbyshire.database.repositories.UserRepository
 import uk.derbyshire.services.AuthService
 import uk.derbyshire.services.ConnectionService
 import uk.derbyshire.services.DeviceService
+import uk.derbyshire.services.DrawingService
+import uk.derbyshire.services.ImageProcessingService
 import uk.derbyshire.services.UserService
 import kotlin.time.Clock
 
@@ -51,14 +54,17 @@ class Repositories {
     val deviceModelRepository = DeviceModelRepository()
     val deviceRepository = DeviceRepository()
     val apiKeyRepository = DeviceApiKeyRepository()
+    val drawingRepository = DrawingRepository()
 }
 
 class Services(repositories: Repositories, database: DatabaseContext, clock: Clock) {
     private val passwordHasherService = PasswordHasherService()
     private val secureTokenService = SecureTokenService()
+    private val imageProcessingService = ImageProcessingService()
 
     val userService = UserService(repositories.userRepository, passwordHasherService, database)
     val authService = AuthService(repositories.sessionRepository, repositories.activationTokenRepository, repositories.apiKeyRepository, repositories.userRepository, secureTokenService, passwordHasherService, database, clock)
     val connectionService = ConnectionService(repositories.connectionRepository, userService, database)
     val deviceService = DeviceService(repositories.deviceModelRepository, repositories.deviceRepository, database)
+    val drawingService = DrawingService(imageProcessingService, repositories.drawingRepository, database)
 }

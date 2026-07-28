@@ -11,6 +11,7 @@ class Tables {
             ConnectionTable,
             DeviceModelTable,
             DeviceTable,
+            DrawingTable,
         )
     }
 }
