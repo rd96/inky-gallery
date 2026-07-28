@@ -101,6 +101,37 @@
   cursor: pointer;
 }
 
+.save-button {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--inky-color-green);
+  color: #ffffff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.save-button:hover:not(:disabled) {
+  background: var(--inky-color-blue);
+}
+
+.save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.draw-save-error {
+  margin: 0;
+  color: var(--inky-color-red);
+  font-size: 0.85rem;
+}
+
+.draw-save-success {
+  margin: 0;
+  color: var(--inky-color-green);
+  font-size: 0.85rem;
+}
+
 .draw-canvas {
   border: 1px solid var(--inky-color-blue);
   border-radius: 12px;

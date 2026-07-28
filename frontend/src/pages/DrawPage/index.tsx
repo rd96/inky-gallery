@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from 'react-sketch-canvas'
+import { DrawingsApi } from '../../features/drawings/api/drawingsApi'
+import { DRAWING_CANVAS_HEIGHT_PX, DRAWING_CANVAS_WIDTH_PX } from '../../features/drawings/canvasSize'
+import { getDraftStorageKey, loadDraftPaths } from '../../features/drawings/draftStorage'
 import { useAuth } from '../../features/auth/useAuth'
+import { formatApiError } from '../../shared/api/ApiError'
 import { INKY_PALETTE } from './inkyPalette'
 import './DrawPage.css'
 
@@ -15,30 +19,17 @@ const MIN_STROKE_WIDTH = 1
 const MAX_STROKE_WIDTH = 50
 const BLANK_HISTORY: History = { snapshots: [[]], index: 0 }
 
-// Namespaced per user so a shared device keeps everyone's in-progress
-// drawing separate - switching users just switches which key gets read,
-// with no need to clear anything on logout.
-function getStorageKey(userId: string) {
-  return `inky-gallery:draw-in-progress:${userId}`
-}
-
-function loadStoredHistory(storageKey: string): History {
-  const saved = localStorage.getItem(storageKey)
-  if (!saved) return BLANK_HISTORY
-
-  try {
-    const paths: CanvasPath[] = JSON.parse(saved)
-    return paths.length > 0 ? { snapshots: [paths], index: 0 } : BLANK_HISTORY
-  } catch {
-    return BLANK_HISTORY
-  }
+function loadStoredHistory(userId: string): History {
+  const paths = loadDraftPaths(userId)
+  return paths.length > 0 ? { snapshots: [paths], index: 0 } : BLANK_HISTORY
 }
 
 export default function DrawPage() {
   const { auth } = useAuth()
   // DrawPage only ever renders inside RequireAuth, so this is always
   // populated in practice; the fallback just satisfies the type checker.
-  const storageKey = getStorageKey(auth.status === 'authenticated' ? auth.user.userId : '')
+  const userId = auth.status === 'authenticated' ? auth.user.userId : ''
+  const storageKey = getDraftStorageKey(userId)
 
   const canvasRef = useRef<ReactSketchCanvasRef>(null)
   const [mode, setMode] = useState<PaletteMode>('inky')
@@ -51,7 +42,10 @@ export default function DrawPage() {
   // own the history ourselves: every completed stroke snapshots the full
   // path list via exportPaths(), and undo/redo replay a snapshot via
   // resetCanvas() + loadPaths().
-  const [history, setHistory] = useState<History>(() => loadStoredHistory(storageKey))
+  const [history, setHistory] = useState<History>(() => loadStoredHistory(userId))
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   // Restore into the canvas itself once on mount - the initial history
   // state above already has the saved paths, but the canvas needs its ref
@@ -83,6 +77,8 @@ export default function DrawPage() {
       snapshots: [...snapshots.slice(0, index + 1), paths],
       index: index + 1,
     }))
+    setSaved(false)
+    setSaveError(null)
   }
 
   function restoreSnapshot(targetIndex: number) {
@@ -108,6 +104,33 @@ export default function DrawPage() {
       snapshots: [...snapshots.slice(0, index + 1), []],
       index: index + 1,
     }))
+  }
+
+  async function handleSave() {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    setSaving(true)
+    setSaved(false)
+    setSaveError(null)
+
+    try {
+      // Without explicit dimensions, exportImage multiplies by
+      // window.devicePixelRatio, so a Retina display would save an
+      // 1600x960 PNG for an 800x480 canvas. Pin it to the canvas's
+      // actual size.
+      const dataUrl = await canvas.exportImage('png', {
+        width: DRAWING_CANVAS_WIDTH_PX,
+        height: DRAWING_CANVAS_HEIGHT_PX,
+      })
+      const png = await (await fetch(dataUrl)).blob()
+      await DrawingsApi.saveDrawing(png)
+      setSaved(true)
+    } catch (cause) {
+      setSaveError(formatApiError(cause))
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -204,13 +227,30 @@ export default function DrawPage() {
             Clear
           </button>
         </div>
+
+        <div className="toolbar-row">
+          <button
+            type="button"
+            className="save-button"
+            onClick={() => void handleSave()}
+            disabled={saving}
+          >
+            {saving ? 'Saving…' : 'Save drawing'}
+          </button>
+          {saveError && (
+            <p className="draw-save-error" role="alert">
+              {saveError}
+            </p>
+          )}
+          {saved && <p className="draw-save-success">Saved!</p>}
+        </div>
       </div>
 
       <ReactSketchCanvas
         ref={canvasRef}
         className="draw-canvas"
-        width="800px"
-        height="480px"
+        width={`${DRAWING_CANVAS_WIDTH_PX}px`}
+        height={`${DRAWING_CANVAS_HEIGHT_PX}px`}
         strokeWidth={strokeWidth}
         eraserWidth={strokeWidth}
         strokeColor={strokeColor}

@@ -70,4 +70,32 @@ export const ApiClient = {
       body: JSON.stringify(body),
     })
   },
+
+  postBinary<TResponse>(
+    path: string,
+    body: Blob,
+    contentType: string,
+  ): Promise<TResponse> {
+    return request<TResponse>(path, {
+      method: 'POST',
+      headers: { 'Content-Type': contentType },
+      body,
+    })
+  },
+
+  async getBlob(path: string): Promise<Blob> {
+    const response = await fetch(path, { credentials: 'include' })
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null)
+      const message =
+        typeof body?.error === 'string'
+          ? body.error
+          : `Request failed with status ${response.status}`
+
+      throw new ApiError(response.status, message)
+    }
+
+    return response.blob()
+  },
 }
