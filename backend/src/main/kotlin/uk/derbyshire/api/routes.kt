@@ -12,6 +12,7 @@ import uk.derbyshire.api.search.searchRoutes
 import uk.derbyshire.services.AuthService
 import uk.derbyshire.services.ConnectionService
 import uk.derbyshire.services.DeviceService
+import uk.derbyshire.services.DrawingService
 import uk.derbyshire.services.UserService
 
 fun apiRoutes(
@@ -20,10 +21,11 @@ fun apiRoutes(
     authService: AuthService,
     connectionService: ConnectionService,
     deviceService: DeviceService,
+    drawingService: DrawingService,
     serverConfig: ServerConfig,
 ) = routes(
     "/auth" bind authRoutes(authChecker, authService, serverConfig),
     "/admin" bind authChecker.requireAdmin().then(adminRoutes(userService, authService, connectionService, deviceService)),
-    "/me" bind authChecker.requireUser().then(userRoutes(connectionService, deviceService, userService, authService, serverConfig)),
+    "/me" bind authChecker.requireUser().then(userRoutes(connectionService, deviceService, userService, authService, drawingService, serverConfig)),
     "/search" bind authChecker.requireUser().then(searchRoutes(deviceService))
 )
