@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import { Navigate, useParams } from 'react-router-dom'
 import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from 'react-sketch-canvas'
 import { DrawingsApi } from '../../features/drawings/api/drawingsApi'
 import { DRAWING_CANVAS_HEIGHT_PX, DRAWING_CANVAS_WIDTH_PX } from '../../features/drawings/canvasSize'
-import { getDraftStorageKey, loadDraftPaths } from '../../features/drawings/draftStorage'
+import { DRAFT_SLOT_COUNT, getDraftStorageKey, loadDraftPaths } from '../../features/drawings/draftStorage'
 import { useAuth } from '../../features/auth/useAuth'
 import { formatApiError } from '../../shared/api/ApiError'
 import { INKY_PALETTE } from './inkyPalette'
@@ -19,17 +20,43 @@ const MIN_STROKE_WIDTH = 1
 const MAX_STROKE_WIDTH = 50
 const BLANK_HISTORY: History = { snapshots: [[]], index: 0 }
 
-function loadStoredHistory(userId: string): History {
-  const paths = loadDraftPaths(userId)
+function loadStoredHistory(userId: string, slot: number): History {
+  const paths = loadDraftPaths(userId, slot)
   return paths.length > 0 ? { snapshots: [paths], index: 0 } : BLANK_HISTORY
 }
 
+function isValidSlot(parsed: number): boolean {
+  return Number.isInteger(parsed) && parsed >= 0 && parsed < DRAFT_SLOT_COUNT
+}
+
+// Keyed by slot in the route below so switching drafts (e.g. via browser
+// back/forward between two /draw/:slot URLs) always remounts fresh instead
+// of reusing state loaded for a different slot.
 export default function DrawPage() {
+  const { slot: slotParam } = useParams()
+  const slot = Number(slotParam)
+
+  // An out-of-range slot (e.g. /draw/4) redirects to the canonical URL
+  // instead of silently rendering slot 0 under a mismatched address - that
+  // would risk drawing into (and overwriting) slot 0 without any sign the
+  // requested slot wasn't valid.
+  if (!isValidSlot(slot)) {
+    return <Navigate to="/draw/0" replace />
+  }
+
+  return <DrawCanvas key={slot} slot={slot} />
+}
+
+type DrawCanvasProps = {
+  slot: number
+}
+
+function DrawCanvas({ slot }: DrawCanvasProps) {
   const { auth } = useAuth()
   // DrawPage only ever renders inside RequireAuth, so this is always
   // populated in practice; the fallback just satisfies the type checker.
   const userId = auth.status === 'authenticated' ? auth.user.userId : ''
-  const storageKey = getDraftStorageKey(userId)
+  const storageKey = getDraftStorageKey(userId, slot)
 
   const canvasRef = useRef<ReactSketchCanvasRef>(null)
   const [mode, setMode] = useState<PaletteMode>('inky')
@@ -42,7 +69,7 @@ export default function DrawPage() {
   // own the history ourselves: every completed stroke snapshots the full
   // path list via exportPaths(), and undo/redo replay a snapshot via
   // resetCanvas() + loadPaths().
-  const [history, setHistory] = useState<History>(() => loadStoredHistory(userId))
+  const [history, setHistory] = useState<History>(() => loadStoredHistory(userId, slot))
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -98,12 +125,16 @@ export default function DrawPage() {
     restoreSnapshot(history.index + 1)
   }
 
-  function handleClear() {
+  function resetToBlank() {
     canvasRef.current?.resetCanvas()
     setHistory(({ snapshots, index }) => ({
       snapshots: [...snapshots.slice(0, index + 1), []],
       index: index + 1,
     }))
+  }
+
+  function handleClear() {
+    resetToBlank()
   }
 
   async function handleSave() {
@@ -126,6 +157,8 @@ export default function DrawPage() {
       const png = await (await fetch(dataUrl)).blob()
       await DrawingsApi.saveDrawing(png)
       setSaved(true)
+      // The canvas is now a saved drawing, not a draft - free up this slot.
+      resetToBlank()
     } catch (cause) {
       setSaveError(formatApiError(cause))
     } finally {

@@ -53,6 +53,16 @@
   background: var(--inky-color-blue);
 }
 
+.gallery-new-drawing--disabled {
+  background: var(--inky-color-black);
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.gallery-new-drawing--disabled:hover {
+  background: var(--inky-color-black);
+}
+
 .gallery-error {
   color: var(--inky-color-red);
   margin-bottom: 1rem;

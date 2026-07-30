@@ -4,10 +4,11 @@ import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from 'r
 import { DRAWING_CANVAS_HEIGHT_PX, DRAWING_CANVAS_WIDTH_PX } from '../../features/drawings/canvasSize'
 
 type DraftCardProps = {
+  slot: number
   paths: CanvasPath[]
 }
 
-export default function DraftCard({ paths }: DraftCardProps) {
+export default function DraftCard({ slot, paths }: DraftCardProps) {
   const canvasRef = useRef<ReactSketchCanvasRef>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
 
@@ -35,7 +36,7 @@ export default function DraftCard({ paths }: DraftCardProps) {
 
   return (
     <Link
-      to="/draw"
+      to={`/draw/${slot}`}
       className="draft-card"
       style={{ aspectRatio: `${DRAWING_CANVAS_WIDTH_PX} / ${DRAWING_CANVAS_HEIGHT_PX}` }}
     >

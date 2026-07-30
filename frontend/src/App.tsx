@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import ActivatePage from './pages/ActivatePage'
 import GalleryPage from './pages/GalleryPage'
@@ -30,7 +30,8 @@ export default function App() {
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<GalleryPage />} />
-          <Route path="/draw" element={<DrawPage />} />
+          <Route path="/draw" element={<Navigate to="/draw/0" replace />} />
+          <Route path="/draw/:slot" element={<DrawPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route element={<RequireAdmin />}>
             <Route element={<AdminLayout />}>

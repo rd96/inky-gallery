@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { DrawingsApi } from '../../features/drawings/api/drawingsApi'
-import { loadDraftPaths } from '../../features/drawings/draftStorage'
+import { findEmptyDraftSlot, loadAllDrafts } from '../../features/drawings/draftStorage'
 import type { DrawingMetadata } from '../../features/drawings/types'
 import { useAuth } from '../../features/auth/useAuth'
 import { formatApiError } from '../../shared/api/ApiError'
@@ -14,7 +14,8 @@ export default function GalleryPage() {
   // populated in practice; the fallback just satisfies the type checker.
   const userId = auth.status === 'authenticated' ? auth.user.userId : ''
 
-  const [draftPaths] = useState(() => loadDraftPaths(userId))
+  const [drafts] = useState(() => loadAllDrafts(userId))
+  const [emptySlot] = useState(() => findEmptyDraftSlot(userId))
   const [drawings, setDrawings] = useState<DrawingMetadata[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -37,11 +38,11 @@ export default function GalleryPage() {
     void loadDrawings()
   }, [loadDrawings])
 
-  if (!loading && !error && draftPaths.length === 0 && drawings.length === 0) {
+  if (!loading && !error && drafts.length === 0 && drawings.length === 0) {
     return (
       <div className="gallery-empty">
         <p className="gallery-empty-message">You don't have any drawings yet.</p>
-        <Link to="/draw" className="gallery-empty-cta">
+        <Link to={`/draw/${emptySlot ?? 0}`} className="gallery-empty-cta">
           Start new drawing
         </Link>
       </div>
@@ -52,9 +53,18 @@ export default function GalleryPage() {
     <div className="gallery-page">
       <div className="gallery-toolbar">
         <h1>Gallery</h1>
-        <Link to="/draw" className="gallery-new-drawing">
-          New drawing
-        </Link>
+        {emptySlot !== null ? (
+          <Link to={`/draw/${emptySlot}`} className="gallery-new-drawing">
+            New drawing
+          </Link>
+        ) : (
+          <span
+            className="gallery-new-drawing gallery-new-drawing--disabled"
+            title="All 3 draft slots are full - finish or clear one first"
+          >
+            New drawing
+          </span>
+        )}
       </div>
 
       {error && (
@@ -63,7 +73,7 @@ export default function GalleryPage() {
         </p>
       )}
 
-      <DrawingGrid draftPaths={draftPaths} drawings={drawings} />
+      <DrawingGrid drafts={drafts} drawings={drawings} />
 
       {loading && <p>Loading…</p>}
     </div>
