@@ -2,6 +2,7 @@ package uk.derbyshire.database.repositories
 
 import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Success
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
@@ -54,6 +55,7 @@ class DeviceRepository {
                 DeviceTable.enabled,
             )
             .where { DeviceTable.userId eq userId.value }
+            .orderBy(DeviceTable.createdAt, SortOrder.ASC)
             .map {
                 UserDevice(
                     deviceId = it[DeviceTable.id].value,
