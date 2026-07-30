@@ -27,17 +27,16 @@ import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.domain.users.UserLoginDetail
 import uk.derbyshire.domain.users.UserSearchResult
 import uk.derbyshire.domain.users.UserSummary
-import kotlin.uuid.Uuid
 
 class UserRepository {
-    fun createUser(username: String, passwordHash: String?, displayName: String, role: Role, activationStatus: ActivationStatus): Uuid? =
+    fun createUser(username: String, passwordHash: String?, displayName: String, role: Role, activationStatus: ActivationStatus): UserId? =
         UserTable.insertIgnoreAndGetId {
             it[this.username] = username
             it[this.passwordHash] = passwordHash
             it[this.displayName] = displayName
             it[this.role] = role
             it[this.activationStatus] = activationStatus
-        }?.value
+        }?.let { UserId(it.value) }
 
     fun hasAdminUser(): Boolean =
         UserTable

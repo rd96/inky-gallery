@@ -9,13 +9,13 @@ import org.http4k.core.Status.Companion.BAD_REQUEST
 import org.http4k.core.Status.Companion.NOT_FOUND
 import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
-import uk.derbyshire.api.helpers.Path
+import uk.derbyshire.api.helpers.PathParams.userId
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.domain.users.UpdateUserFailure
 import uk.derbyshire.services.UserService
 
 fun patchUser(userService: UserService) = { request: Request ->
-    val userId = Path.userId(request)
+    val userId = userId(request)
     val patchUserRequest = PatchUserRequestDTO.lens(request)
 
     val result = userService.updateUser(

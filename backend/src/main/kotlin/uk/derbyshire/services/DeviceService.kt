@@ -10,7 +10,9 @@ import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.DeviceModelRepository
 import uk.derbyshire.database.repositories.DeviceRepository
 import uk.derbyshire.domain.devices.CreateDeviceModelFailure
+import uk.derbyshire.domain.devices.DeviceId
 import uk.derbyshire.domain.devices.DeviceModel
+import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.domain.devices.Orientation
 import uk.derbyshire.domain.devices.RegisterDeviceFailure
@@ -20,14 +22,13 @@ import uk.derbyshire.domain.drawings.DrawingLimits.MAX_DIMENSION_PX
 import uk.derbyshire.domain.drawings.DrawingLimits.MAX_TOTAL_PIXELS
 import uk.derbyshire.domain.drawings.DrawingLimits.MIN_DIMENSION_PX
 import uk.derbyshire.domain.users.UserId
-import kotlin.uuid.Uuid
 
 class DeviceService(
     private val deviceModelRepository: DeviceModelRepository,
     private val deviceRepository: DeviceRepository,
     private val context: DatabaseContext,
 ) {
-    fun createDeviceModel(deviceName: String, landscapeWidthPx: Int, landscapeHeightPx: Int, colourSwatch: List<HexColour>? = null): Result4k<Uuid, CreateDeviceModelFailure> {
+    fun createDeviceModel(deviceName: String, landscapeWidthPx: Int, landscapeHeightPx: Int, colourSwatch: List<HexColour>? = null): Result4k<DeviceModelId, CreateDeviceModelFailure> {
         if (deviceName.length > MAX_DEVICE_MODEL_NAME_LENGTH) return Failure(CreateDeviceModelFailure.MODAL_NAME_TOO_LONG)
         validateDimensions(width = landscapeWidthPx, height = landscapeHeightPx).onFailure { return it }
 
@@ -41,7 +42,7 @@ class DeviceService(
             deviceModelRepository.getDeviceModels()
         }
 
-    fun registerDevice(userId: UserId, deviceModelId: Uuid, deviceNickname: String, orientation: Orientation): Result4k<Uuid, RegisterDeviceFailure> {
+    fun registerDevice(userId: UserId, deviceModelId: DeviceModelId, deviceNickname: String, orientation: Orientation): Result4k<DeviceId, RegisterDeviceFailure> {
         if (deviceNickname.length > MAX_DEVICE_NICKNAME_LENGTH) return Failure(RegisterDeviceFailure.NICKNAME_TOO_LONG)
 
         return context.transaction {
@@ -49,7 +50,7 @@ class DeviceService(
         }.asResultOr { RegisterDeviceFailure.NICKNAME_ALREADY_IN_USE_FOR_USER }
     }
 
-    fun updateDevice(userId: UserId, deviceId: Uuid, deviceNickname: String?, orientation: Orientation?, enabled: Boolean?): Result4k<Unit, UpdateDeviceFailure> {
+    fun updateDevice(userId: UserId, deviceId: DeviceId, deviceNickname: String?, orientation: Orientation?, enabled: Boolean?): Result4k<Unit, UpdateDeviceFailure> {
         if (deviceNickname != null && deviceNickname.length > MAX_DEVICE_NICKNAME_LENGTH) return Failure(UpdateDeviceFailure.DEVICE_NICKNAME_TOO_LONG)
 
         return context.transaction {

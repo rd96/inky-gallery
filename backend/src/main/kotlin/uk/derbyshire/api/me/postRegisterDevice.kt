@@ -8,9 +8,9 @@ import org.http4k.core.Status
 import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
+import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.Orientation
 import uk.derbyshire.services.DeviceService
-import kotlin.uuid.Uuid
 
 fun postRegisterDevice(deviceService: DeviceService) = { request: Request ->
     val currentUser = CurrentUser(request)
@@ -32,7 +32,7 @@ fun postRegisterDevice(deviceService: DeviceService) = { request: Request ->
 
 data class PostRegisterDeviceRequestDTO(
     val deviceNickname: String,
-    val deviceModelId: Uuid,
+    val deviceModelId: DeviceModelId,
     val orientation: Orientation,
 ) {
     companion object {

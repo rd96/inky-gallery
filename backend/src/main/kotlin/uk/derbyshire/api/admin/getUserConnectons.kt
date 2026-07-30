@@ -10,15 +10,15 @@ import uk.derbyshire.api.admin.GetUserConnectionsResponseDTO.Companion.toDto
 import uk.derbyshire.api.admin.UserConnectionDTO.Companion.toDto
 import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
-import uk.derbyshire.api.helpers.Path
+import uk.derbyshire.api.helpers.PathParams.userId
+import uk.derbyshire.domain.connections.ConnectionId
 import uk.derbyshire.domain.connections.UserConnection
 import uk.derbyshire.domain.connections.UserConnections
 import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.services.ConnectionService
-import kotlin.uuid.Uuid
 
 fun getUserConnections(connectionService: ConnectionService) = request@{ request: Request ->
-    val userId = Path.userId(request)
+    val userId = userId(request)
 
     when (val connections = connectionService.getAllConnectionsForUser(userId)) {
         is Success -> Response(Status.OK).with(GetUserConnectionsResponseDTO.lens of connections.value.toDto())
@@ -41,7 +41,7 @@ data class GetUserConnectionsResponseDTO(
 }
 
 data class UserConnectionDTO(
-    val connectionId: Uuid,
+    val connectionId: ConnectionId,
     val userId: UserId,
     val username: String,
     val displayName: String,

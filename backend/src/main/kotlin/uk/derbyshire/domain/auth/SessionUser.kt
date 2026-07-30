@@ -4,10 +4,9 @@ import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.domain.users.UserId
 import kotlin.time.Instant
-import kotlin.uuid.Uuid
 
 data class SessionUser(
-    val sessionId: Uuid,
+    val sessionId: SessionId,
     val expiresAt: Instant,
     val lastSeen: Instant,
     val userId: UserId,

@@ -8,13 +8,13 @@ import org.http4k.core.Status
 import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
-import uk.derbyshire.api.helpers.Path
+import uk.derbyshire.api.helpers.PathParams.deviceId
 import uk.derbyshire.domain.devices.Orientation
 import uk.derbyshire.services.DeviceService
 
 fun patchOwnDevice(deviceService: DeviceService) = { request: Request ->
     val currentUser = CurrentUser(request)
-    val deviceId = Path.deviceId(request)
+    val deviceId = deviceId(request)
 
     val patchRequest = PatchOwnDeviceRequestDTO.lens(request)
 

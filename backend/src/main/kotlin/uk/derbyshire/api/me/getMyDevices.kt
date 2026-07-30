@@ -7,11 +7,11 @@ import org.http4k.core.with
 import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.api.me.GetMyDevicesResponseDTO.Companion.toDto
+import uk.derbyshire.domain.devices.DeviceId
 import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.domain.devices.Orientation
 import uk.derbyshire.domain.devices.UserDevice
 import uk.derbyshire.services.DeviceService
-import kotlin.uuid.Uuid
 
 fun getMyDevices(deviceService: DeviceService) = { request: Request ->
     val currentUser = CurrentUser(request)
@@ -22,7 +22,7 @@ fun getMyDevices(deviceService: DeviceService) = { request: Request ->
 }
 
 data class GetMyDevicesResponseDTO(
-    val deviceId: Uuid,
+    val deviceId: DeviceId,
     val modelName: String,
     val deviceNickname: String,
     val widthPx: Int,

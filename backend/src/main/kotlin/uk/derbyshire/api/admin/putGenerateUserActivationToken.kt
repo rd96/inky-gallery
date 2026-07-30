@@ -10,7 +10,7 @@ import uk.derbyshire.api.admin.PutGenerateUserActivationTokenResponseDTO.Compani
 import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.filters.ErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
-import uk.derbyshire.api.helpers.Path
+import uk.derbyshire.api.helpers.PathParams.userId
 import uk.derbyshire.domain.auth.UserPendingActivation
 import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.services.AuthService
@@ -18,7 +18,7 @@ import kotlin.time.Instant
 
 fun putGenerateUserActivationToken(authService: AuthService) = { request: Request ->
     val user = CurrentUser(request)
-    val userId = Path.userId(request)
+    val userId = userId(request)
 
     val pendingUserResult = authService.generateUserActivationToken(
         userId = userId,

@@ -7,9 +7,9 @@ import org.http4k.core.with
 import uk.derbyshire.api.search.GetDeviceModelsResponseDTO.Companion.toDto
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.domain.devices.DeviceModel
+import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.services.DeviceService
-import kotlin.uuid.Uuid
 
 fun getDeviceModels(deviceService: DeviceService): HttpHandler = {
     val devices = deviceService.getDeviceModels()
@@ -18,7 +18,7 @@ fun getDeviceModels(deviceService: DeviceService): HttpHandler = {
 }
 
 data class GetDeviceModelsResponseDTO(
-    val deviceModelId: Uuid,
+    val deviceModelId: DeviceModelId,
     val deviceName: String,
     val landscapeWidthPx: Int,
     val landscapeHeightPx: Int,

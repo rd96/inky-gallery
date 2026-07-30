@@ -7,10 +7,10 @@ import org.http4k.core.with
 import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.api.me.GetMyDrawingsResponseDTO.Companion.toDto
+import uk.derbyshire.domain.drawings.DrawingId
 import uk.derbyshire.domain.drawings.DrawingMetadata
 import uk.derbyshire.services.DrawingService
 import kotlin.time.Instant
-import kotlin.uuid.Uuid
 
 fun getMyDrawings(drawingService: DrawingService) = { request: Request ->
     val currentUser = CurrentUser(request)
@@ -21,7 +21,7 @@ fun getMyDrawings(drawingService: DrawingService) = { request: Request ->
 }
 
 data class GetMyDrawingsResponseDTO(
-    val drawingId: Uuid,
+    val drawingId: DrawingId,
     val widthPx: Int,
     val heightPx: Int,
     val createdAt: Instant,

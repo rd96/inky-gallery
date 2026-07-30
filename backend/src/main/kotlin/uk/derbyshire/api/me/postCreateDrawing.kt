@@ -12,8 +12,8 @@ import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.api.helpers.RequestMediaChecks.hasContentType
 import uk.derbyshire.api.helpers.RequestMediaChecks.readBodyUpTo
+import uk.derbyshire.domain.drawings.DrawingId
 import uk.derbyshire.services.DrawingService
-import kotlin.uuid.Uuid
 
 private const val MAX_DRAWING_BYTES = 512 * 1024
 
@@ -30,7 +30,7 @@ fun postCreateDrawing(drawingService: DrawingService) = request@{ request: Reque
 }
 
 data class PostCreateDrawingResponseDTO(
-    val drawingId: Uuid,
+    val drawingId: DrawingId,
 ) {
     companion object {
         val lens = Json.autoBody<PostCreateDrawingResponseDTO>().toLens()

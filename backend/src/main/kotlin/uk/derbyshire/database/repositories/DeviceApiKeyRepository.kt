@@ -10,14 +10,14 @@ import uk.derbyshire.database.schema.DeviceApiKeyTable
 import uk.derbyshire.database.schema.DeviceTable
 import uk.derbyshire.database.schema.UserTable
 import uk.derbyshire.domain.auth.ApiKeyUser
+import uk.derbyshire.domain.devices.DeviceId
 import uk.derbyshire.domain.users.UserId
 import kotlin.time.Instant
-import kotlin.uuid.Uuid
 
 class DeviceApiKeyRepository {
-    fun createDeviceApiKey(deviceId: Uuid, keyHash: String, keyPrefix: String, createdAt: Instant) {
+    fun createDeviceApiKey(deviceId: DeviceId, keyHash: String, keyPrefix: String, createdAt: Instant) {
         DeviceApiKeyTable.insert {
-            it[this.deviceId] = deviceId
+            it[this.deviceId] = deviceId.value
             it[this.keyHash] = keyHash
             it[this.keyPrefix] = keyPrefix
             it[this.createdAt] = createdAt
@@ -41,15 +41,15 @@ class DeviceApiKeyRepository {
                 ApiKeyUser(
                     userId = UserId(it[UserTable.id].value),
                     userEnabled = it[UserTable.enabled],
-                    deviceId = it[DeviceTable.id].value,
+                    deviceId = DeviceId(it[DeviceTable.id].value),
                     deviceEnabled = it[DeviceTable.enabled],
                     revokedAt = it[DeviceApiKeyTable.revokedAt],
                 )
             }
 
-    fun revokeApiKeysForDevice(deviceId: Uuid, revokedAt: Instant) {
+    fun revokeApiKeysForDevice(deviceId: DeviceId, revokedAt: Instant) {
         DeviceApiKeyTable.update({
-            (DeviceApiKeyTable.deviceId eq deviceId) and (DeviceApiKeyTable.revokedAt.isNull())
+            (DeviceApiKeyTable.deviceId eq deviceId.value) and (DeviceApiKeyTable.revokedAt.isNull())
         }) {
             it[this.revokedAt] = revokedAt
         }

@@ -3,12 +3,11 @@ package uk.derbyshire.services
 import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Result4k
 import dev.forkhandles.result4k.Success
-import dev.forkhandles.result4k.asSuccess
+import dev.forkhandles.result4k.asResultOr
 import org.http4k.config.Secret
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.UserRepository
-import uk.derbyshire.domain.auth.ActivationFailure
 import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.domain.users.CreateAdminFailure
 import uk.derbyshire.domain.users.CreateUserFailure
@@ -35,7 +34,7 @@ class UserService(
             userRepository.createUser(
                 normalisedUsername, null, normalisedDisplayName, role, ActivationStatus.PENDING
             )
-        }?.let { Success(UserId(it)) } ?: Failure(CreateUserFailure.USERNAME_ALREADY_IN_USE)
+        }.asResultOr { CreateUserFailure.USERNAME_ALREADY_IN_USE }
     }
 
     fun findUserLoginByUsername(username: String): UserLoginDetail? =

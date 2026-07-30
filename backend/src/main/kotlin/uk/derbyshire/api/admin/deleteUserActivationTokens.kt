@@ -7,11 +7,11 @@ import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.with
 import uk.derbyshire.api.filters.ErrorResponseDTO
-import uk.derbyshire.api.helpers.Path
+import uk.derbyshire.api.helpers.PathParams
 import uk.derbyshire.services.AuthService
 
 fun deleteUserActivationTokens(authService: AuthService) = { request: Request ->
-    val userId = Path.userId(request)
+    val userId = PathParams.userId(request)
 
     val result = authService.revokeUserActivationTokens(
         userId = userId,

@@ -11,20 +11,21 @@ import org.jetbrains.exposed.v1.jdbc.insertIgnoreAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
 import uk.derbyshire.database.schema.ConnectionTable
 import uk.derbyshire.database.schema.UserTable
+import uk.derbyshire.domain.connections.ConnectionId
 import uk.derbyshire.domain.connections.UserConnection
 import uk.derbyshire.domain.users.UserId
 import kotlin.uuid.Uuid
 
 class ConnectionRepository {
-    fun insertConnection(senderUserId: UserId, recipientUserId: UserId, createdBy: UserId) =
+    fun insertConnection(senderUserId: UserId, recipientUserId: UserId, createdBy: UserId): ConnectionId? =
         ConnectionTable.insertIgnoreAndGetId {
                 it[this.senderUserId] = senderUserId.value
                 it[this.recipientUserId] = recipientUserId.value
                 it[this.createdBy] = createdBy.value
-            }?.value
+            }?.let { ConnectionId(it.value) }
 
-    fun deleteConnection(connectionId: Uuid) =
-        ConnectionTable.deleteWhere { ConnectionTable.id eq connectionId }
+    fun deleteConnection(connectionId: ConnectionId) =
+        ConnectionTable.deleteWhere { ConnectionTable.id eq connectionId.value }
 
     private fun getConnectionsForUser(userId: UserId, ownerColumn: Column<EntityID<Uuid>>, connectedUserColumn: Column<EntityID<Uuid>>, onlyEnabled: Boolean = false): List<UserConnection> =
         ConnectionTable
@@ -45,7 +46,7 @@ class ConnectionRepository {
             }
             .map {
                 UserConnection(
-                    connectionId = it[ConnectionTable.id].value,
+                    connectionId = ConnectionId(it[ConnectionTable.id].value),
                     userId = UserId(it[UserTable.id].value),
                     username = it[UserTable.username],
                     displayName = it[UserTable.displayName],

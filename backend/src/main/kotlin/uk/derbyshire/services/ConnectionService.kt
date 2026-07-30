@@ -6,19 +6,19 @@ import dev.forkhandles.result4k.asResultOr
 import dev.forkhandles.result4k.asSuccess
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.ConnectionRepository
+import uk.derbyshire.domain.connections.ConnectionId
 import uk.derbyshire.domain.connections.CreateConnectionFailure
 import uk.derbyshire.domain.connections.GetConnectionsFailure
 import uk.derbyshire.domain.connections.UserConnection
 import uk.derbyshire.domain.connections.UserConnections
 import uk.derbyshire.domain.users.UserId
-import kotlin.uuid.Uuid
 
 class ConnectionService(
     private val connectionRepository: ConnectionRepository,
     private val userService: UserService,
     private val context: DatabaseContext,
 ) {
-    fun createUserConnection(senderUserId: UserId, recipientUserId: UserId, createdBy: UserId): Result4k<Uuid, CreateConnectionFailure> {
+    fun createUserConnection(senderUserId: UserId, recipientUserId: UserId, createdBy: UserId): Result4k<ConnectionId, CreateConnectionFailure> {
         if (!userService.userExists(senderUserId)) return Failure(CreateConnectionFailure.SENDER_NOT_FOUND)
         if (!userService.userExists(recipientUserId)) return Failure(CreateConnectionFailure.RECIPIENT_NOT_FOUND)
 
@@ -28,7 +28,7 @@ class ConnectionService(
         }
     }
 
-    fun deleteUserConnection(connectionId: Uuid) {
+    fun deleteUserConnection(connectionId: ConnectionId) {
         context.transaction {
             connectionRepository.deleteConnection(connectionId)
         }

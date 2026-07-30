@@ -1,9 +1,7 @@
 package uk.derbyshire.domain.devices
 
-import kotlin.uuid.Uuid
-
 data class UserDevice(
-    val deviceId: Uuid,
+    val deviceId: DeviceId,
     val deviceNickname: String,
     val modelName: String,
     private val landscapeWidthPx: Int,

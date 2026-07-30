@@ -6,7 +6,7 @@ import org.http4k.core.Status
 import org.http4k.core.with
 import uk.derbyshire.api.admin.GetUserResponseDTO.Companion.toDto
 import uk.derbyshire.api.helpers.Json
-import uk.derbyshire.api.helpers.Path
+import uk.derbyshire.api.helpers.PathParams.userId
 import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.domain.users.UserId
@@ -15,7 +15,7 @@ import uk.derbyshire.services.UserService
 import kotlin.time.Instant
 
 fun getUser(userService: UserService) = { request: Request ->
-    val userId = Path.userId(request)
+    val userId = userId(request)
     
     val user = userService.findUser(userId)
     

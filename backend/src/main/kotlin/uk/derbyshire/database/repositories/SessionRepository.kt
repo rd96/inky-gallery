@@ -8,10 +8,10 @@ import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.update
 import uk.derbyshire.database.schema.SessionTable
 import uk.derbyshire.database.schema.UserTable
+import uk.derbyshire.domain.auth.SessionId
 import uk.derbyshire.domain.auth.SessionUser
 import uk.derbyshire.domain.users.UserId
 import kotlin.time.Instant
-import kotlin.uuid.Uuid
 
 class SessionRepository {
     fun findUserBySessionTokenHash(tokenHash: String): SessionUser? =
@@ -30,7 +30,7 @@ class SessionRepository {
             .where(SessionTable.tokenHash eq tokenHash)
             .singleOrNull()?.let {
                 SessionUser(
-                    it[SessionTable.id].value,
+                    SessionId(it[SessionTable.id].value),
                     it[SessionTable.expiresAt],
                     it[SessionTable.lastSeenAt],
                     UserId(it[UserTable.id].value),
@@ -42,8 +42,8 @@ class SessionRepository {
                 )
             }
 
-    fun deleteSession(sessionId: Uuid) {
-        SessionTable.deleteWhere { SessionTable.id eq sessionId }
+    fun deleteSession(sessionId: SessionId) {
+        SessionTable.deleteWhere { SessionTable.id eq sessionId.value }
     }
 
     fun deleteByTokenHash(tokenHash: String) {
@@ -54,8 +54,8 @@ class SessionRepository {
         SessionTable.deleteWhere { SessionTable.expiresAt less now }
     }
 
-    fun updateLastSeen(sessionId: Uuid, now: Instant) {
-        SessionTable.update({ SessionTable.id eq sessionId }) {
+    fun updateLastSeen(sessionId: SessionId, now: Instant) {
+        SessionTable.update({ SessionTable.id eq sessionId.value }) {
             it[lastSeenAt] = now
         }
     }

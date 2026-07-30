@@ -12,25 +12,26 @@ import org.jetbrains.exposed.v1.jdbc.update
 import org.postgresql.util.PSQLState
 import uk.derbyshire.database.schema.DeviceModelTable
 import uk.derbyshire.database.schema.DeviceTable
+import uk.derbyshire.domain.devices.DeviceId
+import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.domain.devices.Orientation
 import uk.derbyshire.domain.devices.UpdateDeviceFailure
 import uk.derbyshire.domain.devices.UserDevice
 import uk.derbyshire.domain.users.UserId
-import kotlin.uuid.Uuid
 
 class DeviceRepository {
-    fun insertDevice(userId: UserId, deviceModelId: Uuid, deviceNickname: String, orientation: Orientation) =
+    fun insertDevice(userId: UserId, deviceModelId: DeviceModelId, deviceNickname: String, orientation: Orientation): DeviceId? =
         DeviceTable.insertIgnoreAndGetId {
             it[this.userId] = userId.value
-            it[this.deviceModelId] = deviceModelId
+            it[this.deviceModelId] = deviceModelId.value
             it[this.deviceNickname] = deviceNickname
             it[this.orientation] = orientation
-        }?.value
+        }?.let { DeviceId(it.value) }
 
-    fun updateDevice(userId: UserId, deviceId: Uuid, deviceNickname: String?, orientation: Orientation?, enabled: Boolean?) =
+    fun updateDevice(userId: UserId, deviceId: DeviceId, deviceNickname: String?, orientation: Orientation?, enabled: Boolean?) =
         try {
-            val success = DeviceTable.update({ (DeviceTable.id eq deviceId) and (DeviceTable.userId eq userId.value) }) { table ->
+            val success = DeviceTable.update({ (DeviceTable.id eq deviceId.value) and (DeviceTable.userId eq userId.value) }) { table ->
                 deviceNickname?.let { table[this.deviceNickname] = it }
                 orientation?.let { table[this.orientation] = it }
                 enabled?.let { table[this.enabled] = it }
@@ -58,7 +59,7 @@ class DeviceRepository {
             .orderBy(DeviceTable.createdAt, SortOrder.ASC)
             .map {
                 UserDevice(
-                    deviceId = it[DeviceTable.id].value,
+                    deviceId = DeviceId(it[DeviceTable.id].value),
                     deviceNickname = it[DeviceTable.deviceNickname],
                     modelName = it[DeviceModelTable.modelName],
                     landscapeWidthPx = it[DeviceModelTable.landscapeWidthPx],
