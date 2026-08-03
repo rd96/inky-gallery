@@ -1,0 +1,3 @@
+ALTER TABLE canvases ADD canvas_type VARCHAR(20) DEFAULT 'SINGLE' NOT NULL;
+
+ALTER TABLE canvases ALTER COLUMN canvas_type DROP DEFAULT;
