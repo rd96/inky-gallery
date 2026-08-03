@@ -1,5 +1,6 @@
 package uk.derbyshire.database.repositories
 
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertIgnoreAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
 import uk.derbyshire.database.schema.DeviceModelTable
@@ -32,4 +33,10 @@ class DeviceModelRepository {
                 colourSwatch = it[DeviceModelTable.colourSwatch]?.map(HexColour::parse),
             )
         }
+
+    fun modelExists(deviceModelId: DeviceModelId): Boolean =
+        DeviceModelTable
+            .select(DeviceModelTable.id)
+            .where { DeviceModelTable.id eq deviceModelId.value }
+            .any()
 }

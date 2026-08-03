@@ -22,7 +22,7 @@ data class GetDeviceModelsResponseDTO(
     val deviceName: String,
     val landscapeWidthPx: Int,
     val landscapeHeightPx: Int,
-    val colourSwatch: List<HexColour>? = null,
+    val colourSwatch: List<HexColour>?,
 ) {
     companion object {
         val lens = Json.autoBody<List<GetDeviceModelsResponseDTO>>().toLens()
