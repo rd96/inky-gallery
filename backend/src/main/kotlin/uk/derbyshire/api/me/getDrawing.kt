@@ -15,7 +15,7 @@ fun getDrawing(drawingService: DrawingService) = handler@{ request: Request ->
     val canvasId = canvasId(request)
     val drawingId = drawingId(request)
 
-    val drawing = drawingService.getDrawingForUser(currentUser.userId, drawingId)
+    val drawing = drawingService.getDrawingForUser(currentUser.userId, canvasId, drawingId)
         ?: return@handler Response(Status.NOT_FOUND)
 
     Response(Status.OK)
