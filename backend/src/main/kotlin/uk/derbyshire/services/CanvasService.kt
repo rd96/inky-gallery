@@ -8,7 +8,6 @@ import uk.derbyshire.database.repositories.CanvasRepository
 import uk.derbyshire.database.repositories.DeviceModelRepository
 import uk.derbyshire.database.repositories.DrawingRepository
 import uk.derbyshire.domain.canvases.CanvasDetail
-import uk.derbyshire.domain.canvases.CanvasDimensions
 import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.canvases.CanvasMetadata
 import uk.derbyshire.domain.canvases.CanvasStatus
