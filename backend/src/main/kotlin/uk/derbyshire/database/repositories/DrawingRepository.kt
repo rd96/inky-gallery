@@ -3,48 +3,50 @@ package uk.derbyshire.database.repositories
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
+import uk.derbyshire.database.schema.CanvasTable
 import uk.derbyshire.database.schema.DrawingTable
+import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.drawings.DrawingId
 import uk.derbyshire.domain.drawings.DrawingMetadata
-import uk.derbyshire.domain.users.UserId
 
 class DrawingRepository {
-    fun saveDrawing(userId: UserId, width: Int, height: Int, pngData: ByteArray): DrawingId =
+    fun saveDrawing(canvasId: CanvasId, position: Int, pngData: ByteArray): DrawingId =
         DrawingTable.insertAndGetId {
-            it[this.userId] = userId.value
-            it[this.widthPx] = width
-            it[this.heightPx] = height
+            it[this.canvasId] = canvasId.value
+            it[this.position] = position
             it[this.pngData] = pngData
             it[this.byteSize] = pngData.size
         }.let { DrawingId(it.value) }
 
-    fun getDrawingsForUser(userId: UserId): List<DrawingMetadata> =
+    fun getDrawingsByCanvasIds(canvasIds: List<CanvasId>): Map<CanvasId, List<DrawingMetadata>> =
         DrawingTable
             .select(
                 DrawingTable.id,
-                DrawingTable.widthPx,
-                DrawingTable.heightPx,
-                DrawingTable.createdAt,
+                DrawingTable.canvasId,
+                DrawingTable.position,
             )
-            .where { DrawingTable.userId eq userId.value }
+            .where { DrawingTable.canvasId inList canvasIds.map(CanvasId::value) }
             .orderBy(DrawingTable.createdAt to SortOrder.DESC)
-            .map {
-                DrawingMetadata(
-                    drawingId = DrawingId(it[DrawingTable.id].value),
-                    widthPx = it[DrawingTable.widthPx],
-                    heightPx = it[DrawingTable.heightPx],
-                    createdAt = it[DrawingTable.createdAt],
-                )
+            .groupBy { CanvasId(it[DrawingTable.canvasId].value) }
+            .mapValues { (_, rows) ->
+                rows.map {
+                    DrawingMetadata(
+                        drawingId = DrawingId(it[DrawingTable.id].value),
+                        position = it[DrawingTable.position],
+                    )
+                }
             }
 
-    fun getDrawingData(userId: UserId, drawingId: DrawingId) =
+    fun getDrawingData(canvasId: CanvasId, drawingId: DrawingId): ByteArray? =
         DrawingTable
+            .innerJoin(CanvasTable)
             .select(
                 DrawingTable.pngData,
             )
-            .where { (DrawingTable.userId eq userId.value) and (DrawingTable.id eq drawingId.value) }
+            .where { (CanvasTable.id eq canvasId.value) and (DrawingTable.id eq drawingId.value) }
             .singleOrNull()
             ?.let {
                 it[DrawingTable.pngData]
