@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.4.0"
+    application
 }
 
 group = "uk.derbyshire"
@@ -7,6 +8,12 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+}
+
+application {
+    applicationDefaultJvmArgs = listOf(
+        "-Djava.awt.headless=true",
+    )
 }
 
 dependencies {
