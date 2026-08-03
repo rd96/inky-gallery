@@ -1,0 +1,1 @@
+ALTER TABLE devices ALTER COLUMN orientation DROP DEFAULT;
