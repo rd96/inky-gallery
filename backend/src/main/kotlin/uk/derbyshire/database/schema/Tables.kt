@@ -12,6 +12,7 @@ class Tables {
             DeviceModelTable,
             DeviceTable,
             DrawingTable,
+            CanvasTable,
         )
     }
 }
