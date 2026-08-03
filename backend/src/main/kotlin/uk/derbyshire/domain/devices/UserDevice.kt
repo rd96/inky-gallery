@@ -4,19 +4,9 @@ data class UserDevice(
     val deviceId: DeviceId,
     val deviceNickname: String,
     val modelName: String,
-    private val landscapeWidthPx: Int,
-    private val landscapeHeightPx: Int,
-    val orientation: Orientation,
+    override val landscapeWidthPx: Int,
+    override val landscapeHeightPx: Int,
+    override val orientation: Orientation,
     val colourSwatch: List<HexColour>?,
     val enabled: Boolean,
-) {
-    val widthPx = when (orientation) {
-        Orientation.LANDSCAPE -> landscapeWidthPx
-        Orientation.PORTRAIT -> landscapeHeightPx
-    }
-
-    val heightPx = when (orientation) {
-        Orientation.LANDSCAPE -> landscapeHeightPx
-        Orientation.PORTRAIT -> landscapeWidthPx
-    }
-}
+) : Dimensions
