@@ -1,4 +1,4 @@
-package uk.derbyshire.domain.drawings
+package uk.derbyshire.domain.canvases
 
 import kotlin.uuid.Uuid
 
