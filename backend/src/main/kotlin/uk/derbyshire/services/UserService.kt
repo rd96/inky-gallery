@@ -81,6 +81,22 @@ class UserService(
             userRepository.searchUsers(nameSearch, role, activationStatus, enabled, USER_SEARCH_LIMIT, max(1, page))
         }
 
+    fun updateUserDisplayName(userId: UserId, displayName: String): Result4k<Unit, UpdateUserFailure> {
+        val normalisedDisplayName = displayName.let(::normaliseDisplayName)
+
+        if (!validDisplayName(normalisedDisplayName)) return Failure(UpdateUserFailure.INVALID_DISPLAY_NAME)
+
+        return database.transaction {
+            val user = userRepository.findUser(userId) ?: return@transaction Failure(UpdateUserFailure.USER_NOT_FOUND)
+            if (displayName == user.displayName) return@transaction Success(Unit)
+
+            userRepository.updateUserDisplayName(
+                userId,
+                normalisedDisplayName,
+            )
+        }
+    }
+
     fun updateUser(userId: UserId, username: String?, displayName: String?, enabled: Boolean?, role: Role?): Result4k<Unit, UpdateUserFailure> {
         val normalisedUsername = username?.let(::normaliseUsername)
         val normalisedDisplayName = displayName?.let(::normaliseDisplayName)

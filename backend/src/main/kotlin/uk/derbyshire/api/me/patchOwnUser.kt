@@ -15,12 +15,9 @@ fun patchOwnUser(userService: UserService) = { request: Request ->
 
     val patchUserRequest = PatchOwnUserRequestDTO.lens(request)
 
-    val result = userService.updateUser(
+    val result = userService.updateUserDisplayName(
         userId = currentUser.userId,
-        username = null,
         displayName = patchUserRequest.displayName,
-        enabled = null,
-        role = null,
     )
 
     when (result) {

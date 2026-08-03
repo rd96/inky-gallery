@@ -147,6 +147,14 @@ class UserRepository {
         )
     }
 
+    fun updateUserDisplayName(userId: UserId, displayName: String): Result4k<Unit, UpdateUserFailure> {
+        val success = UserTable.update({ UserTable.id eq userId.value }) { table ->
+            table[this.displayName] = displayName
+        } == 1
+
+        return if (success) Success(Unit) else Failure(UpdateUserFailure.USER_NOT_FOUND)
+    }
+
     fun updateUser(userId: UserId, username: String?, displayName: String?, enabled: Boolean?, role: Role?): Result4k<Unit, UpdateUserFailure> =
         try {
             val success = UserTable.update({ UserTable.id eq userId.value }) { table ->
