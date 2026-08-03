@@ -6,6 +6,7 @@ import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.DatabaseMigrator
 import uk.derbyshire.database.DatabaseSetup
 import uk.derbyshire.database.repositories.ActivationTokenRepository
+import uk.derbyshire.database.repositories.CanvasRepository
 import uk.derbyshire.database.repositories.ConnectionRepository
 import uk.derbyshire.database.repositories.DeviceApiKeyRepository
 import uk.derbyshire.database.repositories.DeviceModelRepository
@@ -14,6 +15,7 @@ import uk.derbyshire.database.repositories.DrawingRepository
 import uk.derbyshire.database.repositories.SessionRepository
 import uk.derbyshire.database.repositories.UserRepository
 import uk.derbyshire.services.AuthService
+import uk.derbyshire.services.CanvasService
 import uk.derbyshire.services.ConnectionService
 import uk.derbyshire.services.DeviceService
 import uk.derbyshire.services.DrawingService
@@ -55,6 +57,7 @@ class Repositories {
     val deviceRepository = DeviceRepository()
     val apiKeyRepository = DeviceApiKeyRepository()
     val drawingRepository = DrawingRepository()
+    val canvasRepository = CanvasRepository()
 }
 
 class Services(repositories: Repositories, database: DatabaseContext, clock: Clock) {
@@ -66,5 +69,6 @@ class Services(repositories: Repositories, database: DatabaseContext, clock: Clo
     val authService = AuthService(repositories.sessionRepository, repositories.activationTokenRepository, repositories.apiKeyRepository, repositories.userRepository, secureTokenService, passwordHasherService, database, clock)
     val connectionService = ConnectionService(repositories.connectionRepository, userService, database)
     val deviceService = DeviceService(repositories.deviceModelRepository, repositories.deviceRepository, database)
-    val drawingService = DrawingService(imageProcessingService, repositories.drawingRepository, database)
+    val drawingService = DrawingService(imageProcessingService, repositories.drawingRepository, repositories.canvasRepository, database)
+    val canvasService = CanvasService(repositories.canvasRepository, repositories.deviceModelRepository, repositories.drawingRepository, database)
 }
