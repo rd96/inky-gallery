@@ -3,7 +3,7 @@ import { MyDevicesApi } from '../../features/devices/api/myDevicesApi'
 import type { DeviceModel, Orientation } from '../../features/devices/types'
 import { formatApiError } from '../../shared/api/ApiError'
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey'
-import OrientationPicker from './OrientationPicker'
+import OrientationPicker from '../../features/devices/OrientationPicker'
 
 type RegisterDeviceFormProps = {
   deviceModels: DeviceModel[]

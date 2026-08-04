@@ -1,4 +1,4 @@
-import type { Orientation } from '../../features/devices/types'
+import type { Orientation } from './types'
 
 type OrientationPickerProps = {
   value: Orientation
