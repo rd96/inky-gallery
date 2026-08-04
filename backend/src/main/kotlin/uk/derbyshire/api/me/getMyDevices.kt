@@ -28,7 +28,7 @@ data class GetMyDevicesResponseDTO(
     val widthPx: Int,
     val heightPx: Int,
     val orientation: Orientation,
-    val colourSwatch: List<HexColour>? = null,
+    val palette: List<HexColour>? = null,
     val enabled: Boolean,
 ) {
     companion object {
@@ -42,7 +42,7 @@ data class GetMyDevicesResponseDTO(
                 widthPx = it.widthPx,
                 heightPx = it.heightPx,
                 orientation = it.orientation,
-                colourSwatch = it.colourSwatch,
+                palette = it.palette,
                 enabled = it.enabled,
             )
         }

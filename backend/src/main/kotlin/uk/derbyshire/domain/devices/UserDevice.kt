@@ -7,6 +7,6 @@ data class UserDevice(
     override val landscapeWidthPx: Int,
     override val landscapeHeightPx: Int,
     override val orientation: Orientation,
-    val colourSwatch: List<HexColour>?,
+    val palette: List<HexColour>?,
     val enabled: Boolean,
 ) : Dimensions

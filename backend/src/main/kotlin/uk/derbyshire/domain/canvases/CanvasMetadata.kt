@@ -14,6 +14,6 @@ data class CanvasMetadata(
     override val orientation: Orientation,
     val status: CanvasStatus,
     val type: CanvasType,
-    val colourSwatch: List<HexColour>?,
+    val palette: List<HexColour>?,
     val createdAt: Instant,
 ) : Dimensions

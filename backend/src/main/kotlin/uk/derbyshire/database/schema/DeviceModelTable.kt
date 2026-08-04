@@ -7,5 +7,5 @@ object DeviceModelTable : UuidTable("device_model") {
     val modelName = varchar("device_name", MAX_DEVICE_MODEL_NAME_LENGTH).uniqueIndex()
     val landscapeWidthPx = integer("landscape_width_px")
     val landscapeHeightPx = integer("landscape_height_px")
-    val colourSwatch = array<String>("colour_swatch").nullable()
+    val palette = array<String>("palette").nullable()
 }

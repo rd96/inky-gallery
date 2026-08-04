@@ -29,7 +29,7 @@ data class GetMyCanvasResponseDTO(
     val heightPx: Int,
     val status: CanvasStatus,
     val type: CanvasType,
-    val colourSwatch: List<HexColour>?,
+    val palette: List<HexColour>?,
 ) {
     companion object {
         val lens = Json.autoBody<GetMyCanvasResponseDTO>().toLens()
@@ -39,7 +39,7 @@ data class GetMyCanvasResponseDTO(
             heightPx = this.heightPx,
             status = this.status,
             type = this.type,
-            colourSwatch = this.colourSwatch,
+            palette = this.palette,
         )
     }
 }

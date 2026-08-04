@@ -1,0 +1,1 @@
+ALTER TABLE device_model RENAME COLUMN colour_swatch to palette;

@@ -9,12 +9,12 @@ import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.HexColour
 
 class DeviceModelRepository {
-    fun insertModel(modelName: String, landscapeWidthPx: Int, landscapeHeightPx: Int, colourSwatch: List<HexColour>?): DeviceModelId? =
+    fun insertModel(modelName: String, landscapeWidthPx: Int, landscapeHeightPx: Int, palette: List<HexColour>?): DeviceModelId? =
         DeviceModelTable.insertIgnoreAndGetId {
             it[this.modelName] = modelName
             it[this.landscapeWidthPx] = landscapeWidthPx
             it[this.landscapeHeightPx] = landscapeHeightPx
-            it[this.colourSwatch] = colourSwatch?.map(HexColour::toString)
+            it[this.palette] = palette?.map(HexColour::toString)
         }?.let { DeviceModelId(it.value) }
 
     fun getDeviceModels(): List<DeviceModel> =
@@ -23,14 +23,14 @@ class DeviceModelRepository {
             DeviceModelTable.modelName,
             DeviceModelTable.landscapeWidthPx,
             DeviceModelTable.landscapeHeightPx,
-            DeviceModelTable.colourSwatch,
+            DeviceModelTable.palette,
         ).map {
             DeviceModel(
                 deviceModelId = DeviceModelId(it[DeviceModelTable.id].value),
                 modelName = it[DeviceModelTable.modelName],
                 landscapeWidthPx = it[DeviceModelTable.landscapeWidthPx],
                 landscapeHeightPx = it[DeviceModelTable.landscapeHeightPx],
-                colourSwatch = it[DeviceModelTable.colourSwatch]?.map(HexColour::parse),
+                palette = it[DeviceModelTable.palette]?.map(HexColour::parse),
             )
         }
 

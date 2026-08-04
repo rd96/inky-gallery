@@ -17,7 +17,7 @@ fun postCreateDeviceModel(deviceService: DeviceService) = { request: Request ->
         deviceName = deviceModel.deviceName,
         landscapeWidthPx = deviceModel.landscapeWidthPx,
         landscapeHeightPx = deviceModel.landscapeHeightPx,
-        colourSwatch = deviceModel.colourSwatch,
+        palette = deviceModel.palette,
     )
 
     when (deviceModelResult) {
@@ -30,7 +30,7 @@ data class PostCreateDeviceTypeRequestDTO(
     val deviceName: String,
     val landscapeWidthPx: Int,
     val landscapeHeightPx: Int,
-    val colourSwatch: List<HexColour>? = null,
+    val palette: List<HexColour>? = null,
 ) {
     companion object {
         val lens = Json.autoBody<PostCreateDeviceTypeRequestDTO>().toLens()

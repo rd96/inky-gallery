@@ -28,12 +28,12 @@ class DeviceService(
     private val deviceRepository: DeviceRepository,
     private val context: DatabaseContext,
 ) {
-    fun createDeviceModel(deviceName: String, landscapeWidthPx: Int, landscapeHeightPx: Int, colourSwatch: List<HexColour>? = null): Result4k<DeviceModelId, CreateDeviceModelFailure> {
+    fun createDeviceModel(deviceName: String, landscapeWidthPx: Int, landscapeHeightPx: Int, palette: List<HexColour>? = null): Result4k<DeviceModelId, CreateDeviceModelFailure> {
         if (deviceName.length > MAX_DEVICE_MODEL_NAME_LENGTH) return Failure(CreateDeviceModelFailure.MODAL_NAME_TOO_LONG)
         validateDimensions(width = landscapeWidthPx, height = landscapeHeightPx).onFailure { return it }
 
         return context.transaction {
-            deviceModelRepository.insertModel(deviceName, landscapeWidthPx, landscapeHeightPx, colourSwatch)
+            deviceModelRepository.insertModel(deviceName, landscapeWidthPx, landscapeHeightPx, palette)
         }.asResultOr { CreateDeviceModelFailure.MODEL_NAME_ALREADY_TAKEN }
     }
 

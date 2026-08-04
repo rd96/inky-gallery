@@ -42,7 +42,7 @@ class CanvasRepository {
                 DeviceModelTable.landscapeHeightPx,
                 CanvasTable.status,
                 CanvasTable.type,
-                DeviceModelTable.colourSwatch,
+                DeviceModelTable.palette,
                 CanvasTable.createdAt,
             )
             .where {
@@ -68,7 +68,7 @@ class CanvasRepository {
                 DeviceModelTable.landscapeHeightPx,
                 CanvasTable.status,
                 CanvasTable.type,
-                DeviceModelTable.colourSwatch,
+                DeviceModelTable.palette,
                 CanvasTable.createdAt,
             )
             .where {
@@ -122,7 +122,7 @@ class CanvasRepository {
             orientation = this[CanvasTable.orientation],
             status = this[CanvasTable.status],
             type = this[CanvasTable.type],
-            colourSwatch = this[DeviceModelTable.colourSwatch]?.map(HexColour::parse),
+            palette = this[DeviceModelTable.palette]?.map(HexColour::parse),
             createdAt = this[CanvasTable.createdAt],
         )
     }
