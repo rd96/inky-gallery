@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react'
 import { DrawingsApi } from '../../features/drawings/api/drawingsApi'
-import type { DrawingMetadata } from '../../features/drawings/types'
+import type { Canvas } from '../../features/drawings/types'
 
 type DrawingCardProps = {
-  drawing: DrawingMetadata
+  canvas: Canvas
 }
 
-export default function DrawingCard({ drawing }: DrawingCardProps) {
+export default function DrawingCard({ canvas }: DrawingCardProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
+
+  // A canvas can hold multiple saved revisions - show the most recent one.
+  const latestDrawing = canvas.drawings.reduce((latest, drawing) =>
+    drawing.position > latest.position ? drawing : latest,
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -17,7 +22,7 @@ export default function DrawingCard({ drawing }: DrawingCardProps) {
     setImageUrl(null)
     setFailed(false)
 
-    DrawingsApi.getDrawingImage(drawing.drawingId)
+    DrawingsApi.getDrawingImage(canvas.canvasId, latestDrawing.drawingId)
       .then(blob => {
         if (cancelled) return
         objectUrl = URL.createObjectURL(blob)
@@ -31,12 +36,12 @@ export default function DrawingCard({ drawing }: DrawingCardProps) {
       cancelled = true
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [drawing.drawingId])
+  }, [canvas.canvasId, latestDrawing.drawingId])
 
   return (
     <li
       className="drawing-card"
-      style={{ aspectRatio: `${drawing.widthPx} / ${drawing.heightPx}` }}
+      style={{ aspectRatio: `${canvas.widthPx} / ${canvas.heightPx}` }}
     >
       {imageUrl && <img className="drawing-card-image" src={imageUrl} alt="" />}
       {!imageUrl && (

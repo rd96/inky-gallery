@@ -1,16 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from 'react-sketch-canvas'
-import { DRAWING_CANVAS_HEIGHT_PX, DRAWING_CANVAS_WIDTH_PX } from '../../features/drawings/canvasSize'
+import { useAuth } from '../../features/auth/useAuth'
+import { loadDraftPaths } from '../../features/drawings/draftStorage'
+import type { Canvas } from '../../features/drawings/types'
 
 type DraftCardProps = {
-  slot: number
-  paths: CanvasPath[]
+  canvas: Canvas
 }
 
-export default function DraftCard({ slot, paths }: DraftCardProps) {
+export default function DraftCard({ canvas }: DraftCardProps) {
+  const { auth } = useAuth()
+  // GalleryPage only ever renders inside RequireAuth, so this is always
+  // populated in practice; the fallback just satisfies the type checker.
+  const userId = auth.status === 'authenticated' ? auth.user.userId : ''
+
   const canvasRef = useRef<ReactSketchCanvasRef>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [paths] = useState(() => loadDraftPaths(userId, canvas.canvasId))
 
   // ReactSketchCanvas has no prop for initial paths - they must be loaded
   // imperatively via the ref once it's mounted.
@@ -29,22 +36,22 @@ export default function DraftCard({ slot, paths }: DraftCardProps) {
     // Without explicit dimensions, exportImage multiplies by
     // window.devicePixelRatio, doubling output size on Retina displays.
     canvasRef.current
-      ?.exportImage('png', { width: DRAWING_CANVAS_WIDTH_PX, height: DRAWING_CANVAS_HEIGHT_PX })
+      ?.exportImage('png', { width: canvas.widthPx, height: canvas.heightPx })
       .then(setImageUrl)
       .catch(() => {})
   }
 
   return (
     <Link
-      to={`/draw/${slot}`}
+      to={`/draw/${canvas.canvasId}`}
       className="draft-card"
-      style={{ aspectRatio: `${DRAWING_CANVAS_WIDTH_PX} / ${DRAWING_CANVAS_HEIGHT_PX}` }}
+      style={{ aspectRatio: `${canvas.widthPx} / ${canvas.heightPx}` }}
     >
       <div className="draft-card-offscreen" aria-hidden="true">
         <ReactSketchCanvas
           ref={canvasRef}
-          width={`${DRAWING_CANVAS_WIDTH_PX}px`}
-          height={`${DRAWING_CANVAS_HEIGHT_PX}px`}
+          width={`${canvas.widthPx}px`}
+          height={`${canvas.heightPx}px`}
           canvasColor="white"
           onChange={handleChange}
           readOnly

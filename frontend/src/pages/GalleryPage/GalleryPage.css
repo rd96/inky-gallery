@@ -15,11 +15,13 @@
 
 .gallery-empty-cta {
   padding: 0.75rem 1.5rem;
+  border: none;
   border-radius: 6px;
   background: var(--inky-color-green);
   color: var(--inky-color-white);
+  font: inherit;
   font-size: 1.05rem;
-  text-decoration: none;
+  cursor: pointer;
 }
 
 .gallery-empty-cta:hover {
@@ -42,25 +44,17 @@
 
 .gallery-new-drawing {
   padding: 0.5rem 1rem;
+  border: none;
   border-radius: 6px;
   background: var(--inky-color-green);
   color: var(--inky-color-white);
+  font: inherit;
   font-size: 1rem;
-  text-decoration: none;
+  cursor: pointer;
 }
 
 .gallery-new-drawing:hover {
   background: var(--inky-color-blue);
-}
-
-.gallery-new-drawing--disabled {
-  background: var(--inky-color-black);
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.gallery-new-drawing--disabled:hover {
-  background: var(--inky-color-black);
 }
 
 .gallery-error {

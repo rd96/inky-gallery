@@ -1,2 +1,0 @@
-export const DRAWING_CANVAS_WIDTH_PX = 800
-export const DRAWING_CANVAS_HEIGHT_PX = 480

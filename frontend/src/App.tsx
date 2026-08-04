@@ -30,8 +30,8 @@ export default function App() {
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<GalleryPage />} />
-          <Route path="/draw" element={<Navigate to="/draw/0" replace />} />
-          <Route path="/draw/:slot" element={<DrawPage />} />
+          <Route path="/draw" element={<Navigate to="/" replace />} />
+          <Route path="/draw/:canvasId" element={<DrawPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route element={<RequireAdmin />}>
             <Route element={<AdminLayout />}>

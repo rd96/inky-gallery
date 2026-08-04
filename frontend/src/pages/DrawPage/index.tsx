@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from 'react-sketch-canvas'
-import { DrawingsApi } from '../../features/drawings/api/drawingsApi'
-import { DRAWING_CANVAS_HEIGHT_PX, DRAWING_CANVAS_WIDTH_PX } from '../../features/drawings/canvasSize'
-import { DRAFT_SLOT_COUNT, getDraftStorageKey, loadDraftPaths } from '../../features/drawings/draftStorage'
 import { useAuth } from '../../features/auth/useAuth'
+import { CanvasesApi } from '../../features/drawings/api/canvasesApi'
+import { DrawingsApi } from '../../features/drawings/api/drawingsApi'
+import { getDraftStorageKey, loadDraftPaths } from '../../features/drawings/draftStorage'
+import type { CanvasDetail } from '../../features/drawings/types'
 import { formatApiError } from '../../shared/api/ApiError'
-import { INKY_PALETTE } from './inkyPalette'
 import './DrawPage.css'
 
-type PaletteMode = 'inky' | 'full'
+type PaletteMode = 'palette' | 'full'
+
+const DEFAULT_STROKE_COLOR = '#000000'
 
 type History = {
   snapshots: CanvasPath[][]
@@ -20,47 +22,90 @@ const MIN_STROKE_WIDTH = 1
 const MAX_STROKE_WIDTH = 50
 const BLANK_HISTORY: History = { snapshots: [[]], index: 0 }
 
-function loadStoredHistory(userId: string, slot: number): History {
-  const paths = loadDraftPaths(userId, slot)
+function loadStoredHistory(userId: string, canvasId: string): History {
+  const paths = loadDraftPaths(userId, canvasId)
   return paths.length > 0 ? { snapshots: [paths], index: 0 } : BLANK_HISTORY
 }
 
-function isValidSlot(parsed: number): boolean {
-  return Number.isInteger(parsed) && parsed >= 0 && parsed < DRAFT_SLOT_COUNT
-}
-
-// Keyed by slot in the route below so switching drafts (e.g. via browser
-// back/forward between two /draw/:slot URLs) always remounts fresh instead
-// of reusing state loaded for a different slot.
+// Keyed by canvasId below so navigating between two /draw/:canvasId URLs
+// always remounts fresh instead of reusing state loaded for a different canvas.
 export default function DrawPage() {
-  const { slot: slotParam } = useParams()
-  const slot = Number(slotParam)
+  const { canvasId } = useParams()
 
-  // An out-of-range slot (e.g. /draw/4) redirects to the canonical URL
-  // instead of silently rendering slot 0 under a mismatched address - that
-  // would risk drawing into (and overwriting) slot 0 without any sign the
-  // requested slot wasn't valid.
-  if (!isValidSlot(slot)) {
-    return <Navigate to="/draw/0" replace />
+  if (!canvasId) {
+    return <Navigate to="/" replace />
   }
 
-  return <DrawCanvas key={slot} slot={slot} />
+  return <DrawCanvasLoader key={canvasId} canvasId={canvasId} />
+}
+
+type DrawCanvasLoaderProps = {
+  canvasId: string
+}
+
+// Canvas dimensions and palette depend on the target device model, so they
+// have to be fetched before the sketch canvas can be rendered.
+function DrawCanvasLoader({ canvasId }: DrawCanvasLoaderProps) {
+  const [canvas, setCanvas] = useState<CanvasDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    CanvasesApi.getMyCanvas(canvasId)
+      .then(result => {
+        if (!cancelled) setCanvas(result)
+      })
+      .catch(cause => {
+        if (!cancelled) setLoadError(formatApiError(cause))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [canvasId])
+
+  if (loading) return <p className="draw-page-status">Loading…</p>
+
+  if (loadError || !canvas) {
+    return (
+      <div className="draw-page-status">
+        <p role="alert">{loadError ?? 'Drawing not found.'}</p>
+        <Link to="/">Back to gallery</Link>
+      </div>
+    )
+  }
+
+  return <DrawCanvas canvasId={canvasId} canvas={canvas} />
 }
 
 type DrawCanvasProps = {
-  slot: number
+  canvasId: string
+  canvas: CanvasDetail
 }
 
-function DrawCanvas({ slot }: DrawCanvasProps) {
+function DrawCanvas({ canvasId, canvas }: DrawCanvasProps) {
   const { auth } = useAuth()
   // DrawPage only ever renders inside RequireAuth, so this is always
   // populated in practice; the fallback just satisfies the type checker.
   const userId = auth.status === 'authenticated' ? auth.user.userId : ''
-  const storageKey = getDraftStorageKey(userId, slot)
+  const storageKey = getDraftStorageKey(userId, canvasId)
+
+  // The device model may only support a fixed set of ink colours - when it
+  // does, offer those as swatches; otherwise there's no palette to restrict
+  // to, so just go straight to the unrestricted colour picker.
+  const paletteSwatches = canvas.palette?.map(hex => ({ name: hex, hex })) ?? []
+  const hasPalette = paletteSwatches.length > 0
 
   const canvasRef = useRef<ReactSketchCanvasRef>(null)
-  const [mode, setMode] = useState<PaletteMode>('inky')
-  const [strokeColor, setStrokeColor] = useState(INKY_PALETTE[0].hex)
+  const [mode, setMode] = useState<PaletteMode>(hasPalette ? 'palette' : 'full')
+  const [strokeColor, setStrokeColor] = useState(
+    hasPalette ? paletteSwatches[0].hex : DEFAULT_STROKE_COLOR,
+  )
   const [strokeWidth, setStrokeWidth] = useState(4)
   const [isErasing, setIsErasing] = useState(false)
 
@@ -69,7 +114,7 @@ function DrawCanvas({ slot }: DrawCanvasProps) {
   // own the history ourselves: every completed stroke snapshots the full
   // path list via exportPaths(), and undo/redo replay a snapshot via
   // resetCanvas() + loadPaths().
-  const [history, setHistory] = useState<History>(() => loadStoredHistory(userId, slot))
+  const [history, setHistory] = useState<History>(() => loadStoredHistory(userId, canvasId))
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -138,8 +183,8 @@ function DrawCanvas({ slot }: DrawCanvasProps) {
   }
 
   async function handleSave() {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const canvasRefCurrent = canvasRef.current
+    if (!canvasRefCurrent) return
 
     setSaving(true)
     setSaved(false)
@@ -148,14 +193,13 @@ function DrawCanvas({ slot }: DrawCanvasProps) {
     try {
       // Without explicit dimensions, exportImage multiplies by
       // window.devicePixelRatio, so a Retina display would save an
-      // 1600x960 PNG for an 800x480 canvas. Pin it to the canvas's
-      // actual size.
-      const dataUrl = await canvas.exportImage('png', {
-        width: DRAWING_CANVAS_WIDTH_PX,
-        height: DRAWING_CANVAS_HEIGHT_PX,
+      // oversized PNG relative to the canvas's actual size.
+      const dataUrl = await canvasRefCurrent.exportImage('png', {
+        width: canvas.widthPx,
+        height: canvas.heightPx,
       })
       const png = await (await fetch(dataUrl)).blob()
-      await DrawingsApi.saveDrawing(png)
+      await DrawingsApi.saveDrawing(canvasId, png)
       setSaved(true)
       // The canvas is now a saved drawing, not a draft - free up this slot.
       resetToBlank()
@@ -168,28 +212,30 @@ function DrawCanvas({ slot }: DrawCanvasProps) {
 
   return (
     <div className="draw-page">
-      <div className="draw-toolbar">
+      <div className="draw-toolbar" style={{ width: `${canvas.widthPx}px` }}>
         <div className="toolbar-row">
-          <div className="toolbar-button-group">
-            <button
-              type="button"
-              className={`toolbar-button ${mode === 'inky' ? 'active' : ''}`}
-              onClick={() => setMode('inky')}
-            >
-              Inky palette
-            </button>
-            <button
-              type="button"
-              className={`toolbar-button ${mode === 'full' ? 'active' : ''}`}
-              onClick={() => setMode('full')}
-            >
-              Full color
-            </button>
-          </div>
+          {hasPalette && (
+            <div className="toolbar-button-group">
+              <button
+                type="button"
+                className={`toolbar-button ${mode === 'palette' ? 'active' : ''}`}
+                onClick={() => setMode('palette')}
+              >
+                Palette
+              </button>
+              <button
+                type="button"
+                className={`toolbar-button ${mode === 'full' ? 'active' : ''}`}
+                onClick={() => setMode('full')}
+              >
+                Full color
+              </button>
+            </div>
+          )}
 
-          {mode === 'inky' ? (
+          {hasPalette && mode === 'palette' ? (
             <div className="palette-swatches">
-              {INKY_PALETTE.map(({ name, hex }) => (
+              {paletteSwatches.map(({ name, hex }) => (
                 <button
                   key={hex}
                   type="button"
@@ -282,8 +328,8 @@ function DrawCanvas({ slot }: DrawCanvasProps) {
       <ReactSketchCanvas
         ref={canvasRef}
         className="draw-canvas"
-        width={`${DRAWING_CANVAS_WIDTH_PX}px`}
-        height={`${DRAWING_CANVAS_HEIGHT_PX}px`}
+        width={`${canvas.widthPx}px`}
+        height={`${canvas.heightPx}px`}
         strokeWidth={strokeWidth}
         eraserWidth={strokeWidth}
         strokeColor={strokeColor}

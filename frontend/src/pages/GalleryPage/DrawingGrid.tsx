@@ -1,11 +1,10 @@
-import type { DraftSlot } from '../../features/drawings/draftStorage'
-import type { DrawingMetadata } from '../../features/drawings/types'
+import type { Canvas } from '../../features/drawings/types'
 import DraftCard from './DraftCard'
 import DrawingCard from './DrawingCard'
 
 type DrawingGridProps = {
-  drafts: DraftSlot[]
-  drawings: DrawingMetadata[]
+  drafts: Canvas[]
+  drawings: Canvas[]
 }
 
 export default function DrawingGrid({ drafts, drawings }: DrawingGridProps) {
@@ -13,11 +12,11 @@ export default function DrawingGrid({ drafts, drawings }: DrawingGridProps) {
 
   return (
     <ul className="drawing-grid">
-      {drafts.map(draft => (
-        <DraftCard key={draft.slot} slot={draft.slot} paths={draft.paths} />
+      {drafts.map(canvas => (
+        <DraftCard key={canvas.canvasId} canvas={canvas} />
       ))}
-      {drawings.map(drawing => (
-        <DrawingCard key={drawing.drawingId} drawing={drawing} />
+      {drawings.map(canvas => (
+        <DrawingCard key={canvas.canvasId} canvas={canvas} />
       ))}
     </ul>
   )
