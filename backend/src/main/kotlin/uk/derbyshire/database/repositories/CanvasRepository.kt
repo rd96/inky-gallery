@@ -8,6 +8,7 @@ import org.jetbrains.exposed.v1.core.andIfNotNull
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.selectAll
 import uk.derbyshire.database.schema.CanvasTable
 import uk.derbyshire.database.schema.DeviceModelTable
 import uk.derbyshire.database.schema.DrawingTable
@@ -56,6 +57,12 @@ class CanvasRepository {
             .select(CanvasTable.id)
             .where { (CanvasTable.id eq canvasId.value) and (CanvasTable.createdBy eq userId.value) }
             .any()
+
+    fun countDraftCanvases(userId: UserId): Long =
+        CanvasTable
+            .selectAll()
+            .where { CanvasTable.createdBy eq userId.value }
+            .count()
 
     fun getCanvas(userId: UserId, canvasId: CanvasId): CanvasMetadata? =
         CanvasTable

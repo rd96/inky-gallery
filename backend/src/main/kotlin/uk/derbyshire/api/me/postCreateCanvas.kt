@@ -24,7 +24,7 @@ fun postCreateCanvas(canvasService: CanvasService) = { request: Request ->
         targetDeviceModelId = canvasRequest.targetDeviceModelId,
         orientation = canvasRequest.orientation,
         type = canvasRequest.canvasType,
-        createdBy = currentUser.userId,
+        userId = currentUser.userId,
     )
 
     when (result) {

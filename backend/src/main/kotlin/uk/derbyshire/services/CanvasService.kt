@@ -23,12 +23,12 @@ class CanvasService(
     private val drawingRepository: DrawingRepository,
     private val context: DatabaseContext,
 ) {
-    fun createCanvas(targetDeviceModelId: DeviceModelId, orientation: Orientation, type: CanvasType, createdBy: UserId): Result4k<CanvasId, CreateCanvasFailure> =
+    fun createCanvas(targetDeviceModelId: DeviceModelId, orientation: Orientation, type: CanvasType, userId: UserId): Result4k<CanvasId, CreateCanvasFailure> =
         context.transaction {
-            // check limits, max three pending at a time
+            if (canvasRepository.countDraftCanvases(userId) >= DRAFT_LIMIT) return@transaction Failure(CreateCanvasFailure.TOO_MANY_DRAFTS)
             if (!deviceModelRepository.modelExists(targetDeviceModelId)) return@transaction Failure(CreateCanvasFailure.DEVICE_MODEL_NOT_FOUND)
 
-            canvasRepository.insertCanvas(targetDeviceModelId, orientation, type, CanvasStatus.DRAFT, createdBy).asSuccess()
+            canvasRepository.insertCanvas(targetDeviceModelId, orientation, type, CanvasStatus.DRAFT, userId).asSuccess()
         }
 
     fun getMyCanvases(userId: UserId, canvasStatus: CanvasStatus?): List<CanvasDetail> =
@@ -54,4 +54,8 @@ class CanvasService(
         context.transaction {
             canvasRepository.getCanvas(userId, canvasId)
         }
+
+    companion object {
+        const val DRAFT_LIMIT = 3
+    }
 }
