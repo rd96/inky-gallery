@@ -8,7 +8,7 @@ type UserDeviceResponseDTO = {
   widthPx: number
   heightPx: number
   orientation: Orientation
-  colourSwatch?: string[] | null
+  palette?: string[] | null
   enabled: boolean
 }
 
@@ -20,7 +20,7 @@ function toUserDevice(dto: UserDeviceResponseDTO): UserDevice {
     widthPx: dto.widthPx,
     heightPx: dto.heightPx,
     orientation: dto.orientation,
-    colourSwatch: dto.colourSwatch ?? null,
+    palette: dto.palette ?? null,
     enabled: dto.enabled,
   }
 }

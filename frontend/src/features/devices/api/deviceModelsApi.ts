@@ -6,7 +6,7 @@ type DeviceModelResponseDTO = {
   deviceName: string
   landscapeWidthPx: number
   landscapeHeightPx: number
-  colourSwatch?: string[] | null
+  palette?: string[] | null
 }
 
 function toDeviceModel(dto: DeviceModelResponseDTO): DeviceModel {
@@ -15,7 +15,7 @@ function toDeviceModel(dto: DeviceModelResponseDTO): DeviceModel {
     deviceName: dto.deviceName,
     landscapeWidthPx: dto.landscapeWidthPx,
     landscapeHeightPx: dto.landscapeHeightPx,
-    colourSwatch: dto.colourSwatch ?? null,
+    palette: dto.palette ?? null,
   }
 }
 

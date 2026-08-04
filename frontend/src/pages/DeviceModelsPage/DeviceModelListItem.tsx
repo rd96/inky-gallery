@@ -14,7 +14,7 @@ export default function DeviceModelListItem({ deviceModel }: DeviceModelListItem
           {deviceModel.landscapeWidthPx} × {deviceModel.landscapeHeightPx}px
         </span>
       </div>
-      <ColourSwatch colours={deviceModel.colourSwatch ?? []} />
+      <ColourSwatch colours={deviceModel.palette ?? []} />
     </li>
   )
 }

@@ -137,7 +137,7 @@ export type CreateDeviceModelRequest = {
   deviceName: string
   landscapeWidthPx: number
   landscapeHeightPx: number
-  colourSwatch?: string[]
+  palette?: string[]
 }
 
 function createDeviceModel(request: CreateDeviceModelRequest): Promise<void> {

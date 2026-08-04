@@ -81,7 +81,7 @@ export default function DevicesSection() {
                 </span>
               </div>
               <div className="user-list-item-actions">
-                <ColourSwatch colours={device.colourSwatch ?? []} />
+                <ColourSwatch colours={device.palette ?? []} />
                 <button
                   type="button"
                   className={`status-badge status-badge--pill ${device.enabled ? 'status-badge--enabled' : 'status-badge--disabled'}`}

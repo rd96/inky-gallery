@@ -15,7 +15,7 @@ export default function CreateDeviceModelForm({
   const [deviceName, setDeviceName] = useState('')
   const [landscapeWidthPx, setLandscapeWidthPx] = useState('')
   const [landscapeHeightPx, setLandscapeHeightPx] = useState('')
-  const [colourSwatch, setColourSwatch] = useState<string[]>([])
+  const [palette, setPalette] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -23,7 +23,7 @@ export default function CreateDeviceModelForm({
     deviceName.trim() !== '' ||
     landscapeWidthPx !== '' ||
     landscapeHeightPx !== '' ||
-    colourSwatch.length > 0
+    palette.length > 0
 
   function handleBackdropClick() {
     if (isDirty) return
@@ -33,15 +33,15 @@ export default function CreateDeviceModelForm({
   useEscapeKey(handleBackdropClick)
 
   function addColour() {
-    setColourSwatch(swatch => [...swatch, '#000000'])
+    setPalette(swatch => [...swatch, '#000000'])
   }
 
   function updateColour(index: number, value: string) {
-    setColourSwatch(swatch => swatch.map((colour, i) => (i === index ? value : colour)))
+    setPalette(swatch => swatch.map((colour, i) => (i === index ? value : colour)))
   }
 
   function removeColour(index: number) {
-    setColourSwatch(swatch => swatch.filter((_, i) => i !== index))
+    setPalette(swatch => swatch.filter((_, i) => i !== index))
   }
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -54,7 +54,7 @@ export default function CreateDeviceModelForm({
         deviceName,
         landscapeWidthPx: Number(landscapeWidthPx),
         landscapeHeightPx: Number(landscapeHeightPx),
-        colourSwatch: colourSwatch.length > 0 ? colourSwatch : undefined,
+        palette: palette.length > 0 ? palette : undefined,
       })
 
       onCreated()
@@ -115,7 +115,7 @@ export default function CreateDeviceModelForm({
           <div className="device-model-swatch-field">
             <span>Colour swatch (optional)</span>
             <div className="device-model-swatch-editor">
-              {colourSwatch.map((colour, index) => (
+              {palette.map((colour, index) => (
                 <div key={index} className="device-model-swatch-input">
                   <input
                     type="color"
