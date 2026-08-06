@@ -101,6 +101,21 @@
   font-size: 0.8rem;
 }
 
+.card-meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  background: linear-gradient(to top, rgba(5, 5, 20, 0.6), transparent);
+  color: var(--inky-color-white);
+  font-size: 0.75rem;
+}
+
 .draft-card {
   position: relative;
   display: flex;
@@ -127,7 +142,7 @@
 .draft-card-label {
   position: absolute;
   left: 0.6rem;
-  bottom: 0.6rem;
+  top: 0.6rem;
   padding: 0.3rem 0.7rem;
   border-radius: 999px;
   background: var(--inky-color-blue);

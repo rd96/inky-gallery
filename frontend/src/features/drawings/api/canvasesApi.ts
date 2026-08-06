@@ -5,6 +5,7 @@ import type { Canvas, CanvasDetail, CanvasStatus, CanvasType, DrawingMetadata } 
 type DrawingMetadataResponseDTO = {
   drawingId: string
   position: number
+  createdAt: string
 }
 
 type CanvasResponseDTO = {
@@ -17,12 +18,14 @@ type CanvasResponseDTO = {
   drawings: DrawingMetadataResponseDTO[]
   sentTo: string[]
   canSendTo: string[]
+  createdAt: string
 }
 
 function toDrawingMetadata(dto: DrawingMetadataResponseDTO): DrawingMetadata {
   return {
     drawingId: dto.drawingId,
     position: dto.position,
+    createdAt: dto.createdAt,
   }
 }
 
@@ -37,6 +40,7 @@ function toCanvas(dto: CanvasResponseDTO): Canvas {
     drawings: dto.drawings.map(toDrawingMetadata),
     sentTo: dto.sentTo,
     canSendTo: dto.canSendTo,
+    createdAt: dto.createdAt,
   }
 }
 

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { DrawingsApi } from '../../features/drawings/api/drawingsApi'
 import type { Canvas } from '../../features/drawings/types'
+import { cardAspectRatio } from './cardAspectRatio'
+import { formatCardDate } from './formatCardDate'
 
 type DrawingCardProps = {
   canvas: Canvas
@@ -41,7 +43,7 @@ export default function DrawingCard({ canvas }: DrawingCardProps) {
   return (
     <li
       className="drawing-card"
-      style={{ aspectRatio: `${canvas.widthPx} / ${canvas.heightPx}` }}
+      style={{ aspectRatio: cardAspectRatio(canvas.widthPx, canvas.heightPx) }}
     >
       {imageUrl && <img className="drawing-card-image" src={imageUrl} alt="" />}
       {!imageUrl && (
@@ -49,6 +51,12 @@ export default function DrawingCard({ canvas }: DrawingCardProps) {
           {failed && <span className="drawing-card-error">Failed to load</span>}
         </div>
       )}
+      <div className="card-meta">
+        <span>
+          {canvas.widthPx} × {canvas.heightPx}
+        </span>
+        <span>{formatCardDate(latestDrawing.createdAt)}</span>
+      </div>
     </li>
   )
 }

@@ -4,6 +4,8 @@ import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from 'r
 import { useAuth } from '../../features/auth/useAuth'
 import { loadDraftPaths } from '../../features/drawings/draftStorage'
 import type { Canvas } from '../../features/drawings/types'
+import { cardAspectRatio } from './cardAspectRatio'
+import { formatCardDate } from './formatCardDate'
 
 type DraftCardProps = {
   canvas: Canvas
@@ -45,7 +47,7 @@ export default function DraftCard({ canvas }: DraftCardProps) {
     <Link
       to={`/draw/${canvas.canvasId}`}
       className="draft-card"
-      style={{ aspectRatio: `${canvas.widthPx} / ${canvas.heightPx}` }}
+      style={{ aspectRatio: cardAspectRatio(canvas.widthPx, canvas.heightPx) }}
     >
       <div className="draft-card-offscreen" aria-hidden="true">
         <ReactSketchCanvas
@@ -59,6 +61,12 @@ export default function DraftCard({ canvas }: DraftCardProps) {
       </div>
       {imageUrl && <img className="draft-card-image" src={imageUrl} alt="" />}
       <span className="draft-card-label">Continue draft</span>
+      <div className="card-meta">
+        <span>
+          {canvas.widthPx} × {canvas.heightPx}
+        </span>
+        <span>{formatCardDate(canvas.createdAt)}</span>
+      </div>
     </Link>
   )
 }
