@@ -38,8 +38,8 @@ export default function GalleryPage() {
     navigate(`/draw/${canvasId}`)
   }
 
-  const drafts = canvases.filter(canvas => canvas.drawings.length === 0)
-  const drawings = canvases.filter(canvas => canvas.drawings.length > 0)
+  const drafts = canvases.filter(canvas => canvas.status === 'DRAFT')
+  const drawings = canvases.filter(canvas => canvas.status === 'FINISHED')
 
   if (!loading && !error && canvases.length === 0) {
     return (
