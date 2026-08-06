@@ -43,8 +43,8 @@ class CanvasRepository {
                 DeviceModelTable.landscapeHeightPx,
                 CanvasTable.status,
                 CanvasTable.type,
-                DeviceModelTable.palette,
                 CanvasTable.createdAt,
+                DeviceModelTable.palette,
             )
             .where {
                 (CanvasTable.createdBy eq userId.value)
@@ -129,6 +129,7 @@ class CanvasRepository {
             orientation = this[CanvasTable.orientation],
             status = this[CanvasTable.status],
             type = this[CanvasTable.type],
+            createdAt = this[CanvasTable.createdAt],
             palette = this[DeviceModelTable.palette]?.map(HexColour::parse),
             createdAt = this[CanvasTable.createdAt],
         )

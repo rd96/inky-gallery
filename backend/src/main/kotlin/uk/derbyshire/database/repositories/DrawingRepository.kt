@@ -27,6 +27,7 @@ class DrawingRepository {
                 DrawingTable.id,
                 DrawingTable.canvasId,
                 DrawingTable.position,
+                DrawingTable.createdAt,
             )
             .where { DrawingTable.canvasId inList canvasIds.map(CanvasId::value) }
             .orderBy(DrawingTable.createdAt to SortOrder.DESC)
@@ -36,6 +37,7 @@ class DrawingRepository {
                     DrawingMetadata(
                         drawingId = DrawingId(it[DrawingTable.id].value),
                         position = it[DrawingTable.position],
+                        createdAt = it[DrawingTable.createdAt],
                     )
                 }
             }

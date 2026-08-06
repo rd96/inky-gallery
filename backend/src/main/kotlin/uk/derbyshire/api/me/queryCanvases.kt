@@ -17,6 +17,7 @@ import uk.derbyshire.domain.drawings.DrawingId
 import uk.derbyshire.domain.drawings.DrawingMetadata
 import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.services.CanvasService
+import kotlin.time.Instant
 
 fun queryMyCanvases(canvasService: CanvasService) = { request: Request ->
     val currentUser = CurrentUser(request)
@@ -42,6 +43,7 @@ private data class QueryCanvasesResponseDTO(
     val heightPx: Int,
     val status: CanvasStatus,
     val type: CanvasType,
+    val createdAt: Instant,
     val drawings: List<DrawingResponseDTO>,
     val sentTo: List<UserId>,
     val canSendTo: List<UserId>,
@@ -58,6 +60,7 @@ private data class QueryCanvasesResponseDTO(
                 heightPx = canvas.heightPx,
                 status = canvas.status,
                 type = canvas.type,
+                createdAt = canvas.createdAt,
                 drawings = it.drawings.toDto(),
                 sentTo = emptyList(),
                 canSendTo = emptyList(),
@@ -69,12 +72,14 @@ private data class QueryCanvasesResponseDTO(
 private data class DrawingResponseDTO(
     val drawingId: DrawingId,
     val position: Int,
+    val createdAt: Instant,
 ) {
     companion object {
         fun List<DrawingMetadata>.toDto() = map {
             DrawingResponseDTO(
                 drawingId = it.drawingId,
                 position = it.position,
+                createdAt = it.createdAt,
             )
         }
     }
