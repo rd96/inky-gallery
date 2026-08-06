@@ -11,6 +11,7 @@ import uk.derbyshire.database.schema.DrawingTable
 import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.drawings.DrawingId
 import uk.derbyshire.domain.drawings.DrawingMetadata
+import uk.derbyshire.domain.users.UserId
 
 class DrawingRepository {
     fun saveDrawing(canvasId: CanvasId, position: Int, pngData: ByteArray): DrawingId =
@@ -42,13 +43,13 @@ class DrawingRepository {
                 }
             }
 
-    fun getDrawingData(canvasId: CanvasId, drawingId: DrawingId): ByteArray? =
+    fun getDrawingData(userId: UserId, canvasId: CanvasId, drawingId: DrawingId): ByteArray? =
         DrawingTable
             .innerJoin(CanvasTable)
             .select(
                 DrawingTable.pngData,
             )
-            .where { (CanvasTable.id eq canvasId.value) and (DrawingTable.id eq drawingId.value) }
+            .where { (CanvasTable.id eq canvasId.value) and (CanvasTable.createdBy eq userId.value) and (DrawingTable.id eq drawingId.value) }
             .singleOrNull()
             ?.let {
                 it[DrawingTable.pngData]

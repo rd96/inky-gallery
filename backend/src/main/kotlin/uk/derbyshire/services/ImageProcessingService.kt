@@ -3,8 +3,6 @@ package uk.derbyshire.services
 import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Result4k
 import dev.forkhandles.result4k.asSuccess
-import uk.derbyshire.domain.drawings.DrawingLimits.MAX_DIMENSION_PX
-import uk.derbyshire.domain.drawings.DrawingLimits.MAX_TOTAL_PIXELS
 import uk.derbyshire.domain.drawings.PngDrawing
 import uk.derbyshire.domain.drawings.SaveDrawingFailure
 import java.awt.image.BufferedImage
@@ -15,7 +13,7 @@ import javax.imageio.ImageIO
 import javax.imageio.stream.MemoryCacheImageInputStream
 
 class ImageProcessingService {
-    fun canonicaliseToPng(uploadedBytes: ByteArray): Result4k<PngDrawing, SaveDrawingFailure> {
+    fun canonicaliseToPng(uploadedBytes: ByteArray, expectedWidth: Int, expectedHeight: Int): Result4k<PngDrawing, SaveDrawingFailure> {
         val reader = ImageIO
             .getImageReadersByFormatName("png")
             .asSequence()
@@ -31,10 +29,9 @@ class ImageProcessingService {
                 val width = reader.getWidth(0)
                 val height = reader.getHeight(0)
 
-                if (
-                    width > MAX_DIMENSION_PX ||
-                    height > MAX_DIMENSION_PX || width.toLong() * height.toLong() > MAX_TOTAL_PIXELS
-                ) return Failure(SaveDrawingFailure.IMAGE_TOO_LARGE)
+                if (width != expectedWidth || height != expectedHeight) {
+                    return Failure(SaveDrawingFailure.INVALID_IMAGE_SIZE)
+                }
 
                 val uploadedImage = reader.read(0)
 

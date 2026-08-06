@@ -1,5 +1,8 @@
 package uk.derbyshire.database.repositories
 
+import dev.forkhandles.result4k.Failure
+import dev.forkhandles.result4k.Result4k
+import dev.forkhandles.result4k.Success
 import org.jetbrains.exposed.v1.core.Count
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -9,6 +12,7 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.update
 import uk.derbyshire.database.schema.CanvasTable
 import uk.derbyshire.database.schema.DeviceModelTable
 import uk.derbyshire.database.schema.DrawingTable
@@ -17,6 +21,7 @@ import uk.derbyshire.domain.canvases.CanvasMetadata
 import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.canvases.CanvasStatus
 import uk.derbyshire.domain.canvases.CanvasType
+import uk.derbyshire.domain.canvases.CompleteCanvasFailure
 import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.domain.devices.Orientation
@@ -120,6 +125,18 @@ class CanvasRepository {
                 )
             }
 
+    fun updateCanvasStatus(userId: UserId, canvasId: CanvasId, status: CanvasStatus): Result4k<Unit, CompleteCanvasFailure> =
+        CanvasTable
+            .update({ (CanvasTable.id eq canvasId.value) and (CanvasTable.createdBy eq userId.value) }) {
+            it[this.status] = status
+        }.let {
+            when (it) {
+                0 -> Failure(CompleteCanvasFailure.CANVAS_NOT_FOUND)
+                1 -> Success(Unit)
+                else -> throw Exception("Multiple canvases edited unexpectedly")
+            }
+        }
+
     companion object {
         private fun ResultRow.toCanvasMetadata() = CanvasMetadata(
             canvasId = CanvasId(this[CanvasTable.id].value),
@@ -131,7 +148,6 @@ class CanvasRepository {
             type = this[CanvasTable.type],
             createdAt = this[CanvasTable.createdAt],
             palette = this[DeviceModelTable.palette]?.map(HexColour::parse),
-            createdAt = this[CanvasTable.createdAt],
         )
     }
 }

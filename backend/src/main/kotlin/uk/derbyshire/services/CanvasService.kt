@@ -12,6 +12,7 @@ import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.canvases.CanvasMetadata
 import uk.derbyshire.domain.canvases.CanvasStatus
 import uk.derbyshire.domain.canvases.CanvasType
+import uk.derbyshire.domain.canvases.CompleteCanvasFailure
 import uk.derbyshire.domain.canvases.CreateCanvasFailure
 import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.Orientation
@@ -53,6 +54,22 @@ class CanvasService(
     fun getMyCanvas(userId: UserId, canvasId: CanvasId): CanvasMetadata? =
         context.transaction {
             canvasRepository.getCanvas(userId, canvasId)
+        }
+
+    fun completeCanvas(userId: UserId, canvasId: CanvasId): Result4k<Unit, CompleteCanvasFailure> =
+        context.transaction {
+            val canvas = canvasRepository.getCanvasDimensionsAndDrawings(userId, canvasId) ?: return@transaction Failure(CompleteCanvasFailure.CANVAS_NOT_FOUND)
+
+            if (canvas.status != CanvasStatus.DRAFT) return@transaction Failure(CompleteCanvasFailure.CANVAS_NOT_IN_DRAFT)
+
+            if (canvas.drawingsCount == 0) return@transaction Failure(CompleteCanvasFailure.CANVAS_IS_BLANK)
+
+            when (canvas.type) {
+                CanvasType.SINGLE -> if (canvas.drawingsCount != 1) return@transaction Failure(CompleteCanvasFailure.CANVAS_HAS_TOO_MANY_DRAWINGS)
+                CanvasType.STACK -> if (canvas.drawingsCount < 2) return@transaction Failure(CompleteCanvasFailure.CANVAS_STACK_NEEDS_MORE_DRAWINGS)
+            }
+
+            canvasRepository.updateCanvasStatus(userId, canvasId, CanvasStatus.FINISHED)
         }
 
     companion object {

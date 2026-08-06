@@ -8,6 +8,8 @@ import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.CanvasRepository
 import uk.derbyshire.database.repositories.DrawingRepository
 import uk.derbyshire.domain.canvases.CanvasId
+import uk.derbyshire.domain.canvases.CanvasStatus
+import uk.derbyshire.domain.canvases.CanvasType
 import uk.derbyshire.domain.drawings.DrawingId
 import uk.derbyshire.domain.drawings.SaveDrawingFailure
 import uk.derbyshire.domain.users.UserId
@@ -23,9 +25,11 @@ class DrawingService(
         context.transaction {
             val canvas = canvasRepository.getCanvasDimensionsAndDrawings(userId, canvasId) ?: return@transaction Failure(SaveDrawingFailure.CANVAS_NOT_FOUND)
 
-            val drawing = imageProcessingService.canonicaliseToPng(uploadedBytes).onFailure { return@transaction it }
+            if (canvas.status != CanvasStatus.DRAFT) return@transaction Failure(SaveDrawingFailure.CANVAS_IS_NOT_IN_DRAFT)
 
-            // check dimensions match canvas
+            if (canvas.type == CanvasType.SINGLE && canvas.drawingsCount >= 1) return@transaction Failure(SaveDrawingFailure.SINGLE_CANVAS_CAN_ONLY_HAVE_ONE_DRAWING)
+
+            val drawing = imageProcessingService.canonicaliseToPng(uploadedBytes, canvas.widthPx, canvas.heightPx).onFailure { return@transaction it }
 
             context.transaction {
                 drawingRepository.saveDrawing(canvasId, canvas.drawingsCount, pngData = drawing.data)
@@ -33,8 +37,7 @@ class DrawingService(
         }
 
     fun getDrawingForUser(userId: UserId, canvasId: CanvasId, drawingId: DrawingId): ByteArray? =
-        // we actually need to check here whether the user can access the drawing, either if they own it or have received it
         context.transaction {
-            drawingRepository.getDrawingData(canvasId, drawingId)
+            drawingRepository.getDrawingData(userId, canvasId, drawingId)
         }
 }
