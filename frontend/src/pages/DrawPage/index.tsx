@@ -4,7 +4,12 @@ import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from 'r
 import { useAuth } from '../../features/auth/useAuth'
 import { CanvasesApi } from '../../features/drawings/api/canvasesApi'
 import { DrawingsApi } from '../../features/drawings/api/drawingsApi'
-import { getDraftStorageKey, loadDraftPaths } from '../../features/drawings/draftStorage'
+import {
+  getDraftStorageKey,
+  isDraftUnknownToThisDevice,
+  loadDraftPaths,
+  UNKNOWN_DRAFT_DEVICE_MESSAGE,
+} from '../../features/drawings/draftStorage'
 import type { CanvasDetail } from '../../features/drawings/types'
 import { formatApiError } from '../../shared/api/ApiError'
 import './DrawPage.css'
@@ -94,6 +99,8 @@ function DrawCanvas({ canvasId, canvas }: DrawCanvasProps) {
   // populated in practice; the fallback just satisfies the type checker.
   const userId = auth.status === 'authenticated' ? auth.user.userId : ''
   const storageKey = getDraftStorageKey(userId, canvasId)
+
+  const [isUnknownToThisDevice] = useState(() => isDraftUnknownToThisDevice(userId, canvasId))
 
   // The device model may only support a fixed set of ink colours - when it
   // does, offer those as swatches; otherwise there's no palette to restrict
@@ -212,6 +219,12 @@ function DrawCanvas({ canvasId, canvas }: DrawCanvasProps) {
 
   return (
     <div className="draw-page">
+      {isUnknownToThisDevice && (
+        <p className="draw-page-notice" style={{ width: `${canvas.widthPx}px` }}>
+          {UNKNOWN_DRAFT_DEVICE_MESSAGE}
+        </p>
+      )}
+
       <div className="draw-toolbar" style={{ width: `${canvas.widthPx}px` }}>
         <div className="toolbar-row">
           {hasPalette && (

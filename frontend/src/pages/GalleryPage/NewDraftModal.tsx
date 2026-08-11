@@ -1,8 +1,10 @@
 import { useEffect, useState, type SubmitEvent } from 'react'
+import { useAuth } from '../../features/auth/useAuth'
 import { DeviceModelsApi } from '../../features/devices/api/deviceModelsApi'
 import OrientationPicker from '../../features/devices/OrientationPicker'
 import type { DeviceModel, Orientation } from '../../features/devices/types'
 import { CanvasesApi } from '../../features/drawings/api/canvasesApi'
+import { markDraftCreatedOnThisDevice } from '../../features/drawings/draftStorage'
 import { formatApiError } from '../../shared/api/ApiError'
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey'
 
@@ -12,6 +14,11 @@ type NewDraftModalProps = {
 }
 
 export default function NewDraftModal({ onClose, onCreated }: NewDraftModalProps) {
+  const { auth } = useAuth()
+  // NewDraftModal only ever renders inside RequireAuth, so this is always
+  // populated in practice; the fallback just satisfies the type checker.
+  const userId = auth.status === 'authenticated' ? auth.user.userId : ''
+
   const [deviceModels, setDeviceModels] = useState<DeviceModel[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -58,6 +65,7 @@ export default function NewDraftModal({ onClose, onCreated }: NewDraftModalProps
         orientation,
         canvasType: 'SINGLE',
       })
+      markDraftCreatedOnThisDevice(userId, canvasId)
       onCreated(canvasId)
     } catch (cause) {
       setSubmitError(formatApiError(cause))
