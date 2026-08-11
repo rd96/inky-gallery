@@ -13,6 +13,7 @@ class Tables {
             DeviceTable,
             DrawingTable,
             CanvasTable,
+            MessageTable,
         )
     }
 }

@@ -116,4 +116,17 @@ class ConnectionRepository {
                 )
             }
 
+    fun checkUserHasActiveRecipient(fromUserId: UserId, toUserId: UserId): Boolean =
+        ConnectionTable
+            .innerJoin(UserTable) {
+                ConnectionTable.recipientUserId eq UserTable.id
+            }
+            .select(ConnectionTable.id)
+            .where {
+                (ConnectionTable.senderUserId eq fromUserId.value) and
+                        (ConnectionTable.recipientUserId eq toUserId.value) and
+                        (UserTable.enabled eq true)
+            }
+            .any()
+
 }

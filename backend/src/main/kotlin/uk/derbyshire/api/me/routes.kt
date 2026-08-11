@@ -24,9 +24,12 @@ fun userRoutes(services: Services, serverConfig: ServerConfig) = routes(
     "/canvases" bind Method.QUERY to queryMyCanvases(services.canvasService),
     "/canvases" bind Method.POST to postCreateCanvas(services.canvasService),
     "/canvases/$canvasId" bind Method.GET to getMyCanvas(services.canvasService),
-    "/canvases/$canvasId/complete" bind Method.POST to postCompleteCanvas(services.canvasService),
 
     "/canvases/$canvasId/drawings" bind Method.POST to postCreateDrawing(services.drawingService),
     "/canvases/$canvasId/drawings" bind Method.PATCH to patchCanvasDrawings(services.canvasService),
     "/canvases/$canvasId/drawings/$drawingId" bind Method.GET to getDrawing(services.drawingService),
+
+    "/canvases/$canvasId/complete" bind Method.POST to postCompleteCanvas(services.canvasService),
+    "/canvases/$canvasId/send" bind Method.POST to postSendCanvas(services.messageService),
+
 )

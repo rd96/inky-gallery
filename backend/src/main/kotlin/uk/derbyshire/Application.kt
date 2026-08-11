@@ -12,6 +12,7 @@ import uk.derbyshire.database.repositories.DeviceApiKeyRepository
 import uk.derbyshire.database.repositories.DeviceModelRepository
 import uk.derbyshire.database.repositories.DeviceRepository
 import uk.derbyshire.database.repositories.DrawingRepository
+import uk.derbyshire.database.repositories.MessageRepository
 import uk.derbyshire.database.repositories.SessionRepository
 import uk.derbyshire.database.repositories.UserRepository
 import uk.derbyshire.services.AuthService
@@ -20,6 +21,7 @@ import uk.derbyshire.services.ConnectionService
 import uk.derbyshire.services.DeviceService
 import uk.derbyshire.services.DrawingService
 import uk.derbyshire.services.ImageProcessingService
+import uk.derbyshire.services.MessageService
 import uk.derbyshire.services.UserService
 import kotlin.time.Clock
 
@@ -58,6 +60,7 @@ class Repositories {
     val apiKeyRepository = DeviceApiKeyRepository()
     val drawingRepository = DrawingRepository()
     val canvasRepository = CanvasRepository()
+    val messageRepository = MessageRepository()
 }
 
 class Services(repositories: Repositories, database: DatabaseContext, clock: Clock) {
@@ -71,4 +74,5 @@ class Services(repositories: Repositories, database: DatabaseContext, clock: Clo
     val deviceService = DeviceService(repositories.deviceModelRepository, repositories.deviceRepository, database)
     val drawingService = DrawingService(imageProcessingService, repositories.drawingRepository, repositories.canvasRepository, database)
     val canvasService = CanvasService(repositories.canvasRepository, repositories.deviceModelRepository, repositories.drawingRepository, database)
+    val messageService = MessageService(repositories.messageRepository, repositories.connectionRepository, repositories.canvasRepository, database)
 }
