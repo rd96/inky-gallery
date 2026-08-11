@@ -57,16 +57,10 @@ class CanvasRepository {
             .orderBy(CanvasTable.createdAt, SortOrder.DESC)
             .map { it.toCanvasMetadata() }
 
-    fun userOwnsCanvas(userId: UserId, canvasId: CanvasId): Boolean =
-        CanvasTable
-            .select(CanvasTable.id)
-            .where { (CanvasTable.id eq canvasId.value) and (CanvasTable.createdBy eq userId.value) }
-            .any()
-
     fun countDraftCanvases(userId: UserId): Long =
         CanvasTable
             .selectAll()
-            .where { CanvasTable.createdBy eq userId.value }
+            .where { (CanvasTable.createdBy eq userId.value) and (CanvasTable.status eq CanvasStatus.DRAFT) }
             .count()
 
     fun getCanvas(userId: UserId, canvasId: CanvasId): CanvasMetadata? =

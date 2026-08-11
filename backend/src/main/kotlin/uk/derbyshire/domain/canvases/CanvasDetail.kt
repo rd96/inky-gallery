@@ -7,5 +7,4 @@ data class CanvasDetail(
     val canvasMetadata: CanvasMetadata,
     val drawings: List<DrawingMetadata>,
     val sentTo: List<UserId>,
-    val canSendTo: List<UserId>,
 )

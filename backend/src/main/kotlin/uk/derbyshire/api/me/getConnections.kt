@@ -33,8 +33,8 @@ data class GetConnectionsResponseDTO(
         val lens = Json.autoBody<GetConnectionsResponseDTO>().toLens()
 
         fun UserConnections.toDto() = GetConnectionsResponseDTO(
-            senders = senders.map { it.toDto() },
-            recipients = recipients.map { it.toDto() },
+            senders = senders.toDto(),
+            recipients = recipients.toDto(),
         )
     }
 }
@@ -45,10 +45,14 @@ data class UserConnectionDTO(
     val displayName: String,
 ) {
     companion object {
-        fun UserConnection.toDto() = UserConnectionDTO(
-            userId = userId,
-            username = username,
-            displayName = displayName,
-        )
+        fun List<UserConnection>.toDto() = map {
+            UserConnectionDTO(
+                userId = it.userId,
+                username = it.username,
+                displayName = it.displayName,
+            )
+        }
+
+        val lens = Json.autoBody<List<UserConnectionDTO>>().toLens()
     }
 }

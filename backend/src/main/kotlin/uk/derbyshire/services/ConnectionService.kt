@@ -11,6 +11,8 @@ import uk.derbyshire.domain.connections.CreateConnectionFailure
 import uk.derbyshire.domain.connections.GetConnectionsFailure
 import uk.derbyshire.domain.connections.UserConnection
 import uk.derbyshire.domain.connections.UserConnections
+import uk.derbyshire.domain.devices.DeviceModelId
+import uk.derbyshire.domain.devices.Orientation
 import uk.derbyshire.domain.users.UserId
 
 class ConnectionService(
@@ -45,7 +47,7 @@ class ConnectionService(
         if (!userService.userExists(userId)) Failure(GetConnectionsFailure.USER_NOT_FOUND)
         else UserConnections(
             senders = findSendersFor(userId, onlyEnabled = true),
-            recipients = findRecipientsFor(userId),
+            recipients = findRecipientsFor(userId, onlyEnabled = true),
         ).asSuccess()
 
     private fun findRecipientsFor(userId: UserId, onlyEnabled: Boolean = false): List<UserConnection> =
@@ -56,6 +58,15 @@ class ConnectionService(
     private fun findSendersFor(userId: UserId, onlyEnabled: Boolean = false): List<UserConnection> =
         context.transaction {
             connectionRepository.getSendersFor(userId, onlyEnabled)
+        }
+
+    fun searchUserRecipients(userId: UserId, deviceModelId: DeviceModelId?, deviceOrientation: Orientation?): List<UserConnection> =
+        context.transaction {
+            if (deviceModelId != null && deviceOrientation != null) {
+                connectionRepository.getRecipientsFor(userId, onlyEnabled = true)
+            } else {
+                connectionRepository.searchRecipientsByDevicesFor(userId, deviceModelId, deviceOrientation)
+            }
         }
 
 }

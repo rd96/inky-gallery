@@ -19,7 +19,7 @@ fun userRoutes(services: Services, serverConfig: ServerConfig) = routes(
 //    "/devices/{deviceId}/api-key" bind Method.PUT to putGenerateDeviceApiKey(deviceService),
 
     "/connections" bind Method.GET to getConnections(services.connectionService),
-//    "/connections/recipients/$USER_ID/devices" bind Method.GET to getRecipientDevices(authService, serverConfig),
+    "/recipients" bind Method.QUERY to queryRecipients(services.connectionService),
 
     "/canvases" bind Method.QUERY to queryMyCanvases(services.canvasService),
     "/canvases" bind Method.POST to postCreateCanvas(services.canvasService),
@@ -29,6 +29,4 @@ fun userRoutes(services: Services, serverConfig: ServerConfig) = routes(
     "/canvases/$canvasId/drawings" bind Method.POST to postCreateDrawing(services.drawingService),
     "/canvases/$canvasId/drawings" bind Method.PATCH to patchCanvasDrawings(services.canvasService),
     "/canvases/$canvasId/drawings/$drawingId" bind Method.GET to getDrawing(services.drawingService),
-
-
 )

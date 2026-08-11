@@ -53,7 +53,7 @@ data class UserConnectionDTO(
             userId = userId,
             username = username,
             displayName = displayName,
-            enabled = enabled,
+            enabled = userEnabled,
         )
     }
 }

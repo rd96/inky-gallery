@@ -46,7 +46,6 @@ private data class QueryCanvasesResponseDTO(
     val createdAt: Instant,
     val drawings: List<DrawingResponseDTO>,
     val sentTo: List<UserId>,
-    val canSendTo: List<UserId>,
 ) {
     companion object {
         val lens = Json.autoBody<List<QueryCanvasesResponseDTO>>().toLens()
@@ -63,7 +62,6 @@ private data class QueryCanvasesResponseDTO(
                 createdAt = canvas.createdAt,
                 drawings = it.drawings.toDto(),
                 sentTo = emptyList(),
-                canSendTo = emptyList(),
             )
         }
     }

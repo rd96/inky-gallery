@@ -9,5 +9,5 @@ data class UserConnection(
     val username: String,
     val displayName: String,
     val createdAt: Instant,
-    val enabled: Boolean,
+    val userEnabled: Boolean,
 )

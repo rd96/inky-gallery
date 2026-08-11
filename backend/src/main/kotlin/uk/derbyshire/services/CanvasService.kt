@@ -50,7 +50,6 @@ class CanvasService(
                     canvasMetadata = it,
                     drawings = drawings[it.canvasId] ?: emptyList(),
                     sentTo = emptyList(),
-                    canSendTo = emptyList(),
                 )
             }
         }
