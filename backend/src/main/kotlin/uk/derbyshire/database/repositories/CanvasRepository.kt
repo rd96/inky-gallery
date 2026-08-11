@@ -21,7 +21,7 @@ import uk.derbyshire.domain.canvases.CanvasMetadata
 import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.canvases.CanvasStatus
 import uk.derbyshire.domain.canvases.CanvasType
-import uk.derbyshire.domain.canvases.CompleteCanvasFailure
+import uk.derbyshire.domain.canvases.UpdateCanvasStatusFailure
 import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.domain.devices.Orientation
@@ -125,15 +125,15 @@ class CanvasRepository {
                 )
             }
 
-    fun updateCanvasStatus(userId: UserId, canvasId: CanvasId, status: CanvasStatus): Result4k<Unit, CompleteCanvasFailure> =
+    fun updateCanvasStatus(userId: UserId, canvasId: CanvasId, status: CanvasStatus): Result4k<Unit, UpdateCanvasStatusFailure> =
         CanvasTable
             .update({ (CanvasTable.id eq canvasId.value) and (CanvasTable.createdBy eq userId.value) }) {
             it[this.status] = status
         }.let {
             when (it) {
-                0 -> Failure(CompleteCanvasFailure.CANVAS_NOT_FOUND)
+                0 -> Failure(UpdateCanvasStatusFailure.CANVAS_NOT_FOUND)
                 1 -> Success(Unit)
-                else -> throw Exception("Multiple canvases edited unexpectedly")
+                else -> throw IllegalStateException("Multiple canvases edited unexpectedly")
             }
         }
 

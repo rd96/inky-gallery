@@ -3,6 +3,7 @@ package uk.derbyshire.services
 import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Result4k
 import dev.forkhandles.result4k.asSuccess
+import dev.forkhandles.result4k.mapFailure
 import dev.forkhandles.result4k.onFailure
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.CanvasRepository
@@ -31,9 +32,13 @@ class DrawingService(
 
             val drawing = imageProcessingService.canonicaliseToPng(uploadedBytes, canvas.widthPx, canvas.heightPx).onFailure { return@transaction it }
 
-            context.transaction {
-                drawingRepository.saveDrawing(canvasId, canvas.drawingsCount, pngData = drawing.data)
-            }.asSuccess()
+            if (canvas.type == CanvasType.SINGLE) {
+                canvasRepository.updateCanvasStatus(userId, canvasId, CanvasStatus.FINISHED)
+                    .mapFailure { SaveDrawingFailure.CANVAS_NOT_FOUND }
+            }
+
+            drawingRepository.saveDrawing(canvasId, canvas.drawingsCount, pngData = drawing.data)
+                .asSuccess()
         }
 
     fun getDrawingForUser(userId: UserId, canvasId: CanvasId, drawingId: DrawingId): ByteArray? =

@@ -4,6 +4,7 @@ import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Result4k
 import dev.forkhandles.result4k.Success
 import dev.forkhandles.result4k.asSuccess
+import dev.forkhandles.result4k.mapFailure
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.CanvasRepository
 import uk.derbyshire.database.repositories.DeviceModelRepository
@@ -73,6 +74,7 @@ class CanvasService(
             }
 
             canvasRepository.updateCanvasStatus(userId, canvasId, CanvasStatus.FINISHED)
+                .mapFailure { CompleteCanvasFailure.CANVAS_NOT_FOUND }
         }
 
     fun reorderCanvasDrawings(userId: UserId, canvasId: CanvasId, orderedDrawingIds: List<DrawingId>): Result4k<Unit, UpdateCanvasFailure> =
