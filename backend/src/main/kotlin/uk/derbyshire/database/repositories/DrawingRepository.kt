@@ -6,6 +6,7 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.update
 import uk.derbyshire.database.schema.CanvasTable
 import uk.derbyshire.database.schema.DrawingTable
 import uk.derbyshire.domain.canvases.CanvasId
@@ -31,7 +32,7 @@ class DrawingRepository {
                 DrawingTable.createdAt,
             )
             .where { DrawingTable.canvasId inList canvasIds.map(CanvasId::value) }
-            .orderBy(DrawingTable.createdAt to SortOrder.DESC)
+            .orderBy(DrawingTable.createdAt to SortOrder.DESC, DrawingTable.position to SortOrder.ASC)
             .groupBy { CanvasId(it[DrawingTable.canvasId].value) }
             .mapValues { (_, rows) ->
                 rows.map {
@@ -42,6 +43,13 @@ class DrawingRepository {
                     )
                 }
             }
+
+    fun getDrawingIdsByCanvasId(canvasId: CanvasId): List<DrawingId> =
+        DrawingTable
+            .select(DrawingTable.id)
+            .where { DrawingTable.canvasId eq canvasId.value }
+            .orderBy(DrawingTable.position to SortOrder.ASC)
+            .map { DrawingId(it[DrawingTable.id].value) }
 
     fun getDrawingData(userId: UserId, canvasId: CanvasId, drawingId: DrawingId): ByteArray? =
         DrawingTable
@@ -54,4 +62,9 @@ class DrawingRepository {
             ?.let {
                 it[DrawingTable.pngData]
             }
+
+    fun updateDrawingOrder(canvasId: CanvasId, drawingId: DrawingId, position: Int) =
+        DrawingTable.update({ (DrawingTable.id eq drawingId.value) and (DrawingTable.canvasId eq canvasId.value) }) {
+            it[DrawingTable.position] = position
+        } == 1
 }

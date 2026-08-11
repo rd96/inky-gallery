@@ -2,6 +2,7 @@ package uk.derbyshire.services
 
 import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Result4k
+import dev.forkhandles.result4k.Success
 import dev.forkhandles.result4k.asSuccess
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.CanvasRepository
@@ -14,8 +15,10 @@ import uk.derbyshire.domain.canvases.CanvasStatus
 import uk.derbyshire.domain.canvases.CanvasType
 import uk.derbyshire.domain.canvases.CompleteCanvasFailure
 import uk.derbyshire.domain.canvases.CreateCanvasFailure
+import uk.derbyshire.domain.canvases.UpdateCanvasFailure
 import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.Orientation
+import uk.derbyshire.domain.drawings.DrawingId
 import uk.derbyshire.domain.users.UserId
 
 class CanvasService(
@@ -70,6 +73,30 @@ class CanvasService(
             }
 
             canvasRepository.updateCanvasStatus(userId, canvasId, CanvasStatus.FINISHED)
+        }
+
+    fun reorderCanvasDrawings(userId: UserId, canvasId: CanvasId, orderedDrawingIds: List<DrawingId>): Result4k<Unit, UpdateCanvasFailure> =
+        context.transaction {
+            val canvas = canvasRepository.getCanvas(userId, canvasId)
+                ?: return@transaction Failure(UpdateCanvasFailure.CANVAS_NOT_FOUND)
+
+            if (canvas.status != CanvasStatus.DRAFT) return@transaction Failure(UpdateCanvasFailure.CANVAS_NOT_IN_DRAFT)
+            if (canvas.type != CanvasType.STACK) return@transaction Failure(UpdateCanvasFailure.CANNOT_REORDER_SINGLE_DRAWING_CANVAS)
+
+            val existingDrawingIds = drawingRepository.getDrawingIdsByCanvasId(canvasId).toSet()
+            val requestedDrawingIds = orderedDrawingIds.toSet()
+
+            if (
+                requestedDrawingIds.size != orderedDrawingIds.size || requestedDrawingIds != existingDrawingIds
+            ) return@transaction Failure(UpdateCanvasFailure.DRAWINGS_MISMATCH)
+
+            for ((position, drawingId) in orderedDrawingIds.withIndex()) {
+                check(drawingRepository.updateDrawingOrder(canvasId, drawingId, position)) {
+                    "Drawing $drawingId unexpectedly missing from canvas $canvasId"
+                }
+            }
+
+            Success(Unit)
         }
 
     companion object {
