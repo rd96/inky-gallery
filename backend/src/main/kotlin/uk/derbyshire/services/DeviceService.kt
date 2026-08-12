@@ -14,7 +14,6 @@ import uk.derbyshire.domain.devices.DeviceId
 import uk.derbyshire.domain.devices.DeviceModel
 import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.Orientation
-import uk.derbyshire.domain.devices.OrientedDeviceModel
 import uk.derbyshire.domain.devices.Palette
 import uk.derbyshire.domain.devices.RegisterDeviceFailure
 import uk.derbyshire.domain.devices.UpdateDeviceFailure
@@ -64,9 +63,9 @@ class DeviceService(
             deviceRepository.getDevicesForUser(userId)
         }
 
-    fun getRecipientDeviceModels(userId: UserId): List<OrientedDeviceModel> = context.transaction {
+    fun getRecipientDeviceModels(userId: UserId, recipientUserId: UserId): List<UserDevice> = context.transaction {
         context.transaction {
-            deviceRepository.getActiveRecipientDevicesForUser(userId)
+            deviceRepository.getActiveRecipientDevicesForUserAndRecipient(userId, recipientUserId)
         }
     }
 

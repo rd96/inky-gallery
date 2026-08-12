@@ -8,6 +8,7 @@ import uk.derbyshire.Services
 import uk.derbyshire.api.helpers.PathParams.canvasId
 import uk.derbyshire.api.helpers.PathParams.deviceId
 import uk.derbyshire.api.helpers.PathParams.drawingId
+import uk.derbyshire.api.helpers.PathParams.userId
 
 fun userRoutes(services: Services, serverConfig: ServerConfig) = routes(
     "" bind Method.PATCH to patchOwnUser(services.userService),
@@ -19,8 +20,8 @@ fun userRoutes(services: Services, serverConfig: ServerConfig) = routes(
 //    "/devices/{deviceId}/api-key" bind Method.PUT to putGenerateDeviceApiKey(deviceService),
 
     "/connections" bind Method.GET to getConnections(services.connectionService),
+    "/recipients/$userId/devices" bind Method.GET to getRecipientDevices(services.deviceService),
     "/recipients" bind Method.QUERY to queryRecipients(services.connectionService),
-    "/recipients/devices" bind Method.GET to getRecipientDevices(services.deviceService),
 
     "/canvases" bind Method.QUERY to queryMyCanvases(services.canvasService),
     "/canvases" bind Method.POST to postCreateCanvas(services.canvasService),

@@ -3,6 +3,7 @@ package uk.derbyshire.database.repositories
 import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Success
 import org.jetbrains.exposed.v1.core.JoinType
+import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -18,7 +19,6 @@ import uk.derbyshire.domain.devices.DeviceId
 import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.domain.devices.Orientation
-import uk.derbyshire.domain.devices.OrientedDeviceModel
 import uk.derbyshire.domain.devices.UpdateDeviceFailure
 import uk.derbyshire.domain.devices.UserDevice
 import uk.derbyshire.domain.users.UserId
@@ -51,6 +51,7 @@ class DeviceRepository {
             .select(
                 DeviceTable.id,
                 DeviceTable.deviceNickname,
+                DeviceModelTable.id,
                 DeviceModelTable.modelName,
                 DeviceModelTable.landscapeWidthPx,
                 DeviceModelTable.landscapeHeightPx,
@@ -60,20 +61,9 @@ class DeviceRepository {
             )
             .where { DeviceTable.userId eq userId.value }
             .orderBy(DeviceTable.createdAt, SortOrder.ASC)
-            .map {
-                UserDevice(
-                    deviceId = DeviceId(it[DeviceTable.id].value),
-                    deviceNickname = it[DeviceTable.deviceNickname],
-                    modelName = it[DeviceModelTable.modelName],
-                    landscapeWidthPx = it[DeviceModelTable.landscapeWidthPx],
-                    landscapeHeightPx = it[DeviceModelTable.landscapeHeightPx],
-                    orientation = it[DeviceTable.orientation],
-                    palette = it[DeviceModelTable.palette]?.map(HexColour::parse),
-                    enabled = it[DeviceTable.enabled],
-                )
-            }
+            .toUserDeviceList()
 
-    fun getActiveRecipientDevicesForUser(userId: UserId): List<OrientedDeviceModel> =
+    fun getActiveRecipientDevicesForUserAndRecipient(userId: UserId, recipientUserId: UserId): List<UserDevice> =
         ConnectionTable
             .join(DeviceTable, JoinType.INNER, DeviceTable.userId, ConnectionTable.recipientUserId)
             .innerJoin(DeviceModelTable)
@@ -85,28 +75,28 @@ class DeviceRepository {
                 DeviceTable.orientation,
                 DeviceModelTable.palette,
             )
-            .where { (ConnectionTable.senderUserId eq userId.value) and DeviceTable.enabled }
-            .groupBy(
-                DeviceModelTable.id,
-                DeviceModelTable.modelName,
-                DeviceModelTable.landscapeWidthPx,
-                DeviceModelTable.landscapeHeightPx,
-                DeviceTable.orientation,
-                DeviceModelTable.palette,
-            )
-            .groupBy { it[DeviceModelTable.id] }
-            .map { rowList ->
-                val deviceModel = rowList.value.first()
-                val orientations = rowList.value.map { it[DeviceTable.orientation] }.toSet()
-
-                OrientedDeviceModel(
-                    deviceModelId = DeviceModelId(deviceModel[DeviceModelTable.id].value),
-                    deviceModelName = deviceModel[DeviceModelTable.modelName],
-                    landscapeWidthPx = deviceModel[DeviceModelTable.landscapeWidthPx],
-                    landscapeHeightPx = deviceModel[DeviceModelTable.landscapeHeightPx],
-                    orientations = orientations,
-                    palette = deviceModel[DeviceModelTable.palette]?.map(HexColour::parse),
-                )
+            .where {
+                // maybe check the recipient is enabled too
+                (ConnectionTable.senderUserId eq userId.value) and
+                        (ConnectionTable.recipientUserId eq recipientUserId.value) and
+                        DeviceTable.enabled
             }
+            .toUserDeviceList()
+
+    companion object {
+        fun Iterable<ResultRow>.toUserDeviceList() = map {
+            UserDevice(
+                deviceId = DeviceId(it[DeviceTable.id].value),
+                deviceNickname = it[DeviceTable.deviceNickname],
+                deviceModelId = DeviceModelId(it[DeviceModelTable.id].value),
+                deviceModelName = it[DeviceModelTable.modelName],
+                landscapeWidthPx = it[DeviceModelTable.landscapeWidthPx],
+                landscapeHeightPx = it[DeviceModelTable.landscapeHeightPx],
+                orientation = it[DeviceTable.orientation],
+                palette = it[DeviceModelTable.palette]?.map(HexColour::parse),
+                enabled = it[DeviceTable.enabled],
+            )
+        }
+    }
 
 }

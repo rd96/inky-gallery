@@ -37,7 +37,7 @@ data class GetMyDevicesResponseDTO(
         fun List<UserDevice>.toDto() = map {
             GetMyDevicesResponseDTO(
                 deviceId = it.deviceId,
-                modelName = it.modelName,
+                modelName = it.deviceModelName,
                 deviceNickname = it.deviceNickname,
                 widthPx = it.widthPx,
                 heightPx = it.heightPx,
