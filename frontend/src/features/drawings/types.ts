@@ -23,6 +23,8 @@ export type Canvas = {
 }
 
 export type CanvasDetail = {
+  deviceModelId: string
+  orientation: Orientation
   widthPx: number
   heightPx: number
   status: CanvasStatus

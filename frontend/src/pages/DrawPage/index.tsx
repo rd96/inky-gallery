@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from 'react-sketch-canvas'
 import { useAuth } from '../../features/auth/useAuth'
 import { CanvasesApi } from '../../features/drawings/api/canvasesApi'
@@ -12,6 +12,7 @@ import {
 } from '../../features/drawings/draftStorage'
 import type { CanvasDetail } from '../../features/drawings/types'
 import { formatApiError } from '../../shared/api/ApiError'
+import SendCanvasModal from '../../shared/components/SendCanvasModal'
 import './DrawPage.css'
 
 type PaletteMode = 'palette' | 'full'
@@ -94,6 +95,7 @@ type DrawCanvasProps = {
 }
 
 function DrawCanvas({ canvasId, canvas }: DrawCanvasProps) {
+  const navigate = useNavigate()
   const { auth } = useAuth()
   // DrawPage only ever renders inside RequireAuth, so this is always
   // populated in practice; the fallback just satisfies the type checker.
@@ -123,8 +125,8 @@ function DrawCanvas({ canvasId, canvas }: DrawCanvasProps) {
   // resetCanvas() + loadPaths().
   const [history, setHistory] = useState<History>(() => loadStoredHistory(userId, canvasId))
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [showSendModal, setShowSendModal] = useState(false)
 
   // Restore into the canvas itself once on mount - the initial history
   // state above already has the saved paths, but the canvas needs its ref
@@ -156,7 +158,6 @@ function DrawCanvas({ canvasId, canvas }: DrawCanvasProps) {
       snapshots: [...snapshots.slice(0, index + 1), paths],
       index: index + 1,
     }))
-    setSaved(false)
     setSaveError(null)
   }
 
@@ -194,7 +195,6 @@ function DrawCanvas({ canvasId, canvas }: DrawCanvasProps) {
     if (!canvasRefCurrent) return
 
     setSaving(true)
-    setSaved(false)
     setSaveError(null)
 
     try {
@@ -207,9 +207,9 @@ function DrawCanvas({ canvasId, canvas }: DrawCanvasProps) {
       })
       const png = await (await fetch(dataUrl)).blob()
       await DrawingsApi.saveDrawing(canvasId, png)
-      setSaved(true)
       // The canvas is now a saved drawing, not a draft - free up this slot.
       resetToBlank()
+      setShowSendModal(true)
     } catch (cause) {
       setSaveError(formatApiError(cause))
     } finally {
@@ -327,14 +327,13 @@ function DrawCanvas({ canvasId, canvas }: DrawCanvasProps) {
             onClick={() => void handleSave()}
             disabled={saving}
           >
-            {saving ? 'Saving…' : 'Save drawing'}
+            {saving ? 'Saving…' : 'Save and send'}
           </button>
           {saveError && (
             <p className="draw-save-error" role="alert">
               {saveError}
             </p>
           )}
-          {saved && <p className="draw-save-success">Saved!</p>}
         </div>
       </div>
 
@@ -349,6 +348,16 @@ function DrawCanvas({ canvasId, canvas }: DrawCanvasProps) {
         canvasColor="white"
         onStroke={commitSnapshot}
       />
+
+      {showSendModal && (
+        <SendCanvasModal
+          canvasId={canvasId}
+          deviceModelId={canvas.deviceModelId}
+          orientation={canvas.orientation}
+          onClose={() => navigate('/')}
+          onSent={() => navigate('/')}
+        />
+      )}
     </div>
   )
 }

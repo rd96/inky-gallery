@@ -71,12 +71,45 @@
   padding: 0;
 }
 
-.drawing-card {
+.drawing-card-item {
   position: relative;
+}
+
+.drawing-card-item:hover,
+.drawing-card-item:focus-within {
+  z-index: 2;
+}
+
+.drawing-card {
+  position: absolute;
+  inset: 0;
   border-radius: 12px;
   overflow: hidden;
   background: var(--inky-color-sand);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.drawing-card:hover,
+.drawing-card:focus-within {
+  transform: scale(1.04);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+.drawing-card-open {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.drawing-card-open:disabled {
+  cursor: default;
 }
 
 .drawing-card-image {
@@ -101,6 +134,29 @@
   font-size: 0.8rem;
 }
 
+.card-hover-action {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: var(--inky-color-blue);
+  color: var(--inky-color-white);
+  font-size: 0.8rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 1;
+}
+
+.draft-card:hover .card-hover-action,
+.draft-card:focus-visible .card-hover-action,
+.drawing-card:hover .card-hover-action,
+.drawing-card:focus-within .card-hover-action {
+  opacity: 1;
+}
+
 .card-meta {
   position: absolute;
   left: 0;
@@ -114,10 +170,16 @@
   background: linear-gradient(to top, rgba(5, 5, 20, 0.6), transparent);
   color: var(--inky-color-white);
   font-size: 0.75rem;
+  pointer-events: none;
 }
 
 .draft-card-item {
   position: relative;
+}
+
+.draft-card-item:hover,
+.draft-card-item:focus-within {
+  z-index: 2;
 }
 
 .draft-card {
@@ -129,6 +191,15 @@
   border: 2px dashed var(--inky-color-blue);
   background: #fff;
   text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.draft-card:hover,
+.draft-card:focus-visible {
+  transform: scale(1.04);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
 }
 
 .draft-card-offscreen {
@@ -153,6 +224,13 @@
   background: var(--inky-color-blue);
   color: var(--inky-color-white);
   font-size: 0.8rem;
+  opacity: 1;
+  transition: opacity 0.15s ease;
+}
+
+.draft-card:hover .draft-card-label,
+.draft-card:focus-visible .draft-card-label {
+  opacity: 0;
 }
 
 .draft-card-warning {
@@ -195,4 +273,26 @@
 .draft-card-warning:focus-within .draft-card-warning-tooltip {
   opacity: 1;
   visibility: visible;
+}
+
+.canvas-preview-modal {
+  max-width: 640px;
+}
+
+.canvas-preview-image {
+  display: block;
+  width: 100%;
+  max-height: 65vh;
+  border-radius: 8px;
+  object-fit: contain;
+  background: var(--texture-canvas), var(--inky-color-sand);
+}
+
+.canvas-preview-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--inky-color-blue);
+  font-size: 0.85rem;
 }

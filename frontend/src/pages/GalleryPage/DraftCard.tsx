@@ -65,7 +65,8 @@ export default function DraftCard({ canvas }: DraftCardProps) {
           />
         </div>
         {imageUrl && <img className="draft-card-image" src={imageUrl} alt="" />}
-        <span className="draft-card-label">Continue draft</span>
+        <span className="draft-card-label">Draft</span>
+        <span className="card-hover-action">Continue draft</span>
         <div className="card-meta">
           <span>
             {canvas.widthPx} × {canvas.heightPx}

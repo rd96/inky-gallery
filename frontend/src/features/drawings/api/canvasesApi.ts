@@ -53,6 +53,8 @@ async function queryMyCanvases(): Promise<Canvas[]> {
 }
 
 type CanvasDetailResponseDTO = {
+  deviceModelId: string
+  orientation: Orientation
   widthPx: number
   heightPx: number
   status: CanvasStatus
@@ -62,6 +64,8 @@ type CanvasDetailResponseDTO = {
 
 function toCanvasDetail(dto: CanvasDetailResponseDTO): CanvasDetail {
   return {
+    deviceModelId: dto.deviceModelId,
+    orientation: dto.orientation,
     widthPx: dto.widthPx,
     heightPx: dto.heightPx,
     status: dto.status,
@@ -89,8 +93,19 @@ function createCanvas(request: CreateCanvasRequest): Promise<CreateCanvasRespons
   return ApiClient.post<CreateCanvasResponseDTO, CreateCanvasRequest>('/api/me/canvases', request)
 }
 
+type SendCanvasRequest = {
+  recipientUserId: string
+  message: string | null
+  showName: boolean
+}
+
+function sendCanvas(canvasId: string, request: SendCanvasRequest): Promise<void> {
+  return ApiClient.post<void, SendCanvasRequest>(`/api/me/canvases/${canvasId}/send`, request)
+}
+
 export const CanvasesApi = {
   queryMyCanvases,
   getMyCanvas,
   createCanvas,
+  sendCanvas,
 }
