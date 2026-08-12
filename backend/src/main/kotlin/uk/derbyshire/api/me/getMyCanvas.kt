@@ -11,7 +11,8 @@ import uk.derbyshire.api.me.GetMyCanvasResponseDTO.Companion.toDto
 import uk.derbyshire.domain.canvases.CanvasMetadata
 import uk.derbyshire.domain.canvases.CanvasStatus
 import uk.derbyshire.domain.canvases.CanvasType
-import uk.derbyshire.domain.devices.HexColour
+import uk.derbyshire.domain.devices.DeviceModelId
+import uk.derbyshire.domain.devices.Orientation
 import uk.derbyshire.domain.devices.Palette
 import uk.derbyshire.services.CanvasService
 
@@ -26,6 +27,8 @@ fun getMyCanvas(canvasService: CanvasService) = handler@{ request: Request ->
 }
 
 data class GetMyCanvasResponseDTO(
+    val deviceModelId: DeviceModelId,
+    val orientation: Orientation,
     val widthPx: Int,
     val heightPx: Int,
     val status: CanvasStatus,
@@ -36,6 +39,8 @@ data class GetMyCanvasResponseDTO(
         val lens = Json.autoBody<GetMyCanvasResponseDTO>().toLens()
 
         fun CanvasMetadata.toDto() = GetMyCanvasResponseDTO(
+            deviceModelId = this.deviceModelId,
+            orientation = this.orientation,
             widthPx = this.widthPx,
             heightPx = this.heightPx,
             status = this.status,
