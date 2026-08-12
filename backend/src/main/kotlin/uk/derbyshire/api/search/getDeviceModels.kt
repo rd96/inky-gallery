@@ -8,7 +8,7 @@ import uk.derbyshire.api.search.GetDeviceModelsResponseDTO.Companion.toDto
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.domain.devices.DeviceModel
 import uk.derbyshire.domain.devices.DeviceModelId
-import uk.derbyshire.domain.devices.HexColour
+import uk.derbyshire.domain.devices.Palette
 import uk.derbyshire.services.DeviceService
 
 fun getDeviceModels(deviceService: DeviceService): HttpHandler = {
@@ -22,7 +22,7 @@ data class GetDeviceModelsResponseDTO(
     val deviceName: String,
     val landscapeWidthPx: Int,
     val landscapeHeightPx: Int,
-    val palette: List<HexColour>?,
+    val palette: Palette?,
 ) {
     companion object {
         val lens = Json.autoBody<List<GetDeviceModelsResponseDTO>>().toLens()

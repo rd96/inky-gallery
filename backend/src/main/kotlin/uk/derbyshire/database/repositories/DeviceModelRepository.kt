@@ -7,9 +7,10 @@ import uk.derbyshire.database.schema.DeviceModelTable
 import uk.derbyshire.domain.devices.DeviceModel
 import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.HexColour
+import uk.derbyshire.domain.devices.Palette
 
 class DeviceModelRepository {
-    fun insertModel(modelName: String, landscapeWidthPx: Int, landscapeHeightPx: Int, palette: List<HexColour>?): DeviceModelId? =
+    fun insertModel(modelName: String, landscapeWidthPx: Int, landscapeHeightPx: Int, palette: Palette?): DeviceModelId? =
         DeviceModelTable.insertIgnoreAndGetId {
             it[this.modelName] = modelName
             it[this.landscapeWidthPx] = landscapeWidthPx

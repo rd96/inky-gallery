@@ -7,7 +7,7 @@ import org.http4k.core.Response
 import org.http4k.core.Status
 import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
-import uk.derbyshire.domain.devices.HexColour
+import uk.derbyshire.domain.devices.Palette
 import uk.derbyshire.services.DeviceService
 
 fun postCreateDeviceModel(deviceService: DeviceService) = { request: Request ->
@@ -30,7 +30,7 @@ data class PostCreateDeviceTypeRequestDTO(
     val deviceName: String,
     val landscapeWidthPx: Int,
     val landscapeHeightPx: Int,
-    val palette: List<HexColour>? = null,
+    val palette: Palette? = null,
 ) {
     companion object {
         val lens = Json.autoBody<PostCreateDeviceTypeRequestDTO>().toLens()

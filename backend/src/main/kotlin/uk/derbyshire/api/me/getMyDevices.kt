@@ -8,8 +8,8 @@ import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.api.me.GetMyDevicesResponseDTO.Companion.toDto
 import uk.derbyshire.domain.devices.DeviceId
-import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.domain.devices.Orientation
+import uk.derbyshire.domain.devices.Palette
 import uk.derbyshire.domain.devices.UserDevice
 import uk.derbyshire.services.DeviceService
 
@@ -28,7 +28,7 @@ data class GetMyDevicesResponseDTO(
     val widthPx: Int,
     val heightPx: Int,
     val orientation: Orientation,
-    val palette: List<HexColour>? = null,
+    val palette: Palette? = null,
     val enabled: Boolean,
 ) {
     companion object {

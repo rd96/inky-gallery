@@ -12,6 +12,7 @@ import uk.derbyshire.domain.canvases.CanvasMetadata
 import uk.derbyshire.domain.canvases.CanvasStatus
 import uk.derbyshire.domain.canvases.CanvasType
 import uk.derbyshire.domain.devices.HexColour
+import uk.derbyshire.domain.devices.Palette
 import uk.derbyshire.services.CanvasService
 
 fun getMyCanvas(canvasService: CanvasService) = handler@{ request: Request ->
@@ -29,7 +30,7 @@ data class GetMyCanvasResponseDTO(
     val heightPx: Int,
     val status: CanvasStatus,
     val type: CanvasType,
-    val palette: List<HexColour>?,
+    val palette: Palette?,
 ) {
     companion object {
         val lens = Json.autoBody<GetMyCanvasResponseDTO>().toLens()

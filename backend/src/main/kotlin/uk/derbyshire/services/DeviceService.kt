@@ -15,6 +15,7 @@ import uk.derbyshire.domain.devices.DeviceModel
 import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.domain.devices.Orientation
+import uk.derbyshire.domain.devices.Palette
 import uk.derbyshire.domain.devices.RegisterDeviceFailure
 import uk.derbyshire.domain.devices.UpdateDeviceFailure
 import uk.derbyshire.domain.devices.UserDevice
@@ -28,7 +29,7 @@ class DeviceService(
     private val deviceRepository: DeviceRepository,
     private val context: DatabaseContext,
 ) {
-    fun createDeviceModel(deviceName: String, landscapeWidthPx: Int, landscapeHeightPx: Int, palette: List<HexColour>? = null): Result4k<DeviceModelId, CreateDeviceModelFailure> {
+    fun createDeviceModel(deviceName: String, landscapeWidthPx: Int, landscapeHeightPx: Int, palette: Palette? = null): Result4k<DeviceModelId, CreateDeviceModelFailure> {
         if (deviceName.length > MAX_DEVICE_MODEL_NAME_LENGTH) return Failure(CreateDeviceModelFailure.MODAL_NAME_TOO_LONG)
         validateDimensions(width = landscapeWidthPx, height = landscapeHeightPx).onFailure { return it }
 

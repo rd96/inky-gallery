@@ -5,5 +5,5 @@ data class DeviceModel(
     val modelName: String,
     val landscapeWidthPx: Int,
     val landscapeHeightPx: Int,
-    val palette: List<HexColour>?,
+    val palette: Palette?,
 )
