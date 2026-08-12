@@ -13,8 +13,8 @@ import uk.derbyshire.domain.devices.CreateDeviceModelFailure
 import uk.derbyshire.domain.devices.DeviceId
 import uk.derbyshire.domain.devices.DeviceModel
 import uk.derbyshire.domain.devices.DeviceModelId
-import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.domain.devices.Orientation
+import uk.derbyshire.domain.devices.OrientedDeviceModel
 import uk.derbyshire.domain.devices.Palette
 import uk.derbyshire.domain.devices.RegisterDeviceFailure
 import uk.derbyshire.domain.devices.UpdateDeviceFailure
@@ -63,6 +63,12 @@ class DeviceService(
         context.transaction {
             deviceRepository.getDevicesForUser(userId)
         }
+
+    fun getRecipientDeviceModels(userId: UserId): List<OrientedDeviceModel> = context.transaction {
+        context.transaction {
+            deviceRepository.getActiveRecipientDevicesForUser(userId)
+        }
+    }
 
     companion object {
         const val MAX_DEVICE_NICKNAME_LENGTH = 50

@@ -2,6 +2,7 @@ package uk.derbyshire.database.repositories
 
 import dev.forkhandles.result4k.Failure
 import dev.forkhandles.result4k.Success
+import org.jetbrains.exposed.v1.core.JoinType
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -10,12 +11,14 @@ import org.jetbrains.exposed.v1.jdbc.insertIgnoreAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.update
 import org.postgresql.util.PSQLState
+import uk.derbyshire.database.schema.ConnectionTable
 import uk.derbyshire.database.schema.DeviceModelTable
 import uk.derbyshire.database.schema.DeviceTable
 import uk.derbyshire.domain.devices.DeviceId
 import uk.derbyshire.domain.devices.DeviceModelId
 import uk.derbyshire.domain.devices.HexColour
 import uk.derbyshire.domain.devices.Orientation
+import uk.derbyshire.domain.devices.OrientedDeviceModel
 import uk.derbyshire.domain.devices.UpdateDeviceFailure
 import uk.derbyshire.domain.devices.UserDevice
 import uk.derbyshire.domain.users.UserId
@@ -67,6 +70,42 @@ class DeviceRepository {
                     orientation = it[DeviceTable.orientation],
                     palette = it[DeviceModelTable.palette]?.map(HexColour::parse),
                     enabled = it[DeviceTable.enabled],
+                )
+            }
+
+    fun getActiveRecipientDevicesForUser(userId: UserId): List<OrientedDeviceModel> =
+        ConnectionTable
+            .join(DeviceTable, JoinType.INNER, DeviceTable.userId, ConnectionTable.recipientUserId)
+            .innerJoin(DeviceModelTable)
+            .select(
+                DeviceModelTable.id,
+                DeviceModelTable.modelName,
+                DeviceModelTable.landscapeWidthPx,
+                DeviceModelTable.landscapeHeightPx,
+                DeviceTable.orientation,
+                DeviceModelTable.palette,
+            )
+            .where { (ConnectionTable.senderUserId eq userId.value) and DeviceTable.enabled }
+            .groupBy(
+                DeviceModelTable.id,
+                DeviceModelTable.modelName,
+                DeviceModelTable.landscapeWidthPx,
+                DeviceModelTable.landscapeHeightPx,
+                DeviceTable.orientation,
+                DeviceModelTable.palette,
+            )
+            .groupBy { it[DeviceModelTable.id] }
+            .map { rowList ->
+                val deviceModel = rowList.value.first()
+                val orientations = rowList.value.map { it[DeviceTable.orientation] }.toSet()
+
+                OrientedDeviceModel(
+                    deviceModelId = DeviceModelId(deviceModel[DeviceModelTable.id].value),
+                    deviceModelName = deviceModel[DeviceModelTable.modelName],
+                    landscapeWidthPx = deviceModel[DeviceModelTable.landscapeWidthPx],
+                    landscapeHeightPx = deviceModel[DeviceModelTable.landscapeHeightPx],
+                    orientations = orientations,
+                    palette = deviceModel[DeviceModelTable.palette]?.map(HexColour::parse),
                 )
             }
 

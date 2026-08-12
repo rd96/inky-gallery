@@ -20,6 +20,7 @@ fun userRoutes(services: Services, serverConfig: ServerConfig) = routes(
 
     "/connections" bind Method.GET to getConnections(services.connectionService),
     "/recipients" bind Method.QUERY to queryRecipients(services.connectionService),
+    "/recipients/devices" bind Method.GET to getRecipientDevices(services.deviceService),
 
     "/canvases" bind Method.QUERY to queryMyCanvases(services.canvasService),
     "/canvases" bind Method.POST to postCreateCanvas(services.canvasService),
@@ -31,5 +32,4 @@ fun userRoutes(services: Services, serverConfig: ServerConfig) = routes(
 
     "/canvases/$canvasId/complete" bind Method.POST to postCompleteCanvas(services.canvasService),
     "/canvases/$canvasId/send" bind Method.POST to postSendCanvas(services.messageService),
-
 )
