@@ -21,7 +21,7 @@ fun patchOwnUser(userService: UserService) = { request: Request ->
     )
 
     when (result) {
-        is Success -> Response(Status.OK)
+        is Success -> Response(Status.NO_CONTENT)
         is Failure -> result.reason.description.toErrorResponseDTO()
     }
 }

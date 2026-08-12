@@ -21,7 +21,7 @@ fun patchCanvasDrawings(canvasService: CanvasService) = { request: Request ->
     val result = canvasService.reorderCanvasDrawings(currentUser.userId, canvasId, patchRequest.orderedDrawingIds)
 
     when (result) {
-        is Success -> Response(Status.OK)
+        is Success -> Response(Status.NO_CONTENT)
         is Failure -> result.reason.description.toErrorResponseDTO()
     }
 }

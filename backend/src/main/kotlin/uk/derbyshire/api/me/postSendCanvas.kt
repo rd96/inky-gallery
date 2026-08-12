@@ -21,7 +21,7 @@ fun postSendCanvas(messageService: MessageService) = { request: Request ->
     val result = messageService.sendMessage(fromUserId = currentUser.userId, toUserId = postRequest.recipientUserId, canvasId, postRequest.message, postRequest.showName)
 
     when (result) {
-        is Success -> Response(Status.OK)
+        is Success -> Response(Status.NO_CONTENT)
         is Failure -> result.reason.description.toErrorResponseDTO()
     }
 }
