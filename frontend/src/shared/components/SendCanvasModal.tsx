@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
-import { CanvasesApi } from '../../features/drawings/api/canvasesApi'
+import { useAuth } from '../../features/auth/useAuth'
 import type { Orientation } from '../../features/devices/types'
+import { CanvasesApi } from '../../features/drawings/api/canvasesApi'
 import { RecipientsApi } from '../../features/recipients/api/recipientsApi'
+import { loadTargetedRecipient } from '../../features/recipients/targetedRecipientStorage'
 import type { Recipient } from '../../features/recipients/types'
 import { formatApiError } from '../api/ApiError'
 import { useEscapeKey } from '../hooks/useEscapeKey'
+import RecipientPicker from './RecipientPicker'
 import './SendCanvasModal.css'
 
 const MAX_MESSAGE_LENGTH = 100
@@ -29,13 +32,22 @@ export default function SendCanvasModal({
   onClose,
   onSent,
 }: SendCanvasModalProps) {
-  const [step, setStep] = useState<Step>('recipient')
+  const { auth } = useAuth()
+  // SendCanvasModal only ever renders inside RequireAuth, so this is always
+  // populated in practice; the fallback just satisfies the type checker.
+  const userId = auth.status === 'authenticated' ? auth.user.userId : ''
+
+  // The canvas may have been created with a recipient already in mind - if
+  // so, skip straight to composing a message for them, but leave "Back"
+  // available in case they'd rather send it to someone else.
+  const targetedRecipient = loadTargetedRecipient(userId, canvasId)
+
+  const [step, setStep] = useState<Step>(targetedRecipient ? 'compose' : 'recipient')
   const [recipients, setRecipients] = useState<Recipient[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
 
-  const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(null)
+  const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(targetedRecipient)
   const [message, setMessage] = useState('')
   const [showName, setShowName] = useState(true)
   const [sending, setSending] = useState(false)
@@ -61,10 +73,6 @@ export default function SendCanvasModal({
       cancelled = true
     }
   }, [deviceModelId, orientation])
-
-  const filteredRecipients = recipients.filter(recipient =>
-    recipient.displayName.toLowerCase().includes(search.trim().toLowerCase()),
-  )
 
   function handlePickRecipient(recipient: Recipient) {
     setSelectedRecipient(recipient)
@@ -111,50 +119,13 @@ export default function SendCanvasModal({
           <>
             <h2>Who do you want to send this to?</h2>
 
-            {loading && <p>Finding your people…</p>}
-            {loadError && (
-              <p className="admin-error" role="alert">
-                {loadError}
-              </p>
-            )}
-
-            {!loading && !loadError && recipients.length === 0 && (
-              <p className="recipient-empty">No connections yet - ask an admin to add some.</p>
-            )}
-
-            {!loading && !loadError && recipients.length > 0 && (
-              <>
-                <input
-                  type="text"
-                  className="recipient-search"
-                  placeholder="Type a name..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  autoFocus
-                />
-
-                <ul className="recipient-list">
-                  {filteredRecipients.map(recipient => (
-                    <li key={recipient.userId}>
-                      <button
-                        type="button"
-                        className="recipient-option"
-                        onClick={() => handlePickRecipient(recipient)}
-                      >
-                        <span className="recipient-avatar" aria-hidden="true">
-                          {recipient.displayName.charAt(0).toUpperCase()}
-                        </span>
-                        <span>{recipient.displayName}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-
-                {filteredRecipients.length === 0 && (
-                  <p className="recipient-empty">No one found for that name</p>
-                )}
-              </>
-            )}
+            <RecipientPicker
+              recipients={recipients}
+              loading={loading}
+              loadError={loadError}
+              emptyMessage="No connections yet - ask an admin to add some."
+              onSelect={handlePickRecipient}
+            />
 
             <div className="modal-actions">
               <button type="button" className="btn-secondary" onClick={onClose}>

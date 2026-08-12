@@ -400,7 +400,7 @@
 }
 
 .orientation-field {
-  padding: 0.75rem 0;
+  padding: 0.75rem 0 1.5rem;
 }
 
 .orientation-picker {
@@ -420,10 +420,13 @@
   background: none;
   color: var(--inky-color-black);
   font-size: 0.85rem;
+}
+
+button.orientation-option {
   cursor: pointer;
 }
 
-.orientation-option:hover {
+button.orientation-option:hover {
   border-color: var(--inky-color-blue);
 }
 
@@ -431,6 +434,12 @@
   border-color: var(--inky-color-blue);
   background: rgba(9, 29, 95, 0.06);
   color: var(--inky-color-blue);
+}
+
+.orientation-dimensions {
+  color: inherit;
+  opacity: 0.65;
+  font-size: 0.75rem;
 }
 
 .orientation-box-frame {

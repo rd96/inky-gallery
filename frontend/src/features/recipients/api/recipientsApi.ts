@@ -1,6 +1,6 @@
 import { ApiClient } from '../../../shared/api/ApiClient'
 import type { Orientation } from '../../devices/types'
-import type { Recipient } from '../types'
+import type { Recipient, RecipientDevice } from '../types'
 
 type DeviceMatching = {
   deviceModelId: string
@@ -15,6 +15,11 @@ async function searchRecipients(deviceMatching?: DeviceMatching): Promise<Recipi
   return ApiClient.query<Recipient[], QueryRecipientsRequest>('/api/me/recipients', { deviceMatching })
 }
 
+function getRecipientDevices(recipientUserId: string): Promise<RecipientDevice[]> {
+  return ApiClient.get<RecipientDevice[]>(`/api/me/recipients/${recipientUserId}/devices`)
+}
+
 export const RecipientsApi = {
   searchRecipients,
+  getRecipientDevices,
 }

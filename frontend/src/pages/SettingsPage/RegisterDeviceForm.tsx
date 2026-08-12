@@ -88,7 +88,7 @@ export default function RegisterDeviceForm({
               required
             />
           </label>
-          {selectedModel && selectedModel.landscapeWidthPx !== selectedModel.landscapeHeightPx && (
+          {selectedModel && (
             <div className="orientation-field">
               <OrientationPicker
                 value={orientation}

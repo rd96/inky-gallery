@@ -16,6 +16,29 @@ export default function OrientationPicker({
   landscapeWidthPx,
   landscapeHeightPx,
 }: OrientationPickerProps) {
+  const isSquare = landscapeWidthPx === landscapeHeightPx
+
+  // A square device has no meaningful orientation to pick - show it as a
+  // single static card (with its dimensions) rather than a two-way toggle.
+  if (isSquare) {
+    return (
+      <div className="orientation-picker">
+        <div className="orientation-option orientation-option--selected">
+          <span className="orientation-box-frame" aria-hidden="true">
+            <span
+              className="orientation-box"
+              style={{ width: `${LONG_SIDE_REM}rem`, height: `${LONG_SIDE_REM}rem` }}
+            />
+          </span>
+          Square
+          <span className="orientation-dimensions">
+            {landscapeWidthPx}×{landscapeHeightPx}
+          </span>
+        </div>
+      </div>
+    )
+  }
+
   const ratio = landscapeWidthPx / landscapeHeightPx
   const shortSideRem = Math.max(MIN_SIDE_REM, LONG_SIDE_REM / ratio)
 
@@ -39,6 +62,9 @@ export default function OrientationPicker({
           />
         </span>
         Landscape
+        <span className="orientation-dimensions">
+          {landscapeWidthPx}×{landscapeHeightPx}
+        </span>
       </button>
       <button
         type="button"
@@ -58,6 +84,9 @@ export default function OrientationPicker({
           />
         </span>
         Portrait
+        <span className="orientation-dimensions">
+          {landscapeHeightPx}×{landscapeWidthPx}
+        </span>
       </button>
     </div>
   )

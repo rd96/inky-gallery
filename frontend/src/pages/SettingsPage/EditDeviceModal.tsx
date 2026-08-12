@@ -77,16 +77,14 @@ export default function EditDeviceModal({ device, onClose, onSaved }: EditDevice
               required
             />
           </label>
-          {landscapeWidthPx !== landscapeHeightPx && (
-            <div className="orientation-field">
-              <OrientationPicker
-                value={orientation}
-                onChange={setOrientation}
-                landscapeWidthPx={landscapeWidthPx}
-                landscapeHeightPx={landscapeHeightPx}
-              />
-            </div>
-          )}
+          <div className="orientation-field">
+            <OrientationPicker
+              value={orientation}
+              onChange={setOrientation}
+              landscapeWidthPx={landscapeWidthPx}
+              landscapeHeightPx={landscapeHeightPx}
+            />
+          </div>
           <label className="settings-checkbox-label">
             <input
               type="checkbox"
