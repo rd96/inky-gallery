@@ -68,12 +68,15 @@ class DeviceRepository {
             .join(DeviceTable, JoinType.INNER, DeviceTable.userId, ConnectionTable.recipientUserId)
             .innerJoin(DeviceModelTable)
             .select(
+                DeviceTable.id,
+                DeviceTable.deviceNickname,
                 DeviceModelTable.id,
                 DeviceModelTable.modelName,
                 DeviceModelTable.landscapeWidthPx,
                 DeviceModelTable.landscapeHeightPx,
                 DeviceTable.orientation,
                 DeviceModelTable.palette,
+                DeviceTable.enabled,
             )
             .where {
                 // maybe check the recipient is enabled too
