@@ -62,7 +62,7 @@ class ConnectionService(
 
     fun searchUserRecipients(userId: UserId, deviceModelId: DeviceModelId?, deviceOrientation: Orientation?): List<UserConnection> =
         context.transaction {
-            if (deviceModelId != null && deviceOrientation != null) {
+            if (deviceModelId == null && deviceOrientation == null) {
                 connectionRepository.getRecipientsFor(userId, onlyEnabled = true)
             } else {
                 connectionRepository.searchRecipientsByDevicesFor(userId, deviceModelId, deviceOrientation)
