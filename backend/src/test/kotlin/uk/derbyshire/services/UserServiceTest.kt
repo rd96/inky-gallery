@@ -1,6 +1,7 @@
 package uk.derbyshire.services
 
 import dev.forkhandles.result4k.Failure
+import dev.forkhandles.result4k.Success
 import dev.forkhandles.result4k.asSuccess
 import io.mockk.clearMocks
 import io.mockk.every
@@ -15,12 +16,12 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.UserRepository
-import uk.derbyshire.domain.auth.ActivationFailure
 import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.domain.users.CreateAdminFailure
 import uk.derbyshire.domain.users.CreateUserFailure
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.domain.users.UpdateUserFailure
+import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.domain.users.UserLoginDetail
 import uk.derbyshire.domain.users.UserSearchResult
 import uk.derbyshire.domain.users.UserSummary
@@ -51,10 +52,6 @@ class UserServiceTest {
         } answers {
             firstArg<() -> Any?>().invoke()
         }
-
-        every {
-            passwordHasherService.hash(any())
-        } returns HASHED_PASSWORD
 
         every {
             userRepository.createUser(
@@ -347,6 +344,17 @@ class UserServiceTest {
         }
 
         @Test
+        fun `returns whether a user exists`() {
+            every {
+                userRepository.userExists(CREATED_USER_ID)
+            } returns true
+
+            val result = userService.userExists(CREATED_USER_ID)
+
+            assertEquals(true, result)
+        }
+
+        @Test
         fun `returns whether an admin exists`() {
             every {
                 userRepository.hasAdminUser()
@@ -367,6 +375,10 @@ class UserServiceTest {
             } returns false
 
             every {
+                passwordHasherService.validateAndHashPassword(VALID_PASSWORD)
+            } returns HASHED_PASSWORD
+
+            every {
                 userRepository.createUser(
                     username = "admin-user",
                     passwordHash = HASHED_PASSWORD,
@@ -382,10 +394,6 @@ class UserServiceTest {
             )
 
             assertEquals(Unit.asSuccess(), result)
-
-            verify(exactly = 1) {
-                passwordHasherService.hash(VALID_PASSWORD)
-            }
 
             verify(exactly = 1) {
                 userRepository.createUser(
@@ -411,7 +419,7 @@ class UserServiceTest {
             )
 
             verify(exactly = 0) {
-                passwordHasherService.hash(any())
+                passwordHasherService.validateAndHashPassword(any())
             }
 
             verify(exactly = 0) {
@@ -420,12 +428,14 @@ class UserServiceTest {
         }
 
         @Test
-        fun `rejects password shorter than minimum length`() {
+        fun `rejects an invalid password`() {
+            every {
+                passwordHasherService.validateAndHashPassword(any())
+            } returns null
+
             val result = userService.createInitialAdminUser(
                 username = "admin-user",
-                password = Secret(
-                    "a".repeat(UserService.MIN_PASSWORD_LENGTH - 1),
-                ),
+                password = Secret("too-short-or-too-long"),
             )
 
             assertEquals(
@@ -434,39 +444,26 @@ class UserServiceTest {
             )
 
             verify(exactly = 0) {
-                passwordHasherService.hash(any())
-            }
-
-            verify(exactly = 0) {
                 userRepository.hasAdminUser()
             }
-        }
-
-        @Test
-        fun `rejects password longer than maximum length`() {
-            val result = userService.createInitialAdminUser(
-                username = "admin-user",
-                password = Secret(
-                    "a".repeat(UserService.MAX_PASSWORD_LENGTH + 1),
-                ),
-            )
-
-            assertEquals(
-                Failure(CreateAdminFailure.INVALID_PASSWORD),
-                result,
-            )
 
             verify(exactly = 0) {
-                passwordHasherService.hash(any())
-            }
-
-            verify(exactly = 0) {
-                userRepository.hasAdminUser()
+                userRepository.createUser(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                )
             }
         }
 
         @Test
         fun `returns admin already exists when an admin exists`() {
+            every {
+                passwordHasherService.validateAndHashPassword(VALID_PASSWORD)
+            } returns HASHED_PASSWORD
+
             every {
                 userRepository.hasAdminUser()
             } returns true
@@ -495,6 +492,10 @@ class UserServiceTest {
         @Test
         fun `returns username taken when insert is ignored`() {
             every {
+                passwordHasherService.validateAndHashPassword(VALID_PASSWORD)
+            } returns HASHED_PASSWORD
+
+            every {
                 userRepository.hasAdminUser()
             } returns false
 
@@ -515,78 +516,6 @@ class UserServiceTest {
 
             assertEquals(
                 Failure(CreateAdminFailure.USERNAME_TAKEN),
-                result,
-            )
-        }
-    }
-
-    @Nested
-    inner class ActivateUser {
-        @Test
-        fun `activates pending user`() {
-            every {
-                userRepository.setPendingUserPasswordAndStatusActivated(
-                    CREATED_USER_ID,
-                    HASHED_PASSWORD,
-                )
-            } returns 1
-
-            val result = userService.activateUser(
-                userId = CREATED_USER_ID,
-                password = Secret(VALID_PASSWORD),
-            )
-
-            assertEquals(Unit.asSuccess(), result)
-
-            verify(exactly = 1) {
-                userRepository.setPendingUserPasswordAndStatusActivated(
-                    CREATED_USER_ID,
-                    HASHED_PASSWORD,
-                )
-            }
-        }
-
-        @Test
-        fun `rejects invalid password`() {
-            val result = userService.activateUser(
-                userId = CREATED_USER_ID,
-                password = Secret("short"),
-            )
-
-            assertEquals(
-                Failure(ActivationFailure.PASSWORD_INVALID),
-                result,
-            )
-
-            verify(exactly = 0) {
-                passwordHasherService.hash(any())
-            }
-
-            verify(exactly = 0) {
-                userRepository
-                    .setPendingUserPasswordAndStatusActivated(
-                        any(),
-                        any(),
-                    )
-            }
-        }
-
-        @Test
-        fun `returns pending user not found when no row is updated`() {
-            every {
-                userRepository.setPendingUserPasswordAndStatusActivated(
-                    CREATED_USER_ID,
-                    HASHED_PASSWORD,
-                )
-            } returns 0
-
-            val result = userService.activateUser(
-                userId = CREATED_USER_ID,
-                password = Secret(VALID_PASSWORD),
-            )
-
-            assertEquals(
-                Failure(ActivationFailure.PENDING_USER_NOT_FOUND),
                 result,
             )
         }
@@ -650,6 +579,112 @@ class UserServiceTest {
             )
 
             assertEquals(expected, result)
+        }
+    }
+
+    @Nested
+    inner class UpdateUserDisplayName {
+        @Test
+        fun `rejects display name shorter than minimum length`() {
+            val result = userService.updateUserDisplayName(
+                userId = CREATED_USER_ID,
+                displayName = " A ",
+            )
+
+            assertEquals(
+                Failure(UpdateUserFailure.INVALID_DISPLAY_NAME),
+                result,
+            )
+
+            verify(exactly = 0) {
+                userRepository.findUser(any())
+            }
+        }
+
+        @Test
+        fun `rejects display name longer than maximum length`() {
+            val result = userService.updateUserDisplayName(
+                userId = CREATED_USER_ID,
+                displayName = "a".repeat(
+                    UserService.MAX_DISPLAY_NAME_LENGTH + 1,
+                ),
+            )
+
+            assertEquals(
+                Failure(UpdateUserFailure.INVALID_DISPLAY_NAME),
+                result,
+            )
+
+            verify(exactly = 0) {
+                userRepository.findUser(any())
+            }
+        }
+
+        @Test
+        fun `returns user not found when user does not exist`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns null
+
+            val result = userService.updateUserDisplayName(
+                userId = CREATED_USER_ID,
+                displayName = "New Display Name",
+            )
+
+            assertEquals(
+                Failure(UpdateUserFailure.USER_NOT_FOUND),
+                result,
+            )
+
+            verify(exactly = 0) {
+                userRepository.updateUserDisplayName(any(), any())
+            }
+        }
+
+        @Test
+        fun `does nothing when display name is unchanged`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns STANDARD_USER
+
+            val result = userService.updateUserDisplayName(
+                userId = CREATED_USER_ID,
+                displayName = STANDARD_USER.displayName,
+            )
+
+            assertEquals(Unit.asSuccess(), result)
+
+            verify(exactly = 0) {
+                userRepository.updateUserDisplayName(any(), any())
+            }
+        }
+
+        @Test
+        fun `normalises and saves a changed display name`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns STANDARD_USER
+
+            every {
+                userRepository.updateUserDisplayName(
+                    CREATED_USER_ID,
+                    "New Display Name",
+                )
+            } returns Success(Unit)
+
+            val result = userService.updateUserDisplayName(
+                userId = CREATED_USER_ID,
+                displayName = "  New   Display   Name  ",
+            )
+
+            assertEquals(Unit.asSuccess(), result)
+
+            verify(exactly = 1) {
+                userRepository.updateUserDisplayName(
+                    CREATED_USER_ID,
+                    "New Display Name",
+                )
+            }
         }
     }
 
@@ -766,7 +801,7 @@ class UserServiceTest {
                     enabled = null,
                     role = null,
                 )
-            } returns true
+            } returns Success(Unit)
 
             val result = userService.updateUser(
                 userId = CREATED_USER_ID,
@@ -875,7 +910,7 @@ class UserServiceTest {
                     enabled = false,
                     role = null,
                 )
-            } returns true
+            } returns Success(Unit)
 
             val result = userService.updateUser(
                 userId = CREATED_USER_ID,
@@ -902,7 +937,7 @@ class UserServiceTest {
                     enabled = null,
                     role = null,
                 )
-            } returns true
+            } returns Success(Unit)
 
             val result = userService.updateUser(
                 userId = CREATED_USER_ID,
@@ -920,7 +955,38 @@ class UserServiceTest {
         }
 
         @Test
-        fun `returns user not found when update affects no rows`() {
+        fun `does not count admins when role is kept as admin`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns ADMIN_USER
+
+            every {
+                userRepository.updateUser(
+                    userId = CREATED_USER_ID,
+                    username = null,
+                    displayName = null,
+                    enabled = null,
+                    role = Role.ADMIN,
+                )
+            } returns Success(Unit)
+
+            val result = userService.updateUser(
+                userId = CREATED_USER_ID,
+                username = null,
+                displayName = null,
+                enabled = null,
+                role = Role.ADMIN,
+            )
+
+            assertEquals(Unit.asSuccess(), result)
+
+            verify(exactly = 0) {
+                userRepository.countEnabledAdmins()
+            }
+        }
+
+        @Test
+        fun `returns the repository failure when the update fails`() {
             every {
                 userRepository.findUser(CREATED_USER_ID)
             } returns STANDARD_USER
@@ -933,7 +999,7 @@ class UserServiceTest {
                     enabled = null,
                     role = null,
                 )
-            } returns false
+            } returns Failure(UpdateUserFailure.USERNAME_ALREADY_IN_USE)
 
             val result = userService.updateUser(
                 userId = CREATED_USER_ID,
@@ -944,7 +1010,7 @@ class UserServiceTest {
             )
 
             assertEquals(
-                Failure(UpdateUserFailure.USER_NOT_FOUND),
+                Failure(UpdateUserFailure.USERNAME_ALREADY_IN_USE),
                 result,
             )
         }
@@ -955,12 +1021,13 @@ class UserServiceTest {
         const val HASHED_PASSWORD = "hashed-password"
         const val VALID_DISPLAY_NAME = "Valid Display Name"
 
-        val CREATED_USER_ID: Uuid =
-            Uuid.parse("00000000-0000-0000-0000-000000000001")
+        val CREATED_USER_ID = UserId(
+            Uuid.parse("00000000-0000-0000-0000-000000000001"),
+        )
 
         val FOUND_LOGIN_USER = UserLoginDetail(
-            id = Uuid.parse(
-                "00000000-0000-0000-0000-000000000002",
+            id = UserId(
+                Uuid.parse("00000000-0000-0000-0000-000000000002"),
             ),
             username = "user-one",
             passwordHash = Secret(HASHED_PASSWORD),

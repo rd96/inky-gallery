@@ -5,7 +5,7 @@ import uk.derbyshire.services.SecureTokenService
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.DatabaseMigrator
 import uk.derbyshire.database.DatabaseSetup
-import uk.derbyshire.database.repositories.ActivationTokenRepository
+import uk.derbyshire.database.repositories.AccountTokenRepository
 import uk.derbyshire.database.repositories.CanvasRepository
 import uk.derbyshire.database.repositories.ConnectionRepository
 import uk.derbyshire.database.repositories.DeviceApiKeyRepository
@@ -53,7 +53,7 @@ class Application {
 class Repositories {
     val userRepository = UserRepository()
     val sessionRepository = SessionRepository()
-    val activationTokenRepository = ActivationTokenRepository()
+    val accountTokenRepository = AccountTokenRepository()
     val connectionRepository = ConnectionRepository()
     val deviceModelRepository = DeviceModelRepository()
     val deviceRepository = DeviceRepository()
@@ -69,7 +69,7 @@ class Services(repositories: Repositories, database: DatabaseContext, clock: Clo
     private val imageProcessingService = ImageProcessingService()
 
     val userService = UserService(repositories.userRepository, passwordHasherService, database)
-    val authService = AuthService(repositories.sessionRepository, repositories.activationTokenRepository, repositories.apiKeyRepository, repositories.userRepository, secureTokenService, passwordHasherService, database, clock)
+    val authService = AuthService(repositories.sessionRepository, repositories.accountTokenRepository, repositories.apiKeyRepository, repositories.userRepository, secureTokenService, passwordHasherService, database, clock)
     val connectionService = ConnectionService(repositories.connectionRepository, userService, database)
     val deviceService = DeviceService(repositories.deviceModelRepository, repositories.deviceRepository, database)
     val drawingService = DrawingService(imageProcessingService, repositories.drawingRepository, repositories.canvasRepository, database)

@@ -3,9 +3,11 @@ package uk.derbyshire.database.schema
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.UuidTable
 import org.jetbrains.exposed.v1.datetime.timestamp
+import uk.derbyshire.domain.auth.AccountTokenType
 
-object ActivationTokenTable : UuidTable("activation_tokens") {
+object AccountTokenTable : UuidTable("account_tokens") {
     val userId = reference("user_id", UserTable.id, ReferenceOption.CASCADE)
+    val tokenType = enumerationByName<AccountTokenType>("token_type", 30)
     val tokenHash = varchar("token_hash", 64).uniqueIndex()
 
     val createdAt = timestamp("created_at")

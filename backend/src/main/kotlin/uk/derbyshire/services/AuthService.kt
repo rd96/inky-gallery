@@ -8,10 +8,11 @@ import org.http4k.config.Secret
 import uk.derbyshire.domain.auth.AuthenticatedUser
 import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.database.DatabaseContext
-import uk.derbyshire.database.repositories.ActivationTokenRepository
+import uk.derbyshire.database.repositories.AccountTokenRepository
 import uk.derbyshire.database.repositories.DeviceApiKeyRepository
 import uk.derbyshire.database.repositories.SessionRepository
 import uk.derbyshire.database.repositories.UserRepository
+import uk.derbyshire.domain.auth.AccountTokenType
 import uk.derbyshire.domain.auth.ActivationFailure
 import uk.derbyshire.domain.auth.AuthenticatedDevice
 import uk.derbyshire.domain.auth.LoginFailure
@@ -25,7 +26,7 @@ import kotlin.time.Duration.Companion.minutes
 
 class AuthService(
     private val sessionRepository: SessionRepository,
-    private val activationTokenRepository: ActivationTokenRepository,
+    private val accountTokenRepository: AccountTokenRepository,
     private val apiKeyRepository: DeviceApiKeyRepository,
     private val userRepository: UserRepository,
     private val secureTokenService: SecureTokenService,
@@ -116,9 +117,10 @@ class AuthService(
             val tokenHash = secureTokenService.hash(token)
             val expiresAt = clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER
 
-            activationTokenRepository.revokeActivationTokensForUser(userId, clock.now())
-            activationTokenRepository.createActivationToken(
+            accountTokenRepository.revokeTokensForUser(userId, AccountTokenType.ACTIVATION, clock.now())
+            accountTokenRepository.createAccountToken(
                 userId,
+                AccountTokenType.ACTIVATION,
                 tokenHash,
                 expiresAt,
                 createdBy,
@@ -155,7 +157,7 @@ class AuthService(
 
     private fun getAndValidateActivationToken(tokenHash: String): Result4k<UserActivationToken, ActivationFailure> =
         context.transaction {
-            val activationToken = activationTokenRepository.getByTokenHash(tokenHash) ?: return@transaction Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN)
+            val activationToken = accountTokenRepository.getActivationTokenByHash(tokenHash) ?: return@transaction Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN)
             if (!activationToken.isValid(clock.now())) return@transaction Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN)
 
             val user = userRepository.findUser(activationToken.userId) ?: return@transaction Failure(ActivationFailure.PENDING_USER_NOT_FOUND)
@@ -182,7 +184,7 @@ class AuthService(
     fun revokeUserActivationTokens(userId: UserId): Result4k<Unit, String> =
         context.transaction {
             if (!userRepository.userExists(userId)) return@transaction Failure("User $userId not found")
-            activationTokenRepository.revokeActivationTokensForUser(userId, clock.now()).asSuccess()
+            accountTokenRepository.revokeTokensForUser(userId, AccountTokenType.ACTIVATION, clock.now()).asSuccess()
         }
 
     fun disableUserAndRevokeSessions(userId: UserId) {

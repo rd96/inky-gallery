@@ -7,7 +7,7 @@ class Tables {
         val all = arrayOf<Table>(
             UserTable,
             SessionTable,
-            ActivationTokenTable,
+            AccountTokenTable,
             ConnectionTable,
             DeviceModelTable,
             DeviceTable,
