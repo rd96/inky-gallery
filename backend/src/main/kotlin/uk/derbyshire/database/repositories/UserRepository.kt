@@ -21,6 +21,7 @@ import org.postgresql.util.PSQLState
 import uk.derbyshire.domain.users.Role
 import uk.derbyshire.database.schema.UserTable
 import uk.derbyshire.domain.auth.ActivationFailure
+import uk.derbyshire.domain.auth.PasswordResetFailure
 import uk.derbyshire.domain.users.ActivationStatus
 import uk.derbyshire.domain.users.UpdateUserFailure
 import uk.derbyshire.domain.users.UserId
@@ -93,6 +94,15 @@ class UserRepository {
         }
 
         return if (result == 0) Failure(ActivationFailure.PENDING_USER_NOT_FOUND)
+        else Success(Unit)
+    }
+
+    fun updateActiveUserPassword(userId: UserId, passwordHash: String): Result4k<Unit, PasswordResetFailure> {
+        val result = UserTable.update({ (UserTable.id eq userId.value) and (UserTable.activationStatus eq ActivationStatus.ACTIVATED) and UserTable.enabled }) {
+            it[UserTable.passwordHash] = passwordHash
+        }
+
+        return if (result == 0) Failure(PasswordResetFailure.USER_NOT_FOUND)
         else Success(Unit)
     }
 

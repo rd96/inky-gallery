@@ -22,7 +22,7 @@ import uk.derbyshire.database.repositories.SessionRepository
 import uk.derbyshire.database.repositories.UserRepository
 import uk.derbyshire.domain.auth.AccountTokenType
 import uk.derbyshire.domain.auth.ActivationFailure
-import uk.derbyshire.domain.auth.ActivationToken
+import uk.derbyshire.domain.auth.AccountToken
 import uk.derbyshire.domain.auth.ApiKeyUser
 import uk.derbyshire.domain.auth.AuthenticatedDevice
 import uk.derbyshire.domain.auth.AuthenticatedUser
@@ -350,14 +350,14 @@ class AuthServiceTest {
             val result = authService.activateUser(Secret(RAW_ACTIVATION_TOKEN), Secret("short"))
 
             assertEquals(Failure(ActivationFailure.PASSWORD_INVALID), result)
-            verify(exactly = 0) { accountTokenRepository.getActivationTokenByHash(any()) }
+            verify(exactly = 0) { accountTokenRepository.getAccountTokenByHash(any(), any()) }
         }
 
         @Test
         fun `fails when the token is unknown`() {
             every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
             every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
-            every { accountTokenRepository.getActivationTokenByHash(ACTIVATION_TOKEN_HASH) } returns null
+            every { accountTokenRepository.getAccountTokenByHash(ACTIVATION_TOKEN_HASH, AccountTokenType.ACTIVATION) } returns null
 
             val result = authService.activateUser(Secret(RAW_ACTIVATION_TOKEN), Secret(VALID_PASSWORD))
 
@@ -369,7 +369,7 @@ class AuthServiceTest {
             every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
             every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
             every {
-                accountTokenRepository.getActivationTokenByHash(ACTIVATION_TOKEN_HASH)
+                accountTokenRepository.getAccountTokenByHash(ACTIVATION_TOKEN_HASH, AccountTokenType.ACTIVATION)
             } returns VALID_ACTIVATION_TOKEN.copy(expiresAt = NOW)
 
             val result = authService.activateUser(Secret(RAW_ACTIVATION_TOKEN), Secret(VALID_PASSWORD))
@@ -382,7 +382,7 @@ class AuthServiceTest {
             every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
             every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
             every {
-                accountTokenRepository.getActivationTokenByHash(ACTIVATION_TOKEN_HASH)
+                accountTokenRepository.getAccountTokenByHash(ACTIVATION_TOKEN_HASH, AccountTokenType.ACTIVATION)
             } returns VALID_ACTIVATION_TOKEN.copy(usedAt = NOW)
 
             val result = authService.activateUser(Secret(RAW_ACTIVATION_TOKEN), Secret(VALID_PASSWORD))
@@ -395,7 +395,7 @@ class AuthServiceTest {
             every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
             every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
             every {
-                accountTokenRepository.getActivationTokenByHash(ACTIVATION_TOKEN_HASH)
+                accountTokenRepository.getAccountTokenByHash(ACTIVATION_TOKEN_HASH, AccountTokenType.ACTIVATION)
             } returns VALID_ACTIVATION_TOKEN.copy(revokedAt = NOW)
 
             val result = authService.activateUser(Secret(RAW_ACTIVATION_TOKEN), Secret(VALID_PASSWORD))
@@ -408,7 +408,7 @@ class AuthServiceTest {
             every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
             every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
             every {
-                accountTokenRepository.getActivationTokenByHash(ACTIVATION_TOKEN_HASH)
+                accountTokenRepository.getAccountTokenByHash(ACTIVATION_TOKEN_HASH, AccountTokenType.ACTIVATION)
             } returns VALID_ACTIVATION_TOKEN
             every { userRepository.findUser(CREATED_USER_ID) } returns null
 
@@ -422,7 +422,7 @@ class AuthServiceTest {
             every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
             every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
             every {
-                accountTokenRepository.getActivationTokenByHash(ACTIVATION_TOKEN_HASH)
+                accountTokenRepository.getAccountTokenByHash(ACTIVATION_TOKEN_HASH, AccountTokenType.ACTIVATION)
             } returns VALID_ACTIVATION_TOKEN
             every {
                 userRepository.findUser(CREATED_USER_ID)
@@ -438,7 +438,7 @@ class AuthServiceTest {
             every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
             every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
             every {
-                accountTokenRepository.getActivationTokenByHash(ACTIVATION_TOKEN_HASH)
+                accountTokenRepository.getAccountTokenByHash(ACTIVATION_TOKEN_HASH, AccountTokenType.ACTIVATION)
             } returns VALID_ACTIVATION_TOKEN
             every {
                 userRepository.findUser(CREATED_USER_ID)
@@ -454,7 +454,7 @@ class AuthServiceTest {
             every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
             every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
             every {
-                accountTokenRepository.getActivationTokenByHash(ACTIVATION_TOKEN_HASH)
+                accountTokenRepository.getAccountTokenByHash(ACTIVATION_TOKEN_HASH, AccountTokenType.ACTIVATION)
             } returns VALID_ACTIVATION_TOKEN
             every { userRepository.findUser(CREATED_USER_ID) } returns PENDING_USER_SUMMARY
             every {
@@ -472,7 +472,7 @@ class AuthServiceTest {
             every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
             every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
             every {
-                accountTokenRepository.getActivationTokenByHash(ACTIVATION_TOKEN_HASH)
+                accountTokenRepository.getAccountTokenByHash(ACTIVATION_TOKEN_HASH, AccountTokenType.ACTIVATION)
             } returns VALID_ACTIVATION_TOKEN
             every { userRepository.findUser(CREATED_USER_ID) } returns PENDING_USER_SUMMARY
             every {
@@ -495,7 +495,7 @@ class AuthServiceTest {
         @Test
         fun `fails when the token is invalid`() {
             every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
-            every { accountTokenRepository.getActivationTokenByHash(ACTIVATION_TOKEN_HASH) } returns null
+            every { accountTokenRepository.getAccountTokenByHash(ACTIVATION_TOKEN_HASH, AccountTokenType.ACTIVATION) } returns null
 
             val result = authService.getActivationDetails(Secret(RAW_ACTIVATION_TOKEN))
 
@@ -506,7 +506,7 @@ class AuthServiceTest {
         fun `returns the pending user's details for a valid token`() {
             every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
             every {
-                accountTokenRepository.getActivationTokenByHash(ACTIVATION_TOKEN_HASH)
+                accountTokenRepository.getAccountTokenByHash(ACTIVATION_TOKEN_HASH, AccountTokenType.ACTIVATION)
             } returns VALID_ACTIVATION_TOKEN
             every { userRepository.findUser(CREATED_USER_ID) } returns PENDING_USER_SUMMARY
 
@@ -525,7 +525,7 @@ class AuthServiceTest {
     }
 
     @Nested
-    inner class GenerateUserActivationToken {
+    inner class GenerateUserAccountToken {
         @Test
         fun `fails when the user does not exist`() {
             every { userRepository.findUser(CREATED_USER_ID) } returns null
@@ -606,7 +606,7 @@ class AuthServiceTest {
     }
 
     @Nested
-    inner class RevokeUserActivationTokens {
+    inner class RevokeUserAccountTokens {
         @Test
         fun `fails when the user does not exist`() {
             every { userRepository.userExists(CREATED_USER_ID) } returns false
@@ -701,7 +701,7 @@ class AuthServiceTest {
             revokedAt = null,
         )
 
-        val VALID_ACTIVATION_TOKEN = ActivationToken(
+        val VALID_ACTIVATION_TOKEN = AccountToken(
             userId = CREATED_USER_ID,
             expiresAt = NOW + 1.days,
             usedAt = null,

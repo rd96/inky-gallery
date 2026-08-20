@@ -16,6 +16,8 @@ fun adminRoutes(userService: UserService, authService: AuthService, connectionSe
     "/users/$userId" bind Method.GET to getUser(userService),
     "/users/$userId" bind Method.PATCH to patchUser(userService),
 
+    "/users/$userId/reset" bind Method.POST to postGeneratePasswordResetToken(authService),
+
     "/users/$userId/activation-tokens" bind Method.PUT to putGenerateUserActivationToken(authService),
     "/users/$userId/activation-tokens" bind Method.DELETE to deleteUserActivationTokens(authService),
 

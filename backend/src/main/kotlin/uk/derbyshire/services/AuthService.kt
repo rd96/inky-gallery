@@ -15,13 +15,18 @@ import uk.derbyshire.database.repositories.UserRepository
 import uk.derbyshire.domain.auth.AccountTokenType
 import uk.derbyshire.domain.auth.ActivationFailure
 import uk.derbyshire.domain.auth.AuthenticatedDevice
+import uk.derbyshire.domain.auth.CreatePasswordResetTokenFailure
 import uk.derbyshire.domain.auth.LoginFailure
 import uk.derbyshire.domain.auth.UserActivationToken
 import uk.derbyshire.domain.auth.LoginSuccess
+import uk.derbyshire.domain.auth.PasswordResetFailure
+import uk.derbyshire.domain.auth.PasswordResetToken
+import uk.derbyshire.domain.auth.UserPasswordResetToken
 import uk.derbyshire.domain.auth.UserPendingActivation
 import uk.derbyshire.domain.users.UserId
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 class AuthService(
@@ -118,14 +123,7 @@ class AuthService(
             val expiresAt = clock.now() + ACTIVATION_TOKEN_EXPIRES_AFTER
 
             accountTokenRepository.revokeTokensForUser(userId, AccountTokenType.ACTIVATION, clock.now())
-            accountTokenRepository.createAccountToken(
-                userId,
-                AccountTokenType.ACTIVATION,
-                tokenHash,
-                expiresAt,
-                createdBy,
-                clock.now(),
-            )
+            accountTokenRepository.createAccountToken(userId, AccountTokenType.ACTIVATION, tokenHash, expiresAt, createdBy, clock.now())
 
             UserPendingActivation(
                 userId = userId,
@@ -157,7 +155,7 @@ class AuthService(
 
     private fun getAndValidateActivationToken(tokenHash: String): Result4k<UserActivationToken, ActivationFailure> =
         context.transaction {
-            val activationToken = accountTokenRepository.getActivationTokenByHash(tokenHash) ?: return@transaction Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN)
+            val activationToken = accountTokenRepository.getAccountTokenByHash(tokenHash, AccountTokenType.ACTIVATION) ?: return@transaction Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN)
             if (!activationToken.isValid(clock.now())) return@transaction Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN)
 
             val user = userRepository.findUser(activationToken.userId) ?: return@transaction Failure(ActivationFailure.PENDING_USER_NOT_FOUND)
@@ -194,8 +192,69 @@ class AuthService(
         }
     }
 
+    fun getPasswordResetDetails(userId: UserId, passwordResetToken: Secret): Result4k<UserPasswordResetToken, PasswordResetFailure> {
+        val tokenHash = passwordResetToken.use(secureTokenService::hash)
+
+        return getAndValidatePasswordResetToken(tokenHash)
+    }
+
+    fun resetUserPassword(passwordResetToken: Secret, password: Secret): Result4k<LoginSuccess, PasswordResetFailure> {
+        val tokenHash = passwordResetToken.use(secureTokenService::hash)
+        val passwordHash = password.use(passwordHasherService::validateAndHashPassword) ?: return Failure(PasswordResetFailure.PASSWORD_INVALID)
+
+        return context.transaction {
+            val activationToken = getAndValidatePasswordResetToken(tokenHash).onFailure { return@transaction it }
+
+            sessionRepository.deleteSessionsForUser(activationToken.userId)
+            userRepository.updateActiveUserPassword(activationToken.userId, passwordHash).onFailure { return@transaction it }
+
+            LoginSuccess(
+                sessionToken = createSession(activationToken.userId),
+            ).asSuccess()
+        }
+    }
+
+    fun generateResetPasswordToken(userId: UserId, createdBy: UserId): Result4k<PasswordResetToken, CreatePasswordResetTokenFailure> =
+        context.transaction {
+            val user = userRepository.findUser(userId) ?: return@transaction Failure(CreatePasswordResetTokenFailure.USER_NOT_FOUND)
+
+            if (user.activationStatus != ActivationStatus.ACTIVATED) return@transaction Failure(CreatePasswordResetTokenFailure.USER_NOT_ACTIVATED)
+            if (!user.enabled) return@transaction Failure(CreatePasswordResetTokenFailure.USER_NOT_ENABLED)
+
+            val token = secureTokenService.generate()
+            val tokenHash = secureTokenService.hash(token)
+            val expiresAt = clock.now() + PASSWORD_RESET_TOKEN_EXPIRES_AFTER
+
+            accountTokenRepository.revokeTokensForUser(userId, AccountTokenType.PASSWORD_RESET, clock.now())
+            accountTokenRepository.createAccountToken(userId, AccountTokenType.PASSWORD_RESET, tokenHash, expiresAt, createdBy, clock.now())
+
+            PasswordResetToken(
+                resetToken = token,
+                expiresAt = expiresAt,
+            ).asSuccess()
+        }
+
+    private fun getAndValidatePasswordResetToken(tokenHash: String): Result4k<UserPasswordResetToken, PasswordResetFailure> =
+        context.transaction {
+            val passwordResetToken = accountTokenRepository.getAccountTokenByHash(tokenHash, AccountTokenType.PASSWORD_RESET) ?: return@transaction Failure(PasswordResetFailure.INVALID_TOKEN)
+            if (!passwordResetToken.isValid(clock.now())) return@transaction Failure(PasswordResetFailure.INVALID_TOKEN)
+
+            val user = userRepository.findUser(passwordResetToken.userId) ?: return@transaction Failure(PasswordResetFailure.USER_NOT_FOUND)
+
+            if (!user.enabled) return@transaction Failure(PasswordResetFailure.USER_DISABLED)
+
+            UserPasswordResetToken(
+                userId = user.id,
+                username = user.username,
+                displayName = user.displayName,
+                expiresAt = passwordResetToken.expiresAt,
+            ).asSuccess()
+        }
+
+
     companion object {
         val SESSION_EXPIRES_AFTER = 30.days
         val ACTIVATION_TOKEN_EXPIRES_AFTER = 7.days
+        val PASSWORD_RESET_TOKEN_EXPIRES_AFTER = 4.hours
     }
 }

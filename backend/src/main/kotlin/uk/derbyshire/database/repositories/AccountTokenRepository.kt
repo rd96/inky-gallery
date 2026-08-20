@@ -8,7 +8,8 @@ import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.update
 import uk.derbyshire.database.schema.AccountTokenTable
 import uk.derbyshire.domain.auth.AccountTokenType
-import uk.derbyshire.domain.auth.ActivationToken
+import uk.derbyshire.domain.auth.AccountToken
+import uk.derbyshire.domain.auth.PasswordResetToken
 import uk.derbyshire.domain.users.UserId
 import kotlin.time.Instant
 
@@ -32,16 +33,16 @@ class AccountTokenRepository {
         }
     }
 
-    fun getActivationTokenByHash(tokenHash: String): ActivationToken? =
+    fun getAccountTokenByHash(tokenHash: String, tokenType: AccountTokenType): AccountToken? =
         AccountTokenTable.select(
             AccountTokenTable.userId,
             AccountTokenTable.expiresAt,
             AccountTokenTable.usedAt,
             AccountTokenTable.revokedAt,
-        ).where { (AccountTokenTable.tokenHash eq tokenHash) and (AccountTokenTable.tokenType eq AccountTokenType.ACTIVATION) }
+        ).where { (AccountTokenTable.tokenHash eq tokenHash) and (AccountTokenTable.tokenType eq tokenType) }
             .singleOrNull()
             ?.let {
-                ActivationToken(
+                AccountToken(
                     UserId(it[AccountTokenTable.userId].value),
                     it[AccountTokenTable.expiresAt],
                     it[AccountTokenTable.usedAt],

@@ -11,7 +11,11 @@ import uk.derbyshire.services.AuthService
 fun authRoutes(authChecker: AuthChecker, authService: AuthService, serverConfig: ServerConfig) = routes(
     "/me" bind Method.GET to authChecker.requireUser().then(getCurrentUser()),
     "/login" bind Method.POST to postLogin(authService, serverConfig),
+    "/logout" bind Method.POST to authChecker.requireUser().then(postLogout(authService, serverConfig)),
+
     "/activate" bind Method.QUERY to queryActivationToken(authService),
     "/activate" bind Method.POST to postActivateUser(authService, serverConfig),
-    "/logout" bind Method.POST to authChecker.requireUser().then(postLogout(authService, serverConfig))
+
+    "/reset" bind Method.QUERY to queryPasswordResetToken(authService),
+    "/reset" bind Method.POST to postResetUserPassword(authService, serverConfig),
 )

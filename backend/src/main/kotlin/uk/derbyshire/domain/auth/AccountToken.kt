@@ -3,7 +3,7 @@ package uk.derbyshire.domain.auth
 import uk.derbyshire.domain.users.UserId
 import kotlin.time.Instant
 
-data class ActivationToken(
+data class AccountToken(
     val userId: UserId,
     val expiresAt: Instant,
     val usedAt: Instant?,
