@@ -192,7 +192,7 @@ class AuthService(
         }
     }
 
-    fun getPasswordResetDetails(userId: UserId, passwordResetToken: Secret): Result4k<UserPasswordResetToken, PasswordResetFailure> {
+    fun getPasswordResetDetails(passwordResetToken: Secret): Result4k<UserPasswordResetToken, PasswordResetFailure> {
         val tokenHash = passwordResetToken.use(secureTokenService::hash)
 
         return getAndValidatePasswordResetToken(tokenHash)
@@ -203,13 +203,13 @@ class AuthService(
         val passwordHash = password.use(passwordHasherService::validateAndHashPassword) ?: return Failure(PasswordResetFailure.PASSWORD_INVALID)
 
         return context.transaction {
-            val activationToken = getAndValidatePasswordResetToken(tokenHash).onFailure { return@transaction it }
+            val passwordResetToken = getAndValidatePasswordResetToken(tokenHash).onFailure { return@transaction it }
 
-            sessionRepository.deleteSessionsForUser(activationToken.userId)
-            userRepository.updateActiveUserPassword(activationToken.userId, passwordHash).onFailure { return@transaction it }
+            userRepository.updateActiveUserPassword(passwordResetToken.userId, passwordHash).onFailure { return@transaction it }
+            sessionRepository.deleteSessionsForUser(passwordResetToken.userId)
 
             LoginSuccess(
-                sessionToken = createSession(activationToken.userId),
+                sessionToken = createSession(passwordResetToken.userId),
             ).asSuccess()
         }
     }
@@ -241,6 +241,7 @@ class AuthService(
 
             val user = userRepository.findUser(passwordResetToken.userId) ?: return@transaction Failure(PasswordResetFailure.USER_NOT_FOUND)
 
+            if (user.activationStatus != ActivationStatus.ACTIVATED) return@transaction Failure(PasswordResetFailure.USER_NOT_ACTIVATED)
             if (!user.enabled) return@transaction Failure(PasswordResetFailure.USER_DISABLED)
 
             UserPasswordResetToken(
