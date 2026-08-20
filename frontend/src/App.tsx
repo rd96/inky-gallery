@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import ActivatePage from './pages/ActivatePage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import GalleryPage from './pages/GalleryPage'
 import DrawPage from './pages/DrawPage'
 import AdminPage from './pages/AdminPage'
@@ -27,6 +28,7 @@ export default function App() {
         }
       />
       <Route path="/activate" element={<ActivatePage />} />
+      <Route path="/reset" element={<ResetPasswordPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<GalleryPage />} />

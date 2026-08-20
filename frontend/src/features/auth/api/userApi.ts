@@ -72,10 +72,44 @@ function logout(): Promise<void> {
   return ApiClient.post<void>('/api/auth/logout')
 }
 
+type PasswordResetDetails = {
+  username: string
+  displayName: string
+  expiresAt: string
+}
+
+function getPasswordResetDetails(passwordResetToken: string): Promise<PasswordResetDetails> {
+  return ApiClient.query<PasswordResetDetails, { passwordResetToken: string }>(
+    '/api/auth/reset',
+    { passwordResetToken },
+  )
+}
+
+type ResetPasswordRequest = {
+  passwordResetToken: string
+  password: string
+}
+
+async function resetPassword(request: ResetPasswordRequest): Promise<User> {
+  await ApiClient.post<void, ResetPasswordRequest>('/api/auth/reset', request)
+
+  const user = await getCurrentUser()
+
+  if (user === null) {
+    throw new Error(
+      'Password reset succeeded but no authenticated user was returned',
+    )
+  }
+
+  return user
+}
+
 export const UserApi = {
   getCurrentUser,
   login,
   logout,
   getActivationDetails,
   activate,
+  getPasswordResetDetails,
+  resetPassword,
 }

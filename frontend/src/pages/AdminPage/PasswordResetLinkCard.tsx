@@ -1,28 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  buildActivationLink,
-  redactedActivationLink,
-} from '../../features/admin/activationLink'
+  buildPasswordResetLink,
+  redactedPasswordResetLink,
+} from '../../features/admin/passwordResetLink'
 
-type ActivationLinkCardProps = {
+type PasswordResetLinkCardProps = {
   username: string
-  activationToken: string
+  passwordResetToken: string
   expiresAt?: string
   onDone: () => void
 }
 
 const COPIED_RESET_MS = 1800
 
-export default function ActivationLinkCard({
+export default function PasswordResetLinkCard({
   username,
-  activationToken,
+  passwordResetToken,
   expiresAt,
   onDone,
-}: ActivationLinkCardProps) {
+}: PasswordResetLinkCardProps) {
   const [copyFailed, setCopyFailed] = useState(false)
   const [copied, setCopied] = useState(false)
   const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const link = buildActivationLink(activationToken)
+  const link = buildPasswordResetLink(passwordResetToken)
 
   useEffect(() => () => clearTimeout(resetTimeoutRef.current), [])
 
@@ -40,7 +40,7 @@ export default function ActivationLinkCard({
 
   return (
     <div className="modal-card" onClick={e => e.stopPropagation()}>
-      <h2>Ready to activate</h2>
+      <h2>Ready to reset password</h2>
       <p className="modal-description">
         Share this link with <strong>{username}</strong>
         {expiresAt && <> — it expires {new Date(expiresAt).toLocaleString()}</>}.
@@ -53,7 +53,7 @@ export default function ActivationLinkCard({
         onClick={() => void handleCopy()}
       >
         <code className="copy-link-redacted">
-          {copyFailed ? link : redactedActivationLink()}
+          {copyFailed ? link : redactedPasswordResetLink()}
         </code>
         <span className="copy-link-hint" aria-hidden="true">
           {copied ? '✓ Copied!' : 'Click to copy'}

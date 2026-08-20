@@ -8,6 +8,7 @@ import { ApiError, formatApiError } from '../../shared/api/ApiError'
 import FullPageMessage from '../../shared/components/FullPageMessage'
 import ActivationLinkCard from '../AdminPage/ActivationLinkCard'
 import EditUserModal from '../AdminPage/EditUserModal'
+import PasswordResetLinkCard from '../AdminPage/PasswordResetLinkCard'
 import '../AdminPage/AdminPage.css'
 import ConnectionsSection from './ConnectionsSection'
 import './UserDetailPage.css'
@@ -29,6 +30,11 @@ export default function UserDetailPage() {
   const [generatingLink, setGeneratingLink] = useState(false)
   const [newActivation, setNewActivation] = useState<{
     activationToken: string
+    expiresAt: string
+  } | null>(null)
+  const [generatingResetLink, setGeneratingResetLink] = useState(false)
+  const [newPasswordReset, setNewPasswordReset] = useState<{
+    passwordResetToken: string
     expiresAt: string
   } | null>(null)
   const [editing, setEditing] = useState(false)
@@ -90,6 +96,20 @@ export default function UserDetailPage() {
       setError(formatApiError(cause))
     } finally {
       setGeneratingLink(false)
+    }
+  }
+
+  async function generatePasswordResetLink() {
+    if (!user) return
+    setGeneratingResetLink(true)
+
+    try {
+      const result = await AdminApi.createPasswordResetToken(user.id)
+      setNewPasswordReset(result)
+    } catch (cause) {
+      setError(formatApiError(cause))
+    } finally {
+      setGeneratingResetLink(false)
     }
   }
 
@@ -171,6 +191,16 @@ export default function UserDetailPage() {
             {generatingLink ? 'Generating…' : 'Pending · Generate new link'}
           </button>
         )}
+        {user.activationStatus === 'ACTIVATED' && user.enabled && (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => void generatePasswordResetLink()}
+            disabled={generatingResetLink}
+          >
+            {generatingResetLink ? 'Generating…' : 'Reset password'}
+          </button>
+        )}
       </div>
 
       <ConnectionsSection userId={user.id} onError={setError} />
@@ -193,6 +223,17 @@ export default function UserDetailPage() {
             activationToken={newActivation.activationToken}
             expiresAt={newActivation.expiresAt}
             onDone={() => setNewActivation(null)}
+          />
+        </div>
+      )}
+
+      {newPasswordReset && (
+        <div className="admin-modal-backdrop" onClick={() => setNewPasswordReset(null)}>
+          <PasswordResetLinkCard
+            username={user.username}
+            passwordResetToken={newPasswordReset.passwordResetToken}
+            expiresAt={newPasswordReset.expiresAt}
+            onDone={() => setNewPasswordReset(null)}
           />
         </div>
       )}

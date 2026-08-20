@@ -116,6 +116,18 @@ function createActivationToken(id: string): Promise<CreateActivationTokenResult>
   )
 }
 
+export type CreatePasswordResetTokenResult = {
+  passwordResetToken: string
+  expiresAt: string
+}
+
+function createPasswordResetToken(id: string): Promise<CreatePasswordResetTokenResult> {
+  return ApiClient.post<CreatePasswordResetTokenResult, undefined>(
+    `/api/admin/users/${id}/reset`,
+    undefined,
+  )
+}
+
 function getUserConnections(id: string): Promise<UserConnections> {
   return ApiClient.get<UserConnections>(`/api/admin/users/${id}/connections`)
 }
@@ -153,6 +165,7 @@ export const AdminApi = {
   createUser,
   updateUser,
   createActivationToken,
+  createPasswordResetToken,
   getUserConnections,
   createConnection,
   deleteConnection,
