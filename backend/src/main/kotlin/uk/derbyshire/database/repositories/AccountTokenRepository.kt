@@ -9,7 +9,6 @@ import org.jetbrains.exposed.v1.jdbc.update
 import uk.derbyshire.database.schema.AccountTokenTable
 import uk.derbyshire.domain.auth.AccountTokenType
 import uk.derbyshire.domain.auth.AccountToken
-import uk.derbyshire.domain.auth.PasswordResetToken
 import uk.derbyshire.domain.users.UserId
 import kotlin.time.Instant
 
