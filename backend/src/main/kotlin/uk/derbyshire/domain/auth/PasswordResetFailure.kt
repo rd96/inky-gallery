@@ -5,5 +5,6 @@ enum class PasswordResetFailure(val description: String) {
     USER_NOT_FOUND("User not found"),
     USER_DISABLED("User disabled"),
     PASSWORD_INVALID("Password is invalid"),
+    USER_NOT_ACTIVATED("User not activated"),
 
 }
