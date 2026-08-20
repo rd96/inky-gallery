@@ -26,11 +26,15 @@ import uk.derbyshire.domain.auth.AccountToken
 import uk.derbyshire.domain.auth.ApiKeyUser
 import uk.derbyshire.domain.auth.AuthenticatedDevice
 import uk.derbyshire.domain.auth.AuthenticatedUser
+import uk.derbyshire.domain.auth.CreatePasswordResetTokenFailure
 import uk.derbyshire.domain.auth.LoginFailure
 import uk.derbyshire.domain.auth.LoginSuccess
+import uk.derbyshire.domain.auth.PasswordResetFailure
+import uk.derbyshire.domain.auth.PasswordResetToken
 import uk.derbyshire.domain.auth.SessionId
 import uk.derbyshire.domain.auth.SessionUser
 import uk.derbyshire.domain.auth.UserActivationToken
+import uk.derbyshire.domain.auth.UserPasswordResetToken
 import uk.derbyshire.domain.auth.UserPendingActivation
 import uk.derbyshire.domain.devices.DeviceId
 import uk.derbyshire.domain.users.ActivationStatus
@@ -41,6 +45,7 @@ import uk.derbyshire.domain.users.UserSummary
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -378,6 +383,28 @@ class AuthServiceTest {
         }
 
         @Test
+        fun `succeeds when the token has not yet expired`() {
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(ACTIVATION_TOKEN_HASH, AccountTokenType.ACTIVATION)
+            } returns VALID_ACTIVATION_TOKEN.copy(expiresAt = NOW + 1.seconds)
+            every { userRepository.findUser(CREATED_USER_ID) } returns PENDING_USER_SUMMARY
+            every {
+                userRepository.setPendingUserPasswordAndStatusActivated(CREATED_USER_ID, HASHED_PASSWORD)
+            } returns Unit.asSuccess()
+            every { secureTokenService.generate() } returns RAW_TOKEN
+            every { secureTokenService.hash(RAW_TOKEN) } returns TOKEN_HASH
+            every {
+                sessionRepository.createSession(CREATED_USER_ID, TOKEN_HASH, NOW + AuthService.SESSION_EXPIRES_AFTER)
+            } just Runs
+
+            val result = authService.activateUser(Secret(RAW_ACTIVATION_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(LoginSuccess(Secret(RAW_TOKEN)).asSuccess(), result)
+        }
+
+        @Test
         fun `fails when the token was already used`() {
             every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
             every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
@@ -491,6 +518,185 @@ class AuthServiceTest {
     }
 
     @Nested
+    inner class ResetUserPassword {
+        @Test
+        fun `rejects an invalid password without touching the account token repository`() {
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every { passwordHasherService.validateAndHashPassword(any()) } returns null
+
+            val result = authService.resetUserPassword(Secret(RAW_RESET_TOKEN), Secret("short"))
+
+            assertEquals(Failure(PasswordResetFailure.PASSWORD_INVALID), result)
+            verify(exactly = 0) { accountTokenRepository.getAccountTokenByHash(any(), any()) }
+        }
+
+        @Test
+        fun `fails when the token is unknown`() {
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns null
+
+            val result = authService.resetUserPassword(Secret(RAW_RESET_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(Failure(PasswordResetFailure.INVALID_TOKEN), result)
+        }
+
+        @Test
+        fun `fails when the token has expired`() {
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN.copy(expiresAt = NOW)
+
+            val result = authService.resetUserPassword(Secret(RAW_RESET_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(Failure(PasswordResetFailure.INVALID_TOKEN), result)
+        }
+
+        @Test
+        fun `succeeds when the token has not yet expired`() {
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN.copy(expiresAt = NOW + 1.seconds)
+            every { userRepository.findUser(CREATED_USER_ID) } returns ACTIVATED_USER_SUMMARY
+            every { sessionRepository.deleteSessionsForUser(CREATED_USER_ID) } just Runs
+            every {
+                userRepository.updateActiveUserPassword(CREATED_USER_ID, HASHED_PASSWORD)
+            } returns Unit.asSuccess()
+            every { secureTokenService.generate() } returns RAW_TOKEN
+            every { secureTokenService.hash(RAW_TOKEN) } returns TOKEN_HASH
+            every {
+                sessionRepository.createSession(CREATED_USER_ID, TOKEN_HASH, NOW + AuthService.SESSION_EXPIRES_AFTER)
+            } just Runs
+
+            val result = authService.resetUserPassword(Secret(RAW_RESET_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(LoginSuccess(Secret(RAW_TOKEN)).asSuccess(), result)
+        }
+
+        @Test
+        fun `fails when the token was already used`() {
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN.copy(usedAt = NOW)
+
+            val result = authService.resetUserPassword(Secret(RAW_RESET_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(Failure(PasswordResetFailure.INVALID_TOKEN), result)
+        }
+
+        @Test
+        fun `fails when the token was revoked`() {
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN.copy(revokedAt = NOW)
+
+            val result = authService.resetUserPassword(Secret(RAW_RESET_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(Failure(PasswordResetFailure.INVALID_TOKEN), result)
+        }
+
+        @Test
+        fun `fails when the token's user no longer exists`() {
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN
+            every { userRepository.findUser(CREATED_USER_ID) } returns null
+
+            val result = authService.resetUserPassword(Secret(RAW_RESET_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(Failure(PasswordResetFailure.USER_NOT_FOUND), result)
+        }
+
+        @Test
+        fun `fails when the user is disabled`() {
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns ACTIVATED_USER_SUMMARY.copy(enabled = false)
+
+            val result = authService.resetUserPassword(Secret(RAW_RESET_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(Failure(PasswordResetFailure.USER_DISABLED), result)
+        }
+
+        @Test
+        fun `fails when the user is not activated`() {
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN
+            every { userRepository.findUser(CREATED_USER_ID) } returns PENDING_USER_SUMMARY
+
+            val result = authService.resetUserPassword(Secret(RAW_RESET_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(Failure(PasswordResetFailure.USER_NOT_ACTIVATED), result)
+        }
+
+        @Test
+        fun `does not delete sessions when the password update fails`() {
+            // Regression test: updateActiveUserPassword is checked before sessions are
+            // touched, so a failure here must leave existing sessions alone.
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN
+            every { userRepository.findUser(CREATED_USER_ID) } returns ACTIVATED_USER_SUMMARY
+            every {
+                userRepository.updateActiveUserPassword(CREATED_USER_ID, HASHED_PASSWORD)
+            } returns Failure(PasswordResetFailure.USER_NOT_FOUND)
+
+            val result = authService.resetUserPassword(Secret(RAW_RESET_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(Failure(PasswordResetFailure.USER_NOT_FOUND), result)
+            verify(exactly = 0) { sessionRepository.deleteSessionsForUser(any()) }
+            verify(exactly = 0) { sessionRepository.createSession(any(), any(), any()) }
+        }
+
+        @Test
+        fun `resets the password, revokes sessions, and returns a new session on success`() {
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN
+            every { userRepository.findUser(CREATED_USER_ID) } returns ACTIVATED_USER_SUMMARY
+            every { sessionRepository.deleteSessionsForUser(CREATED_USER_ID) } just Runs
+            every {
+                userRepository.updateActiveUserPassword(CREATED_USER_ID, HASHED_PASSWORD)
+            } returns Unit.asSuccess()
+            every { secureTokenService.generate() } returns RAW_TOKEN
+            every { secureTokenService.hash(RAW_TOKEN) } returns TOKEN_HASH
+            every {
+                sessionRepository.createSession(CREATED_USER_ID, TOKEN_HASH, NOW + AuthService.SESSION_EXPIRES_AFTER)
+            } just Runs
+
+            val result = authService.resetUserPassword(Secret(RAW_RESET_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(LoginSuccess(Secret(RAW_TOKEN)).asSuccess(), result)
+            verify(exactly = 1) { sessionRepository.deleteSessionsForUser(CREATED_USER_ID) }
+            verify(exactly = 1) { userRepository.updateActiveUserPassword(CREATED_USER_ID, HASHED_PASSWORD) }
+        }
+    }
+
+    @Nested
     inner class GetActivationDetails {
         @Test
         fun `fails when the token is invalid`() {
@@ -518,6 +724,82 @@ class AuthServiceTest {
                     username = PENDING_USER_SUMMARY.username,
                     displayName = PENDING_USER_SUMMARY.displayName,
                     expiresAt = VALID_ACTIVATION_TOKEN.expiresAt,
+                ).asSuccess(),
+                result,
+            )
+        }
+    }
+
+    @Nested
+    inner class GetPasswordResetDetails {
+        @Test
+        fun `fails when the token is invalid`() {
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns null
+
+            val result = authService.getPasswordResetDetails(Secret(RAW_RESET_TOKEN))
+
+            assertEquals(Failure(PasswordResetFailure.INVALID_TOKEN), result)
+        }
+
+        @Test
+        fun `fails when the token has expired`() {
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN.copy(expiresAt = NOW)
+
+            val result = authService.getPasswordResetDetails(Secret(RAW_RESET_TOKEN))
+
+            assertEquals(Failure(PasswordResetFailure.INVALID_TOKEN), result)
+        }
+
+        @Test
+        fun `fails when the user is disabled`() {
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns ACTIVATED_USER_SUMMARY.copy(enabled = false)
+
+            val result = authService.getPasswordResetDetails(Secret(RAW_RESET_TOKEN))
+
+            assertEquals(Failure(PasswordResetFailure.USER_DISABLED), result)
+        }
+
+        @Test
+        fun `fails when the user is not activated`() {
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN
+            every { userRepository.findUser(CREATED_USER_ID) } returns PENDING_USER_SUMMARY
+
+            val result = authService.getPasswordResetDetails(Secret(RAW_RESET_TOKEN))
+
+            assertEquals(Failure(PasswordResetFailure.USER_NOT_ACTIVATED), result)
+        }
+
+        @Test
+        fun `returns the user's details for a valid token`() {
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(RESET_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN
+            every { userRepository.findUser(CREATED_USER_ID) } returns ACTIVATED_USER_SUMMARY
+
+            val result = authService.getPasswordResetDetails(Secret(RAW_RESET_TOKEN))
+
+            assertEquals(
+                UserPasswordResetToken(
+                    userId = CREATED_USER_ID,
+                    username = ACTIVATED_USER_SUMMARY.username,
+                    displayName = ACTIVATED_USER_SUMMARY.displayName,
+                    expiresAt = VALID_PASSWORD_RESET_TOKEN.expiresAt,
                 ).asSuccess(),
                 result,
             )
@@ -593,6 +875,71 @@ class AuthServiceTest {
     }
 
     @Nested
+    inner class GenerateResetPasswordToken {
+        @Test
+        fun `fails when the user does not exist`() {
+            every { userRepository.findUser(CREATED_USER_ID) } returns null
+
+            val result = authService.generateResetPasswordToken(CREATED_USER_ID, ADMIN_USER_ID)
+
+            assertEquals(Failure(CreatePasswordResetTokenFailure.USER_NOT_FOUND), result)
+        }
+
+        @Test
+        fun `fails when the user is not activated`() {
+            every { userRepository.findUser(CREATED_USER_ID) } returns PENDING_USER_SUMMARY
+
+            val result = authService.generateResetPasswordToken(CREATED_USER_ID, ADMIN_USER_ID)
+
+            assertEquals(Failure(CreatePasswordResetTokenFailure.USER_NOT_ACTIVATED), result)
+        }
+
+        @Test
+        fun `fails when the user is disabled`() {
+            every {
+                userRepository.findUser(CREATED_USER_ID)
+            } returns ACTIVATED_USER_SUMMARY.copy(enabled = false)
+
+            val result = authService.generateResetPasswordToken(CREATED_USER_ID, ADMIN_USER_ID)
+
+            assertEquals(Failure(CreatePasswordResetTokenFailure.USER_NOT_ENABLED), result)
+        }
+
+        @Test
+        fun `revokes existing reset tokens and creates a new one`() {
+            every { userRepository.findUser(CREATED_USER_ID) } returns ACTIVATED_USER_SUMMARY
+            every { secureTokenService.generate() } returns RAW_RESET_TOKEN
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.revokeTokensForUser(CREATED_USER_ID, AccountTokenType.PASSWORD_RESET, NOW)
+            } just Runs
+            every {
+                accountTokenRepository.createAccountToken(
+                    CREATED_USER_ID,
+                    AccountTokenType.PASSWORD_RESET,
+                    RESET_TOKEN_HASH,
+                    NOW + AuthService.PASSWORD_RESET_TOKEN_EXPIRES_AFTER,
+                    ADMIN_USER_ID,
+                    NOW,
+                )
+            } just Runs
+
+            val result = authService.generateResetPasswordToken(CREATED_USER_ID, ADMIN_USER_ID)
+
+            assertEquals(
+                PasswordResetToken(
+                    resetToken = RAW_RESET_TOKEN,
+                    expiresAt = NOW + AuthService.PASSWORD_RESET_TOKEN_EXPIRES_AFTER,
+                ).asSuccess(),
+                result,
+            )
+            verify(exactly = 1) {
+                accountTokenRepository.revokeTokensForUser(CREATED_USER_ID, AccountTokenType.PASSWORD_RESET, NOW)
+            }
+        }
+    }
+
+    @Nested
     inner class Logout {
         @Test
         fun `deletes the session for the hashed token`() {
@@ -630,6 +977,93 @@ class AuthServiceTest {
     }
 
     @Nested
+    inner class TokenTypeIsolation {
+        @Test
+        fun `a password reset token cannot be used to activate a user`() {
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(SHARED_RAW_TOKEN) } returns SHARED_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(SHARED_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns VALID_PASSWORD_RESET_TOKEN
+            every {
+                accountTokenRepository.getAccountTokenByHash(SHARED_TOKEN_HASH, AccountTokenType.ACTIVATION)
+            } returns null
+
+            val result = authService.activateUser(Secret(SHARED_RAW_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(Failure(ActivationFailure.INVALID_ACTIVATION_TOKEN), result)
+        }
+
+        @Test
+        fun `an activation token cannot be used to reset a password`() {
+            every { passwordHasherService.validateAndHashPassword(VALID_PASSWORD) } returns HASHED_PASSWORD
+            every { secureTokenService.hash(SHARED_RAW_TOKEN) } returns SHARED_TOKEN_HASH
+            every {
+                accountTokenRepository.getAccountTokenByHash(SHARED_TOKEN_HASH, AccountTokenType.ACTIVATION)
+            } returns VALID_ACTIVATION_TOKEN
+            every {
+                accountTokenRepository.getAccountTokenByHash(SHARED_TOKEN_HASH, AccountTokenType.PASSWORD_RESET)
+            } returns null
+
+            val result = authService.resetUserPassword(Secret(SHARED_RAW_TOKEN), Secret(VALID_PASSWORD))
+
+            assertEquals(Failure(PasswordResetFailure.INVALID_TOKEN), result)
+        }
+
+        @Test
+        fun `generating an activation token does not revoke the user's password reset tokens`() {
+            every { userRepository.findUser(CREATED_USER_ID) } returns PENDING_USER_SUMMARY
+            every { secureTokenService.generate() } returns RAW_ACTIVATION_TOKEN
+            every { secureTokenService.hash(RAW_ACTIVATION_TOKEN) } returns ACTIVATION_TOKEN_HASH
+            every {
+                accountTokenRepository.revokeTokensForUser(CREATED_USER_ID, AccountTokenType.ACTIVATION, NOW)
+            } just Runs
+            every {
+                accountTokenRepository.createAccountToken(
+                    CREATED_USER_ID,
+                    AccountTokenType.ACTIVATION,
+                    ACTIVATION_TOKEN_HASH,
+                    NOW + AuthService.ACTIVATION_TOKEN_EXPIRES_AFTER,
+                    ADMIN_USER_ID,
+                    NOW,
+                )
+            } just Runs
+
+            authService.generateUserActivationToken(CREATED_USER_ID, ADMIN_USER_ID)
+
+            verify(exactly = 0) {
+                accountTokenRepository.revokeTokensForUser(CREATED_USER_ID, AccountTokenType.PASSWORD_RESET, any())
+            }
+        }
+
+        @Test
+        fun `generating a password reset token does not revoke the user's activation tokens`() {
+            every { userRepository.findUser(CREATED_USER_ID) } returns ACTIVATED_USER_SUMMARY
+            every { secureTokenService.generate() } returns RAW_RESET_TOKEN
+            every { secureTokenService.hash(RAW_RESET_TOKEN) } returns RESET_TOKEN_HASH
+            every {
+                accountTokenRepository.revokeTokensForUser(CREATED_USER_ID, AccountTokenType.PASSWORD_RESET, NOW)
+            } just Runs
+            every {
+                accountTokenRepository.createAccountToken(
+                    CREATED_USER_ID,
+                    AccountTokenType.PASSWORD_RESET,
+                    RESET_TOKEN_HASH,
+                    NOW + AuthService.PASSWORD_RESET_TOKEN_EXPIRES_AFTER,
+                    ADMIN_USER_ID,
+                    NOW,
+                )
+            } just Runs
+
+            authService.generateResetPasswordToken(CREATED_USER_ID, ADMIN_USER_ID)
+
+            verify(exactly = 0) {
+                accountTokenRepository.revokeTokensForUser(CREATED_USER_ID, AccountTokenType.ACTIVATION, any())
+            }
+        }
+    }
+
+    @Nested
     inner class DisableUserAndRevokeSessions {
         @Test
         fun `disables the user and deletes their sessions`() {
@@ -661,6 +1095,12 @@ class AuthServiceTest {
 
         const val RAW_ACTIVATION_TOKEN = "raw-activation-token"
         const val ACTIVATION_TOKEN_HASH = "activation-token-hash"
+
+        const val RAW_RESET_TOKEN = "raw-reset-token"
+        const val RESET_TOKEN_HASH = "reset-token-hash"
+
+        const val SHARED_RAW_TOKEN = "shared-raw-token"
+        const val SHARED_TOKEN_HASH = "shared-token-hash"
 
         val CREATED_USER_ID = UserId(Uuid.parse("00000000-0000-0000-0000-000000000001"))
         val ADMIN_USER_ID = UserId(Uuid.parse("00000000-0000-0000-0000-000000000002"))
@@ -708,12 +1148,29 @@ class AuthServiceTest {
             revokedAt = null,
         )
 
+        val VALID_PASSWORD_RESET_TOKEN = AccountToken(
+            userId = CREATED_USER_ID,
+            expiresAt = NOW + 1.days,
+            usedAt = null,
+            revokedAt = null,
+        )
+
         val PENDING_USER_SUMMARY = UserSummary(
             id = CREATED_USER_ID,
             username = USERNAME,
             displayName = "User One",
             role = Role.USER,
             activationStatus = ActivationStatus.PENDING,
+            enabled = true,
+            createdAt = NOW,
+        )
+
+        val ACTIVATED_USER_SUMMARY = UserSummary(
+            id = CREATED_USER_ID,
+            username = USERNAME,
+            displayName = "User One",
+            role = Role.USER,
+            activationStatus = ActivationStatus.ACTIVATED,
             enabled = true,
             createdAt = NOW,
         )
