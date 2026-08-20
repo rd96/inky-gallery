@@ -54,6 +54,11 @@
   margin-left: auto;
 }
 
+.app-nav-user {
+  color: var(--inky-color-white);
+  font-size: 0.95rem;
+}
+
 .app-nav-divider {
   width: 1px;
   height: 1.1rem;
