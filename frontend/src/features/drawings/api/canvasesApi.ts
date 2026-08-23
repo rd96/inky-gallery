@@ -16,8 +16,6 @@ type CanvasResponseDTO = {
   status: CanvasStatus
   type: CanvasType
   drawings: DrawingMetadataResponseDTO[]
-  sentTo: string[]
-  canSendTo: string[]
   createdAt: string
 }
 
@@ -38,8 +36,6 @@ function toCanvas(dto: CanvasResponseDTO): Canvas {
     status: dto.status,
     type: dto.type,
     drawings: dto.drawings.map(toDrawingMetadata),
-    sentTo: dto.sentTo,
-    canSendTo: dto.canSendTo,
     createdAt: dto.createdAt,
   }
 }

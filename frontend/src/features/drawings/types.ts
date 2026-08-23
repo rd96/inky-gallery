@@ -17,8 +17,6 @@ export type Canvas = {
   status: CanvasStatus
   type: CanvasType
   drawings: DrawingMetadata[]
-  sentTo: string[]
-  canSendTo: string[]
   createdAt: string
 }
 
