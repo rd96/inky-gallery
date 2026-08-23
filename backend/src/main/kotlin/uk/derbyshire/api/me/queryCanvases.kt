@@ -6,16 +6,14 @@ import org.http4k.core.Status
 import org.http4k.core.with
 import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.helpers.Json
-import uk.derbyshire.api.me.DrawingResponseDTO.Companion.toDto
 import uk.derbyshire.api.me.QueryCanvasesResponseDTO.Companion.toDto
+import uk.derbyshire.api.me.shared.DrawingDTO
+import uk.derbyshire.api.me.shared.DrawingDTO.Companion.toDto
 import uk.derbyshire.domain.canvases.CanvasDetail
 import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.canvases.CanvasStatus
 import uk.derbyshire.domain.canvases.CanvasType
 import uk.derbyshire.domain.devices.Orientation
-import uk.derbyshire.domain.drawings.DrawingId
-import uk.derbyshire.domain.drawings.DrawingMetadata
-import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.services.CanvasService
 import kotlin.time.Instant
 
@@ -44,8 +42,7 @@ private data class QueryCanvasesResponseDTO(
     val status: CanvasStatus,
     val type: CanvasType,
     val createdAt: Instant,
-    val drawings: List<DrawingResponseDTO>,
-    val sentTo: List<UserId>,
+    val drawings: List<DrawingDTO>,
 ) {
     companion object {
         val lens = Json.autoBody<List<QueryCanvasesResponseDTO>>().toLens()
@@ -61,23 +58,6 @@ private data class QueryCanvasesResponseDTO(
                 type = canvas.type,
                 createdAt = canvas.createdAt,
                 drawings = it.drawings.toDto(),
-                sentTo = emptyList(),
-            )
-        }
-    }
-}
-
-private data class DrawingResponseDTO(
-    val drawingId: DrawingId,
-    val position: Int,
-    val createdAt: Instant,
-) {
-    companion object {
-        fun List<DrawingMetadata>.toDto() = map {
-            DrawingResponseDTO(
-                drawingId = it.drawingId,
-                position = it.position,
-                createdAt = it.createdAt,
             )
         }
     }

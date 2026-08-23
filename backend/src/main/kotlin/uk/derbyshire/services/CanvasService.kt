@@ -43,13 +43,10 @@ class CanvasService(
 
             val drawings = drawingRepository.getDrawingsByCanvasIds(canvasIds)
 
-            // TODO get can send to/sent recipients
-
             canvases.map {
                 CanvasDetail(
                     canvasMetadata = it,
                     drawings = drawings[it.canvasId] ?: emptyList(),
-                    sentTo = emptyList(),
                 )
             }
         }
