@@ -9,7 +9,7 @@ import uk.derbyshire.domain.canvases.CanvasType
 import uk.derbyshire.domain.devices.Orientation
 
 object CanvasTable : UuidTable("canvases") {
-    val targetDeviceModel = reference("target_device_id", DeviceModelTable, ReferenceOption.CASCADE)
+    val targetDeviceModelId = reference("target_device_id", DeviceModelTable, ReferenceOption.CASCADE)
     val orientation = enumerationByName<Orientation>("target_orientation", 20)
 
     val status = enumerationByName<CanvasStatus>("canvas_status", 20)

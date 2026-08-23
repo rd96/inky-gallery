@@ -30,7 +30,7 @@ import uk.derbyshire.domain.users.UserId
 class CanvasRepository {
     fun insertCanvas(targetDeviceModelId: DeviceModelId, orientation: Orientation, type: CanvasType, status: CanvasStatus, createdBy: UserId): CanvasId =
         CanvasTable.insertAndGetId {
-            it[this.targetDeviceModel] = targetDeviceModelId.value
+            it[this.targetDeviceModelId] = targetDeviceModelId.value
             it[this.orientation] = orientation
             it[this.createdBy] = createdBy.value
             it[this.status] = status
