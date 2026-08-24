@@ -93,7 +93,7 @@ class ConnectionRepository {
                 UserTable.enabled,
             )
             .where {
-                (ConnectionTable.senderUserId eq userId.value)
+                ((ConnectionTable.senderUserId eq userId.value) and (UserTable.enabled))
                     .andIfNotNull { deviceModelId?.let { DeviceTable.deviceModelId eq deviceModelId.value } }
                     .andIfNotNull { deviceOrientation?.let { DeviceTable.orientation eq deviceOrientation } }
             }
