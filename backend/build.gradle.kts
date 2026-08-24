@@ -43,7 +43,7 @@ tasks.register<JavaExec>("runMigrationGenerator") {
     description = "Generates suggested SQL for the next Flyway migration"
 
     classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("uk.derbyshire.inkygallery.tooling.GenerateMigration")
+    mainClass.set("uk.derbyshire.tooling.GenerateDatabaseMigration")
 }
 
 tasks.test {
