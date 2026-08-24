@@ -63,11 +63,10 @@ class DeviceService(
             deviceRepository.getDevicesForUser(userId)
         }
 
-    fun getRecipientDeviceModels(userId: UserId, recipientUserId: UserId): List<UserDevice> = context.transaction {
+    fun getRecipientDeviceModels(userId: UserId, recipientUserId: UserId): List<UserDevice> =
         context.transaction {
             deviceRepository.getActiveRecipientDevicesForUserAndRecipient(userId, recipientUserId)
         }
-    }
 
     companion object {
         const val MAX_DEVICE_NICKNAME_LENGTH = 50
