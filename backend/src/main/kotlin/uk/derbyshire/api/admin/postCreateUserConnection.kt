@@ -5,9 +5,11 @@ import dev.forkhandles.result4k.Success
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.http4k.core.with
 import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
+import uk.derbyshire.domain.connections.ConnectionId
 import uk.derbyshire.domain.users.UserId
 import uk.derbyshire.services.ConnectionService
 
@@ -22,7 +24,7 @@ fun postCreateUserConnection(connectionService: ConnectionService) = { request: 
     )
 
     when (result) {
-        is Success -> Response(Status.NO_CONTENT)
+        is Success -> Response(Status.OK).with(PostCreateUserConnectionResponseDTO.lens of PostCreateUserConnectionResponseDTO(result.value))
         is Failure -> result.reason.description.toErrorResponseDTO()
     }
 }
@@ -33,6 +35,14 @@ private data class PostCreateUserConnectionRequestDTO(
 ) {
     companion object {
         val lens = Json.autoBody<PostCreateUserConnectionRequestDTO>().toLens()
+    }
+}
+
+private data class PostCreateUserConnectionResponseDTO(
+    val connectionId: ConnectionId,
+) {
+    companion object {
+        val lens = Json.autoBody<PostCreateUserConnectionResponseDTO>().toLens()
     }
 }
 
