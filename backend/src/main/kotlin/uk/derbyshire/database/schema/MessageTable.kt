@@ -1,13 +1,13 @@
 package uk.derbyshire.database.schema
 
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import org.jetbrains.exposed.v1.core.dao.id.UuidTable
 import org.jetbrains.exposed.v1.datetime.CurrentTimestamp
 import org.jetbrains.exposed.v1.datetime.timestamp
 import uk.derbyshire.services.MessageService.Companion.MAX_MESSAGE_LENGTH
 
-object MessageTable : UUIDTable("messages") {
+object MessageTable : UuidTable("messages") {
     val fromUserId = reference("from_user_id", UserTable.id)
-    val toUserId = reference("to_user_id", UserTable.id)
+    val toUserId = reference("to_user_id", UserTable.id).index()
 
     val canvasId = reference("canvas_id", CanvasTable.id)
     val message = varchar("message", MAX_MESSAGE_LENGTH).nullable()

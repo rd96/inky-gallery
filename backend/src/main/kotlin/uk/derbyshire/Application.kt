@@ -74,5 +74,5 @@ class Services(repositories: Repositories, database: DatabaseContext, clock: Clo
     val deviceService = DeviceService(repositories.deviceModelRepository, repositories.deviceRepository, database)
     val drawingService = DrawingService(imageProcessingService, repositories.drawingRepository, repositories.canvasRepository, database)
     val canvasService = CanvasService(repositories.canvasRepository, repositories.deviceModelRepository, repositories.drawingRepository, database)
-    val messageService = MessageService(repositories.messageRepository, repositories.connectionRepository, repositories.canvasRepository, database)
+    val messageService = MessageService(repositories.messageRepository, repositories.connectionRepository, repositories.canvasRepository, repositories.drawingRepository, database)
 }
