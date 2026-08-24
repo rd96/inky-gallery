@@ -88,10 +88,8 @@ class CanvasService(
                 requestedDrawingIds.size != orderedDrawingIds.size || requestedDrawingIds != existingDrawingIds
             ) return@transaction Failure(UpdateCanvasFailure.DRAWINGS_MISMATCH)
 
-            for ((position, drawingId) in orderedDrawingIds.withIndex()) {
-                check(drawingRepository.updateDrawingOrder(canvasId, drawingId, position)) {
-                    "Drawing $drawingId unexpectedly missing from canvas $canvasId"
-                }
+            check (drawingRepository.updateDrawingPositions(canvasId, orderedDrawingIds) == orderedDrawingIds.size) {
+                "Skipped a drawing position update, rolling back"
             }
 
             Success(Unit)

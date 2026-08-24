@@ -1,9 +1,12 @@
 package uk.derbyshire.database.repositories
 
+import org.jetbrains.exposed.v1.core.Case
+import org.jetbrains.exposed.v1.core.CaseWhen
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.core.intParam
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.update
@@ -32,7 +35,7 @@ class DrawingRepository {
                 DrawingTable.createdAt,
             )
             .where { DrawingTable.canvasId inList canvasIds.map(CanvasId::value) }
-            .orderBy(DrawingTable.createdAt to SortOrder.DESC, DrawingTable.position to SortOrder.ASC)
+            .orderBy(DrawingTable.position to SortOrder.ASC)
             .groupBy { CanvasId(it[DrawingTable.canvasId].value) }
             .mapValues { (_, rows) ->
                 rows.map {
@@ -63,8 +66,12 @@ class DrawingRepository {
                 it[DrawingTable.pngData]
             }
 
-    fun updateDrawingOrder(canvasId: CanvasId, drawingId: DrawingId, position: Int) =
-        DrawingTable.update({ (DrawingTable.id eq drawingId.value) and (DrawingTable.canvasId eq canvasId.value) }) {
-            it[DrawingTable.position] = position
-        } == 1
+    fun updateDrawingPositions(canvasId: CanvasId, orderedDrawingIds: List<DrawingId>): Int =
+        DrawingTable.update({
+            (DrawingTable.canvasId eq canvasId.value) and (DrawingTable.id inList orderedDrawingIds.map(DrawingId::value))
+        }) {
+            it[DrawingTable.position] = orderedDrawingIds.withIndex()
+                .fold(CaseWhen<Int>()) { case, (position, drawingId) -> case.When(DrawingTable.id eq drawingId.value, intParam(position)) }
+                .Else(DrawingTable.position)
+        }
 }
