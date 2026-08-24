@@ -13,7 +13,6 @@ import uk.derbyshire.domain.users.CreateAdminFailure
 import uk.derbyshire.domain.users.CreateUserFailure
 import uk.derbyshire.domain.users.UpdateUserFailure
 import uk.derbyshire.domain.users.UserId
-import uk.derbyshire.domain.users.UserLoginDetail
 import uk.derbyshire.domain.users.UserSearchResult
 import uk.derbyshire.domain.users.UserSummary
 import kotlin.math.max
@@ -36,11 +35,6 @@ class UserService(
             )
         }.asResultOr { CreateUserFailure.USERNAME_ALREADY_IN_USE }
     }
-
-    fun findUserLoginByUsername(username: String): UserLoginDetail? =
-        database.transaction {
-            userRepository.findUserLoginByUsername(normaliseUsername(username))
-        }
 
     fun userExists(userId: UserId): Boolean =
         database.transaction {
