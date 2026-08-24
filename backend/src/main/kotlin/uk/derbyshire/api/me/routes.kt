@@ -23,6 +23,8 @@ fun userRoutes(services: Services, serverConfig: ServerConfig) = routes(
     "/recipients/$userId/devices" bind Method.GET to getRecipientDevices(services.deviceService),
     "/recipients" bind Method.QUERY to queryRecipients(services.connectionService),
 
+    "/messages" bind Method.GET to getReceivedCanvasMessages(services.messageService),
+
     "/canvases" bind Method.QUERY to queryMyCanvases(services.canvasService),
     "/canvases" bind Method.POST to postCreateCanvas(services.canvasService),
     "/canvases/$canvasId" bind Method.GET to getMyCanvas(services.canvasService),

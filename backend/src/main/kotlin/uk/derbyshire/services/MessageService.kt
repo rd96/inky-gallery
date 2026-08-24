@@ -8,17 +8,20 @@ import dev.forkhandles.result4k.onFailure
 import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.CanvasRepository
 import uk.derbyshire.database.repositories.ConnectionRepository
+import uk.derbyshire.database.repositories.DrawingRepository
 import uk.derbyshire.database.repositories.MessageRepository
 import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.canvases.CanvasStatus
+import uk.derbyshire.domain.messages.CanvasMessageWithDrawings
 import uk.derbyshire.domain.messages.SendMessageFailure
 import uk.derbyshire.domain.users.UserId
 
 class MessageService(
-    val messageRepository: MessageRepository,
-    val connectionRepository: ConnectionRepository,
-    val canvasRepository: CanvasRepository,
-    val context: DatabaseContext,
+    private val messageRepository: MessageRepository,
+    private val connectionRepository: ConnectionRepository,
+    private val canvasRepository: CanvasRepository,
+    private val drawingRepository: DrawingRepository,
+    private val context: DatabaseContext,
 ) {
     fun sendMessage(fromUserId: UserId, toUserId: UserId, canvasId: CanvasId, message: String?, showName: Boolean): Result4k<Unit, SendMessageFailure> {
         val normalisedMessage = message?.let(::normaliseAndValidateMessage)?.onFailure { return it }
@@ -30,6 +33,22 @@ class MessageService(
             if (canvas.status != CanvasStatus.FINISHED) return@transaction Failure(SendMessageFailure.CANVAS_NOT_FINISHED)
 
             messageRepository.insertMessage(fromUserId, toUserId, canvasId, normalisedMessage, showName).asSuccess()
+        }
+    }
+
+    fun getReceivedCanvasMessages(recipientUserId: UserId): List<CanvasMessageWithDrawings> {
+        return context.transaction {
+            val messages = messageRepository.getMessagesFor(recipientUserId)
+            val canvasIds = messages.map { it.canvasId }
+
+            val drawings = drawingRepository.getDrawingsByCanvasIds(canvasIds)
+
+            messages.map {
+                CanvasMessageWithDrawings(
+                    canvasMessage = it,
+                    drawings = drawings[it.canvasId] ?: emptyList()
+                )
+            }
         }
     }
 
