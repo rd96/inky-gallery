@@ -1,7 +1,7 @@
 package uk.derbyshire.api.me.shared
 
 import uk.derbyshire.domain.drawings.DrawingId
-import uk.derbyshire.domain.drawings.DrawingMetadata
+import uk.derbyshire.domain.drawings.Drawing
 import kotlin.time.Instant
 
 data class DrawingDTO(
@@ -10,7 +10,7 @@ data class DrawingDTO(
     val createdAt: Instant,
 ) {
     companion object {
-        fun List<DrawingMetadata>.toDto() = map {
+        fun List<Drawing>.toDto() = map {
             DrawingDTO(
                 drawingId = it.drawingId,
                 position = it.position,

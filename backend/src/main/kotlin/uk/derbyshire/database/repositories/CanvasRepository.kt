@@ -16,8 +16,8 @@ import org.jetbrains.exposed.v1.jdbc.update
 import uk.derbyshire.database.schema.CanvasTable
 import uk.derbyshire.database.schema.DeviceModelTable
 import uk.derbyshire.database.schema.DrawingTable
-import uk.derbyshire.domain.canvases.CanvasDimensions
-import uk.derbyshire.domain.canvases.CanvasMetadata
+import uk.derbyshire.domain.canvases.CanvasWithDrawingCount
+import uk.derbyshire.domain.canvases.Canvas
 import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.canvases.CanvasStatus
 import uk.derbyshire.domain.canvases.CanvasType
@@ -37,7 +37,7 @@ class CanvasRepository {
             it[this.type] = type
         }.let { CanvasId(it.value) }
 
-    fun findUserCanvases(userId: UserId, canvasStatus: CanvasStatus?): List<CanvasMetadata> =
+    fun findUserCanvases(userId: UserId, canvasStatus: CanvasStatus?): List<Canvas> =
         CanvasTable
             .innerJoin(DeviceModelTable)
             .select(
@@ -63,7 +63,7 @@ class CanvasRepository {
             .where { (CanvasTable.createdBy eq userId.value) and (CanvasTable.status eq CanvasStatus.DRAFT) }
             .count()
 
-    fun getCanvas(userId: UserId, canvasId: CanvasId): CanvasMetadata? =
+    fun getCanvas(userId: UserId, canvasId: CanvasId): Canvas? =
         CanvasTable
             .innerJoin(DeviceModelTable)
             .select(
@@ -83,7 +83,7 @@ class CanvasRepository {
             .singleOrNull()
             ?.toCanvasMetadata()
 
-    fun getCanvasDimensionsAndDrawings(userId: UserId, canvasId: CanvasId): CanvasDimensions? =
+    fun getCanvasWithDrawingCount(userId: UserId, canvasId: CanvasId): CanvasWithDrawingCount? =
         CanvasTable
             .innerJoin(DeviceModelTable)
             .leftJoin(DrawingTable)
@@ -108,7 +108,7 @@ class CanvasRepository {
             )
             .singleOrNull()
             ?.let {
-                CanvasDimensions(
+                CanvasWithDrawingCount(
                     canvasId = CanvasId(canvasId.value),
                     landscapeWidthPx = it[DeviceModelTable.landscapeWidthPx],
                     landscapeHeightPx = it[DeviceModelTable.landscapeHeightPx],
@@ -132,7 +132,7 @@ class CanvasRepository {
         }
 
     companion object {
-        private fun ResultRow.toCanvasMetadata() = CanvasMetadata(
+        private fun ResultRow.toCanvasMetadata() = Canvas(
             canvasId = CanvasId(this[CanvasTable.id].value),
             deviceModelId = DeviceModelId(this[DeviceModelTable.id].value),
             landscapeWidthPx = this[DeviceModelTable.landscapeWidthPx],

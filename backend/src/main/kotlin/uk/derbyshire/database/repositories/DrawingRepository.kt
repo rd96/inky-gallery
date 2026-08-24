@@ -11,7 +11,7 @@ import uk.derbyshire.database.schema.CanvasTable
 import uk.derbyshire.database.schema.DrawingTable
 import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.drawings.DrawingId
-import uk.derbyshire.domain.drawings.DrawingMetadata
+import uk.derbyshire.domain.drawings.Drawing
 import uk.derbyshire.domain.users.UserId
 
 class DrawingRepository {
@@ -23,7 +23,7 @@ class DrawingRepository {
             it[this.byteSize] = pngData.size
         }.let { DrawingId(it.value) }
 
-    fun getDrawingsByCanvasIds(canvasIds: List<CanvasId>): Map<CanvasId, List<DrawingMetadata>> =
+    fun getDrawingsByCanvasIds(canvasIds: List<CanvasId>): Map<CanvasId, List<Drawing>> =
         DrawingTable
             .select(
                 DrawingTable.id,
@@ -36,7 +36,7 @@ class DrawingRepository {
             .groupBy { CanvasId(it[DrawingTable.canvasId].value) }
             .mapValues { (_, rows) ->
                 rows.map {
-                    DrawingMetadata(
+                    Drawing(
                         drawingId = DrawingId(it[DrawingTable.id].value),
                         position = it[DrawingTable.position],
                         createdAt = it[DrawingTable.createdAt],

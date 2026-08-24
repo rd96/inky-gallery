@@ -9,7 +9,7 @@ import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.api.me.QueryCanvasesResponseDTO.Companion.toDto
 import uk.derbyshire.api.me.shared.DrawingDTO
 import uk.derbyshire.api.me.shared.DrawingDTO.Companion.toDto
-import uk.derbyshire.domain.canvases.CanvasDetail
+import uk.derbyshire.domain.canvases.CanvasWithDrawings
 import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.canvases.CanvasStatus
 import uk.derbyshire.domain.canvases.CanvasType
@@ -47,8 +47,8 @@ private data class QueryCanvasesResponseDTO(
     companion object {
         val lens = Json.autoBody<List<QueryCanvasesResponseDTO>>().toLens()
 
-        fun List<CanvasDetail>.toDto() = map {
-            val canvas = it.canvasMetadata
+        fun List<CanvasWithDrawings>.toDto() = map {
+            val canvas = it.canvas
             QueryCanvasesResponseDTO(
                 canvasId = canvas.canvasId,
                 orientation = canvas.orientation,

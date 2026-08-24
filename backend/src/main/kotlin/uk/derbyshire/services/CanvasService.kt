@@ -9,9 +9,9 @@ import uk.derbyshire.database.DatabaseContext
 import uk.derbyshire.database.repositories.CanvasRepository
 import uk.derbyshire.database.repositories.DeviceModelRepository
 import uk.derbyshire.database.repositories.DrawingRepository
-import uk.derbyshire.domain.canvases.CanvasDetail
+import uk.derbyshire.domain.canvases.CanvasWithDrawings
 import uk.derbyshire.domain.canvases.CanvasId
-import uk.derbyshire.domain.canvases.CanvasMetadata
+import uk.derbyshire.domain.canvases.Canvas
 import uk.derbyshire.domain.canvases.CanvasStatus
 import uk.derbyshire.domain.canvases.CanvasType
 import uk.derbyshire.domain.canvases.CompleteCanvasFailure
@@ -36,7 +36,7 @@ class CanvasService(
             canvasRepository.insertCanvas(targetDeviceModelId, orientation, type, CanvasStatus.DRAFT, userId).asSuccess()
         }
 
-    fun getMyCanvases(userId: UserId, canvasStatus: CanvasStatus?): List<CanvasDetail> =
+    fun getMyCanvases(userId: UserId, canvasStatus: CanvasStatus?): List<CanvasWithDrawings> =
         context.transaction {
             val canvases = canvasRepository.findUserCanvases(userId, canvasStatus)
             val canvasIds = canvases.map { it.canvasId }
@@ -44,21 +44,21 @@ class CanvasService(
             val drawings = drawingRepository.getDrawingsByCanvasIds(canvasIds)
 
             canvases.map {
-                CanvasDetail(
-                    canvasMetadata = it,
+                CanvasWithDrawings(
+                    canvas = it,
                     drawings = drawings[it.canvasId] ?: emptyList(),
                 )
             }
         }
 
-    fun getMyCanvas(userId: UserId, canvasId: CanvasId): CanvasMetadata? =
+    fun getMyCanvas(userId: UserId, canvasId: CanvasId): Canvas? =
         context.transaction {
             canvasRepository.getCanvas(userId, canvasId)
         }
 
     fun completeCanvas(userId: UserId, canvasId: CanvasId): Result4k<Unit, CompleteCanvasFailure> =
         context.transaction {
-            val canvas = canvasRepository.getCanvasDimensionsAndDrawings(userId, canvasId) ?: return@transaction Failure(CompleteCanvasFailure.CANVAS_NOT_FOUND)
+            val canvas = canvasRepository.getCanvasWithDrawingCount(userId, canvasId) ?: return@transaction Failure(CompleteCanvasFailure.CANVAS_NOT_FOUND)
 
             if (canvas.status != CanvasStatus.DRAFT) return@transaction Failure(CompleteCanvasFailure.CANVAS_NOT_IN_DRAFT)
 

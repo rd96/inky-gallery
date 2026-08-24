@@ -8,7 +8,7 @@ import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.api.helpers.PathParams.canvasId
 import uk.derbyshire.api.me.GetMyCanvasResponseDTO.Companion.toDto
-import uk.derbyshire.domain.canvases.CanvasMetadata
+import uk.derbyshire.domain.canvases.Canvas
 import uk.derbyshire.domain.canvases.CanvasStatus
 import uk.derbyshire.domain.canvases.CanvasType
 import uk.derbyshire.domain.devices.DeviceModelId
@@ -38,7 +38,7 @@ data class GetMyCanvasResponseDTO(
     companion object {
         val lens = Json.autoBody<GetMyCanvasResponseDTO>().toLens()
 
-        fun CanvasMetadata.toDto() = GetMyCanvasResponseDTO(
+        fun Canvas.toDto() = GetMyCanvasResponseDTO(
             deviceModelId = this.deviceModelId,
             orientation = this.orientation,
             widthPx = this.widthPx,
