@@ -16,11 +16,13 @@ import uk.derbyshire.domain.auth.AccountTokenType
 import uk.derbyshire.domain.auth.ActivationFailure
 import uk.derbyshire.domain.auth.AuthenticatedDevice
 import uk.derbyshire.domain.auth.CreatePasswordResetTokenFailure
+import uk.derbyshire.domain.auth.CreateUserActivationTokensFailure
 import uk.derbyshire.domain.auth.LoginFailure
 import uk.derbyshire.domain.auth.UserActivationToken
 import uk.derbyshire.domain.auth.LoginSuccess
 import uk.derbyshire.domain.auth.PasswordResetFailure
 import uk.derbyshire.domain.auth.PasswordResetToken
+import uk.derbyshire.domain.auth.RevokeUserActivationTokensFailure
 import uk.derbyshire.domain.auth.UserPasswordResetToken
 import uk.derbyshire.domain.auth.UserPendingActivation
 import uk.derbyshire.domain.users.UserId
@@ -111,12 +113,12 @@ class AuthService(
         ).asSuccess()
     }
 
-    fun generateUserActivationToken(userId: UserId, createdBy: UserId): Result4k<UserPendingActivation, String> =
+    fun generateUserActivationToken(userId: UserId, createdBy: UserId): Result4k<UserPendingActivation, CreateUserActivationTokensFailure> =
         context.transaction {
-            val user = userRepository.findUser(userId) ?: return@transaction Failure("User $userId not found")
+            val user = userRepository.findUser(userId) ?: return@transaction Failure(CreateUserActivationTokensFailure.USER_NOT_FOUND)
 
-            if (user.activationStatus != ActivationStatus.PENDING) return@transaction Failure("User $userId is already activated")
-            if (!user.enabled) return@transaction Failure("User $userId is not enabled")
+            if (user.activationStatus != ActivationStatus.PENDING) return@transaction Failure(CreateUserActivationTokensFailure.USER_NOT_PENDING)
+            if (!user.enabled) return@transaction Failure(CreateUserActivationTokensFailure.USER_NOT_ENABLED)
 
             val token = secureTokenService.generate()
             val tokenHash = secureTokenService.hash(token)
@@ -179,9 +181,9 @@ class AuthService(
         }
     }
 
-    fun revokeUserActivationTokens(userId: UserId): Result4k<Unit, String> =
+    fun revokeUserActivationTokens(userId: UserId): Result4k<Unit, RevokeUserActivationTokensFailure> =
         context.transaction {
-            if (!userRepository.userExists(userId)) return@transaction Failure("User $userId not found")
+            if (!userRepository.userExists(userId)) return@transaction Failure(RevokeUserActivationTokensFailure.USER_NOT_FOUND)
             accountTokenRepository.revokeTokensForUser(userId, AccountTokenType.ACTIVATION, clock.now()).asSuccess()
         }
 

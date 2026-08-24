@@ -7,6 +7,7 @@ import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.with
 import uk.derbyshire.api.filters.ErrorResponseDTO
+import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.PathParams
 import uk.derbyshire.services.AuthService
 
@@ -19,7 +20,7 @@ fun deleteUserActivationTokens(authService: AuthService) = { request: Request ->
 
     when (result) {
         is Success -> Response(Status.NO_CONTENT)
-        is Failure -> Response(Status.BAD_REQUEST).with(ErrorResponseDTO.lens of ErrorResponseDTO(Status.BAD_REQUEST.description))
+        is Failure -> result.reason.description.toErrorResponseDTO()
     }
 }
 

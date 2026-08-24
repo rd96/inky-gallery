@@ -9,6 +9,7 @@ import org.http4k.core.with
 import uk.derbyshire.api.admin.PutGenerateUserActivationTokenResponseDTO.Companion.toDto
 import uk.derbyshire.api.filters.CurrentUser
 import uk.derbyshire.api.filters.ErrorResponseDTO
+import uk.derbyshire.api.filters.ErrorResponseDTO.Companion.toErrorResponseDTO
 import uk.derbyshire.api.helpers.Json
 import uk.derbyshire.api.helpers.PathParams.userId
 import uk.derbyshire.domain.auth.UserPendingActivation
@@ -27,7 +28,7 @@ fun putGenerateUserActivationToken(authService: AuthService) = { request: Reques
 
     when (pendingUserResult) {
         is Success -> Response(Status.OK).with(PutGenerateUserActivationTokenResponseDTO.lens of pendingUserResult.value.toDto())
-        is Failure -> Response(Status.BAD_REQUEST).with(ErrorResponseDTO.lens of ErrorResponseDTO(Status.BAD_REQUEST.description))
+        is Failure -> pendingUserResult.reason.description.toErrorResponseDTO()
     }
 }
 
