@@ -26,8 +26,8 @@ fun getRecipientDevices(deviceService: DeviceService) = { request: Request ->
 data class GetRecipientDevicesResponseDTO(
     val deviceModelId: DeviceModelId,
     val deviceModelName: String,
-    val landscapeWidthPx: Int,
-    val landscapeHeightPx: Int,
+    val widthPx: Int,
+    val heightPx: Int,
     val orientation: Orientation,
     val palette: Palette?,
 ) {
@@ -38,8 +38,8 @@ data class GetRecipientDevicesResponseDTO(
             GetRecipientDevicesResponseDTO(
                 deviceModelId = it.deviceModelId,
                 deviceModelName = it.deviceModelName,
-                landscapeWidthPx = it.landscapeWidthPx,
-                landscapeHeightPx = it.landscapeHeightPx,
+                widthPx = it.widthPx,
+                heightPx = it.heightPx,
                 orientation = it.orientation,
                 palette = it.palette,
             )
