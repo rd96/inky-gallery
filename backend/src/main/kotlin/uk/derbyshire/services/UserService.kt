@@ -82,7 +82,7 @@ class UserService(
 
         return database.transaction {
             val user = userRepository.findUser(userId) ?: return@transaction Failure(UpdateUserFailure.USER_NOT_FOUND)
-            if (displayName == user.displayName) return@transaction Success(Unit)
+            if (normalisedDisplayName == user.displayName) return@transaction Success(Unit)
 
             userRepository.updateUserDisplayName(
                 userId,
