@@ -29,8 +29,8 @@ class MessageRepository {
     fun getMessagesFor(recipientUserId: UserId): List<CanvasMessage> =
         MessageTable
             .join(UserTable, JoinType.INNER, MessageTable.fromUserId, UserTable.id)
-            .innerJoin(CanvasTable)
-            .innerJoin(DeviceModelTable)
+            .join(CanvasTable, JoinType.INNER, MessageTable.canvasId, CanvasTable.id)
+            .join(DeviceModelTable, JoinType.INNER, CanvasTable.targetDeviceModelId, DeviceModelTable.id)
         .select(
             MessageTable.id,
             MessageTable.fromUserId,
