@@ -10,5 +10,5 @@ object DeviceApiKeyTable : UuidTable("device_api_keys") {
     val keyHash = varchar("key_hash", 64).uniqueIndex()
     val keyPrefix = varchar("api_key_reference", 10)
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)
-    val revokedAt = timestamp("revoked_at").defaultExpression(CurrentTimestamp)
+    val revokedAt = timestamp("revoked_at").nullable()
 }

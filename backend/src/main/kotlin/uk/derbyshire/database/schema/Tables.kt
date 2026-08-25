@@ -14,6 +14,7 @@ class Tables {
             DrawingTable,
             CanvasTable,
             MessageTable,
+            DeviceApiKeyTable,
         )
     }
 }
