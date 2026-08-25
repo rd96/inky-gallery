@@ -15,6 +15,6 @@ object CanvasTable : UuidTable("canvases") {
     val status = enumerationByName<CanvasStatus>("canvas_status", 20)
     val type = enumerationByName<CanvasType>("canvas_type", 20)
 
-    val createdBy = reference("created_by", UserTable, ReferenceOption.CASCADE)
+    val createdBy = reference("created_by", UserTable, ReferenceOption.CASCADE).index()
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)
 }

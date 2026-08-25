@@ -8,7 +8,7 @@ import org.jetbrains.exposed.v1.datetime.timestamp
 
 object ConnectionTable : UuidTable("connections") {
     val senderUserId = reference("user_id", UserTable.id, ReferenceOption.CASCADE)
-    val recipientUserId = reference("recipient_id", UserTable.id, ReferenceOption.CASCADE)
+    val recipientUserId = reference("recipient_id", UserTable.id, ReferenceOption.CASCADE).index()
 
     val createdBy = reference("created_by", UserTable.id)
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)

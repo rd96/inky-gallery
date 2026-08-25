@@ -6,7 +6,7 @@ import org.jetbrains.exposed.v1.datetime.CurrentTimestamp
 import org.jetbrains.exposed.v1.datetime.timestamp
 
 object SessionTable : UuidTable("sessions") {
-    val userId = reference("user_id", UserTable, ReferenceOption.CASCADE)
+    val userId = reference("user_id", UserTable, ReferenceOption.CASCADE).index()
     val tokenHash = varchar("token_hash", length = 64).uniqueIndex()
 
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)

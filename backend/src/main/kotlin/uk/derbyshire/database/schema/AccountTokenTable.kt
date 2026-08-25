@@ -6,7 +6,7 @@ import org.jetbrains.exposed.v1.datetime.timestamp
 import uk.derbyshire.domain.auth.AccountTokenType
 
 object AccountTokenTable : UuidTable("account_tokens") {
-    val userId = reference("user_id", UserTable.id, ReferenceOption.CASCADE)
+    val userId = reference("user_id", UserTable.id, ReferenceOption.CASCADE).index()
     val tokenType = enumerationByName<AccountTokenType>("token_type", 30)
     val tokenHash = varchar("token_hash", 64).uniqueIndex()
 
