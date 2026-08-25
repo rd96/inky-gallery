@@ -12,9 +12,11 @@ import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.update
 import uk.derbyshire.database.schema.CanvasTable
 import uk.derbyshire.database.schema.DrawingTable
+import uk.derbyshire.database.schema.MessageTable
 import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.drawings.DrawingId
 import uk.derbyshire.domain.drawings.Drawing
+import uk.derbyshire.domain.messages.MessageId
 import uk.derbyshire.domain.users.UserId
 
 class DrawingRepository {
@@ -61,6 +63,19 @@ class DrawingRepository {
                 DrawingTable.pngData,
             )
             .where { (CanvasTable.id eq canvasId.value) and (CanvasTable.createdBy eq userId.value) and (DrawingTable.id eq drawingId.value) }
+            .singleOrNull()
+            ?.let {
+                it[DrawingTable.pngData]
+            }
+
+    fun getDrawingData(userId: UserId, messageId: MessageId, drawingId: DrawingId): ByteArray? =
+        MessageTable
+            .innerJoin(CanvasTable)
+            .innerJoin(DrawingTable)
+            .select(
+                DrawingTable.pngData,
+            )
+            .where { (MessageTable.id eq messageId.value) and (MessageTable.toUserId eq userId.value) and (DrawingTable.id eq drawingId.value) }
             .singleOrNull()
             ?.let {
                 it[DrawingTable.pngData]

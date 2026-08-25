@@ -13,6 +13,7 @@ import uk.derbyshire.domain.canvases.CanvasStatus
 import uk.derbyshire.domain.canvases.CanvasType
 import uk.derbyshire.domain.drawings.DrawingId
 import uk.derbyshire.domain.drawings.SaveDrawingFailure
+import uk.derbyshire.domain.messages.MessageId
 import uk.derbyshire.domain.users.UserId
 
 class DrawingService(
@@ -46,5 +47,10 @@ class DrawingService(
     fun getDrawingForUser(userId: UserId, canvasId: CanvasId, drawingId: DrawingId): ByteArray? =
         context.transaction {
             drawingRepository.getDrawingData(userId, canvasId, drawingId)
+        }
+
+    fun getDrawingForUser(userId: UserId, messageId: MessageId, drawingId: DrawingId): ByteArray? =
+        context.transaction {
+            drawingRepository.getDrawingData(userId, messageId, drawingId) ?: return@transaction null
         }
 }

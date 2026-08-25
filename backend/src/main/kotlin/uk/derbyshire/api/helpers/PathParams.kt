@@ -8,6 +8,7 @@ import uk.derbyshire.domain.connections.ConnectionId
 import uk.derbyshire.domain.devices.DeviceId
 import uk.derbyshire.domain.canvases.CanvasId
 import uk.derbyshire.domain.drawings.DrawingId
+import uk.derbyshire.domain.messages.MessageId
 import uk.derbyshire.domain.users.UserId
 import kotlin.uuid.Uuid
 
@@ -17,6 +18,7 @@ object PathParams {
     val deviceId = PathParam.uuid("deviceId", ::DeviceId)
     val drawingId = PathParam.uuid("drawingId", ::DrawingId)
     val canvasId = PathParam.uuid("canvasId", ::CanvasId)
+    val messageId = PathParam.uuid("messageId", ::MessageId)
 }
 
 class PathParam<T> private constructor (
