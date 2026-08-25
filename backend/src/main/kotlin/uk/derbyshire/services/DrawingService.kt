@@ -24,6 +24,8 @@ class DrawingService(
 
     fun saveDrawing(userId: UserId, canvasId: CanvasId, uploadedBytes: ByteArray): Result4k<DrawingId, SaveDrawingFailure> =
         context.transaction {
+            if (!canvasRepository.lockCanvas(userId, canvasId)) return@transaction Failure(SaveDrawingFailure.CANVAS_NOT_FOUND)
+
             val canvas = canvasRepository.getCanvasWithDrawingCount(userId, canvasId) ?: return@transaction Failure(SaveDrawingFailure.CANVAS_NOT_FOUND)
 
             if (canvas.status != CanvasStatus.DRAFT) return@transaction Failure(SaveDrawingFailure.CANVAS_IS_NOT_IN_DRAFT)

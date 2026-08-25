@@ -83,6 +83,13 @@ class CanvasRepository {
             .singleOrNull()
             ?.toCanvasMetadata()
 
+    fun lockCanvas(userId: UserId, canvasId: CanvasId): Boolean =
+        CanvasTable
+            .select(CanvasTable.id)
+            .where { (CanvasTable.id eq canvasId.value) and (CanvasTable.createdBy eq userId.value) }
+            .forUpdate()
+            .any()
+
     fun getCanvasWithDrawingCount(userId: UserId, canvasId: CanvasId): CanvasWithDrawingCount? =
         CanvasTable
             .innerJoin(DeviceModelTable)
