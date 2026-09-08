@@ -1,0 +1,61 @@
+# docker-compose.prod.yml
+# Usage on the server: docker compose -f docker-compose.prod.yml up -d --build
+#
+# Reads variables from a `.env` file in this directory (see .env.example).
+# On the server, DATABASE_URL must point at the `postgres` service name below,
+# e.g. jdbc:postgresql://postgres:5432/${POSTGRES_DB} — not localhost.
+#
+# `name:` below deliberately differs from docker-compose.dev.yml's default
+# project name (both live in the same directory, so without this they'd
+# default to the same project name and share/collide on volumes) — and the
+# container_name values are suffixed `-prod` so the two files can never
+# collide even if both ever run on the same Docker host (e.g. testing this
+# file locally on a dev machine that also has the dev stack up).
+
+name: inky-gallery-prod
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: inky-gallery-postgres-prod
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Deliberately no `ports:` — only the backend container can reach Postgres,
+    # over the internal network. Nothing external should ever touch this port.
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inky-gallery-backend-prod
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    networks:
+      - internal
+    ports:
+      # Bound to loopback only — not reachable from outside the VM directly.
+      # A reverse proxy (e.g. Caddy) running on the host talks to it via
+      # 127.0.0.1:8080 and is the only thing that should be public.
+      - "127.0.0.1:${PORT}:${PORT}"
+
+networks:
+  internal:
+
+volumes:
+  postgres-data:

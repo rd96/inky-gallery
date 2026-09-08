@@ -1,0 +1,23 @@
+# Caddyfile — deploy to /etc/caddy/Caddyfile on the server, then:
+#   sudo systemctl reload caddy
+#
+# Caddy handles this domain's HTTPS automatically (Let's Encrypt) — no manual
+# cert/renewal setup needed. It's the only thing that should be listening on
+# 80/443 publicly; the backend stays on 127.0.0.1 (see docker-compose.prod.yml).
+
+inky.derbyshire.uk {
+	encode gzip zstd
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+	}
+
+	log {
+		output file /var/log/caddy/inky-gallery-access.log
+		format json
+	}
+
+	reverse_proxy 127.0.0.1:8080
+}

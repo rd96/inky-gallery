@@ -1,0 +1,20 @@
+# Keep the build context small and avoid leaking local/dev-only state into the image.
+.git/
+.gradle/
+.kotlin/
+.idea/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+frontend/node_modules/
+frontend/dist/
+
+inkyframe/
+
+.env
+*.env
+!.env.example
+
+.claude/
+*.md
