@@ -11,6 +11,7 @@ repositories {
 }
 
 application {
+    mainClass.set("uk.derbyshire.MainKt")
     applicationDefaultJvmArgs = listOf(
         "-Djava.awt.headless=true",
     )
