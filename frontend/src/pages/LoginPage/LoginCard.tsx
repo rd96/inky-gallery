@@ -39,7 +39,7 @@ export default function LoginCard({ onShowAbout }: LoginCardProps) {
       <header>
         <h1>Inky Gallery</h1>
       </header>
-      <p className="tagline">Tagline TODO.</p>
+      <p className="tagline">Hand drawn digital postcards for friends.</p>
       <form onSubmit={handleSubmit} noValidate>
         <div className="field">
           <label htmlFor="username">Username</label>

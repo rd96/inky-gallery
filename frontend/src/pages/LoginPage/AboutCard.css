@@ -7,3 +7,12 @@
 .about-body p:last-child {
   margin-bottom: 0;
 }
+
+.about-body a {
+  color: var(--inky-color-blue);
+  text-decoration: none;
+}
+
+.about-body a:hover {
+  text-decoration: underline;
+}

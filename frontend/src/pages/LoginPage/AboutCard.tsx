@@ -12,8 +12,13 @@ export default function AboutCard({ onBack }: AboutCardProps) {
       </header>
       <div className="about-body">
         <p>
-          TODO
+          Inky Gallery is a place to share drawings with friends who have a digital picture frame, like the{' '}
+          <a href="https://shop.pimoroni.com/collections/pimoroni?tags=e-ink%20Displays" target="_blank" rel="noreferrer">
+            InkyFrame
+          </a>
+          .
         </p>
+        <p>Made by Robert Derbyshire</p>
       </div>
       <button type="button" className="flip-link" onClick={onBack}>
         ← Back to sign in
