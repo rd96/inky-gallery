@@ -25,7 +25,9 @@ data class Environment(
         )
 
         val source = run {
-            val dotenv = Environment4k.from(File(".env"))
+            val dotenv = File(".env")
+                .takeIf { it.exists() }
+                ?.let { Environment4k.from(it) } ?: Environment4k.EMPTY
 
             Environment4k.ENV overrides dotenv overrides defaultConfig
         }
