@@ -7,6 +7,7 @@ import org.http4k.filter.ServerFilters
 import org.http4k.routing.ResourceLoader
 import org.http4k.routing.bind
 import org.http4k.routing.routes
+import org.http4k.routing.singlePageApp
 import org.http4k.routing.static
 import org.http4k.server.ApacheServer
 import org.http4k.server.asServer
@@ -32,7 +33,7 @@ class Server(private val services: Services, val serverConfig: ServerConfig) {
             .then(ServerFilters.CatchLensFailure)
             .then(routes(
                 "/api" bind apiRoutes(authChecker, services, serverConfig),
-                "/" bind Method.GET to static(ResourceLoader.Classpath("public")),
+                "/" bind Method.GET to singlePageApp(ResourceLoader.Classpath("public")),
             ))
 
         app.asServer(ApacheServer(serverConfig.port)).also {
